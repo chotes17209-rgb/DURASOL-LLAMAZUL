@@ -117,7 +117,7 @@
             <div class="p-3"><textarea class="form-input" rows="2" x-model="observaciones" :disabled="!editable"></textarea></div>
         </div>
 
-        <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-5 py-2.5 lg:left-60 no-print" x-show="editable">
+        <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-6 py-2.5 lg:left-64 no-print" style="box-shadow: 0 -4px 12px -6px rgb(10 26 56 / .15)" x-show="editable">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-xs text-slate-500">
                     Llenos S-10 final: <b class="text-slate-800" x-text="n(control('lleno_s10').final)"></b> ·

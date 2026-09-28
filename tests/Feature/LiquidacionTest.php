@@ -82,9 +82,27 @@ class LiquidacionTest extends TestCase
         $this->assertSame(EstadoLiquidacion::Borrador, $liquidacion->fresh()->estado);
     }
 
+    public function test_precio_es_el_vigente_del_cliente_y_se_liquida_al_dia_siguiente(): void
+    {
+        $cliente = $this->cliente(['S10' => 45]);
+        $item = ['cliente_id' => $cliente->id, 'empresa_id' => $this->empresa()->id, 'producto_id' => $this->producto('S10')->id, 'cantidad' => 2, 'precio' => 1, 'metodo_pago' => 'efectivo'];
+
+        // El precio enviado se ignora: se usa el de su lista de precios.
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['items' => [$item]]))->assertOk();
+        $this->assertSame('90.00', Liquidacion::firstOrFail()->total_venta);
+
+        // Sin precio registrado para esa presentación no se puede liquidar.
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['items' => [['producto_id' => $this->producto('S45')->id] + $item]]))
+            ->assertStatus(422)->assertJsonValidationErrors('items');
+
+        // La venta de hoy se liquida mañana.
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['fecha_venta' => today()->toDateString(), 'fecha_liquidacion' => today()->toDateString(), 'items' => [$item]]))
+            ->assertStatus(422)->assertJsonValidationErrors(['fecha_venta', 'fecha_liquidacion']);
+    }
+
     public function test_cobranza_en_liquidacion_paga_deudas_antiguas_primero(): void
     {
-        $cliente = $this->cliente();
+        $cliente = $this->cliente(['S10' => 50]);
         $s10 = $this->producto('S10')->id;
         $durasol = $this->empresa()->id;
 
