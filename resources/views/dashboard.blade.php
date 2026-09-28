@@ -7,19 +7,15 @@
         </form>
     </x-slot:actions>
 
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <x-kpi label="Venta del día" :value="soles($ventaDia)" :hint="num($balonesDia).' balones'"/>
-        <x-kpi label="Venta acumulada del mes" :value="soles($ventaMes)" :hint="num($balonesMes).' balones'"/>
+    <dl class="ledger !grid-cols-2 lg:!grid-cols-5">
+        <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p class="text-[11px] text-slate-500">{{ num($balonesDia) }} balones</p></div>
+        <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd><p class="text-[11px] text-slate-500">{{ num($balonesMes) }} balones</p></div>
+        <div class="ledger-cell"><dt>Llenos en almacén</dt><dd>{{ num($stock['lleno_s10']['final']) }} <span class="text-xs font-medium text-slate-500">S-10</span></dd><p class="text-[11px] text-slate-500">S-45 {{ num($stock['lleno_s45']['final']) }} · M-10 {{ num($stock['lleno_m10']['final']) }}</p></div>
         @if ($u->hasRole('liquidaciones', 'caja'))
-            <x-kpi label="Por cobrar (créditos)" :value="soles($porCobrar)" color="red"/>
+            <div class="ledger-cell"><dt>Créditos por cobrar</dt><dd class="!text-red-700">{{ soles($porCobrar) }}</dd><p class="text-[11px] text-slate-500">saldo pendiente de clientes</p></div>
         @endif
-        @if ($u->hasRole('caja'))
-            <x-kpi label="Saldo en caja hoy" :value="soles($saldoCaja)" color="green"/>
-        @endif
-        @if ($u->hasRole('logistica') && ! $u->hasRole('caja'))
-            <x-kpi label="Llenos en almacén (S-10)" :value="num($stock['lleno_s10']['final'])" :hint="'S-45: '.num($stock['lleno_s45']['final']).' · M-10: '.num($stock['lleno_m10']['final'])" color="amber"/>
-        @endif
-    </div>
+        <div class="ledger-cell ledger-total border-r-0"><dt>{{ $u->hasRole('caja') ? 'Saldo en caja hoy' : 'Liquidaciones por cerrar' }}</dt><dd>{{ $u->hasRole('caja') ? soles($saldoCaja) : $borradores }}</dd><p class="text-[11px] text-[#b9c7df]">{{ $borradores }} en borrador</p></div>
+    </dl>
 
     @if ($borradores)
         <div class="help mt-3 flex items-center justify-between">

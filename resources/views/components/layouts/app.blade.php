@@ -57,7 +57,7 @@
 
 {{-- Menú lateral --}}
 <div x-show="menu" x-cloak class="fixed inset-0 z-20 bg-slate-900/40 lg:hidden" @click="menu = false"></div>
-<aside class="app-sidebar" :class="menu ? 'translate-x-0' : '-translate-x-full'">
+<aside class="app-sidebar -translate-x-full transition-transform lg:translate-x-0" :class="menu && '!translate-x-0'">
     <nav class="flex-1 py-3">
         @foreach ($menu as $seccion)
             <p class="nav-section">{{ $seccion['titulo'] }}</p>

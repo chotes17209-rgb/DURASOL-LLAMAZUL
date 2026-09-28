@@ -372,6 +372,10 @@ export default function liquidacionEditor(config) {
         /* ---------------- Utilidades ---------------- */
         round(v) { return Math.round((v + Number.EPSILON) * 100) / 100; },
         money(v) { return 'S/ ' + this.dec(v); },
+        fechaLarga(f) {
+            if (!f) return '—';
+            return new Date(`${f}T12:00:00`).toLocaleDateString('es-PE', { weekday: 'long', day: '2-digit', month: 'long' });
+        },
         dec(v) { return Number(v || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     };
 }

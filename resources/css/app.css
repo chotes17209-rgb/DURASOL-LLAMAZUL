@@ -45,9 +45,9 @@
 @layer components {
     /* Estructura */
     .app-header { @apply fixed inset-x-0 top-0 z-30 flex h-16 items-center border-b border-line bg-white; box-shadow: inset 0 -3px 0 var(--color-brand-800); }
-    .app-brand { @apply flex h-full w-64 shrink-0 items-center gap-3 border-r border-line px-5 max-lg:w-auto max-lg:border-r-0; }
+    .app-brand { @apply flex h-full min-w-64 shrink-0 items-center gap-3 border-r border-line pr-6 pl-5 max-lg:min-w-0 max-lg:border-r-0; }
     .app-avatar { @apply flex h-9 w-9 items-center justify-center rounded-full bg-brand-800 text-[12px] font-semibold tracking-wide text-white; }
-    .app-sidebar { @apply fixed top-16 bottom-0 left-0 z-20 flex w-64 flex-col overflow-y-auto bg-brand-900 transition-transform lg:translate-x-0; }
+    .app-sidebar { @apply fixed top-16 bottom-0 left-0 z-20 flex w-64 flex-col overflow-y-auto bg-brand-900; }
     .app-modal { @apply relative w-full overflow-hidden rounded-md border border-brand-900/20 bg-white; box-shadow: 0 24px 48px -12px rgb(10 26 56 / .35); }
     .page-head { @apply flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-6 py-3.5; }
     .page-crumb { @apply flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-slate-500 uppercase; }
@@ -105,6 +105,10 @@
     .cell-input { @apply h-7 w-full rounded-none border border-transparent bg-transparent px-1.5 text-right text-[13px] tabular-nums hover:border-line focus:border-brand-600 focus:bg-white focus:ring-0 focus:outline-none; }
     .cell-input.text-left { @apply text-left; }
     .cell-input:disabled { @apply appearance-none bg-transparent text-slate-800 opacity-100 hover:border-transparent; }
+    .fila-vacia select, .fila-vacia td { @apply text-slate-400; }
+    .fila-vacia .cell-fija { @apply bg-transparent; }
+    .cell-input::placeholder { color: transparent; }
+    .cell-input:focus::placeholder { @apply text-slate-400; }
     .cell-fija { @apply bg-[#f3f5f9] text-slate-800; }
 
     /* Etiquetas de estado */
@@ -140,6 +144,26 @@
     .dl-grid dd { @apply mt-0.5 text-[13px] font-medium text-slate-800; }
 
     .help { @apply rounded border border-l-[3px] border-line border-l-brand-700 bg-white px-3 py-2 text-xs text-slate-600; }
+
+    /* Documento (liquidación): cabecera, barra de totales y cuadre */
+    .doc-head { @apply overflow-hidden rounded-md border border-line bg-white; box-shadow: 0 1px 2px rgb(16 38 80 / .05); }
+    .doc-band { @apply flex flex-wrap items-center justify-between gap-3 bg-brand-900 px-5 py-3 text-white; }
+    .doc-num { @apply font-mono text-[18px] font-semibold tracking-wide; }
+    .doc-tag { @apply rounded-sm border border-white/25 bg-white/10 px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase; }
+    .ledger { @apply grid grid-cols-2 overflow-hidden rounded-md border border-line bg-white sm:grid-cols-4 xl:grid-cols-7; box-shadow: 0 1px 2px rgb(16 38 80 / .05); }
+    .ledger-cell { @apply border-r border-b border-line-soft px-4 py-2.5 xl:border-b-0; }
+    .ledger-cell dt { @apply truncate text-[10.5px] font-semibold tracking-[.08em] text-slate-500 uppercase; }
+    .ledger-cell dd { @apply mt-0.5 text-[17px] font-semibold tracking-tight text-brand-950 tabular-nums; }
+    .ledger-total { @apply bg-brand-800 text-white; }
+    .ledger-total dt { @apply text-[#b9c7df]; }
+    .ledger-total dd { @apply text-[20px] text-white; }
+    .table .th-group th { @apply border-b-0 bg-brand-800 py-1.5 text-center text-[10.5px] tracking-[.12em] text-white; }
+    .table-grid .th-group th { @apply border-x-brand-700; }
+    .recibo { @apply w-full text-[13px]; }
+    .recibo td { @apply border-b border-dashed border-line px-4 py-2; }
+    .recibo td:last-child { @apply text-right font-medium tabular-nums; }
+    .recibo tr.resta td { @apply text-slate-600; }
+    .recibo tr.final td { @apply border-0 bg-brand-800 py-3 text-[15px] font-semibold text-white; }
 
     /* Lista de sugerencias (búsqueda de clientes en celdas) */
     .sugerencias { @apply fixed z-[60] max-h-72 overflow-y-auto rounded border border-brand-800/30 bg-white text-[13px]; box-shadow: 0 12px 28px -8px rgb(10 26 56 / .35); }
