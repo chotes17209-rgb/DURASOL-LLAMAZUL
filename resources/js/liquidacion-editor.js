@@ -1,5 +1,3 @@
-import TomSelect from 'tom-select';
-
 /**
  * Liquidación diaria, igual que la hoja REGISTRO del Excel:
  * se escribe el CÓDIGO del cliente y se completan su nombre y su precio (como el BUSCARV);
@@ -35,8 +33,9 @@ export default function liquidacionEditor(config) {
         empresaDefecto: config.empresas[0]?.id ?? null,
 
         init() {
-            this.items = (config.items || []).map((i) => ({ ...i, codigo: this.clientes[i.cliente_id]?.codigo ?? '', error: '' }));
-            this.cobranzas = (config.cobranzas || []).map((c) => ({ ...c, codigo: this.clientes[c.cliente_id]?.codigo ?? '', error: '' }));
+            const conCliente = (f) => ({ ...f, codigo: this.clientes[f.cliente_id]?.codigo ?? '', texto: this.clientes[f.cliente_id]?.nombre ?? '', error: '' });
+            this.items = (config.items || []).map(conCliente);
+            this.cobranzas = (config.cobranzas || []).map(conCliente);
             if (!this.fises.sin) this.fises.sin = {};
             if (this.editable) {
                 this.agregarFilas(Math.max(3, 10 - this.items.length));
@@ -44,42 +43,69 @@ export default function liquidacionEditor(config) {
                 if (!this.gastos.length) this.agregarGasto();
             }
 
-            this.$nextTick(() => {
-                this.initBuscador(this.$refs.buscadorCliente, (id) => this.agregarCliente(id));
-                this.sucio = false;
-            });
+            this.$nextTick(() => { this.sucio = false; });
+            window.addEventListener('scroll', (e) => {
+                if (!e.target.closest?.('[data-sugerencias]')) this.sugerencias = null;
+            }, true);
             this.cargarCuadre();
             this.$watch('cab.chofer_id', () => { this.cambiarChofer(); this.cargarCuadre(); });
-            this.$watch('cab.fecha_venta', (v) => { this.sugerirFechaLiquidacion(v); this.cargarCuadre(); });
+            this.$watch('cab.fecha_venta', (v) => {
+                this.sugerirFechaLiquidacion(v);
+                this.cargarCuadre();
+                if (this.editable) this.recargarPrecios();
+            });
             ['items', 'fises', 'cobranzas', 'gastos', 'cab'].forEach((k) => this.$watch(k, () => { this.sucio = true; }));
             window.addEventListener('beforeunload', (e) => {
                 if (this.sucio && this.editable) { e.preventDefault(); e.returnValue = ''; }
             });
         },
 
-        /* ---------------- Buscador por nombre (Tom Select remoto) ---------------- */
-        initBuscador(el, onPick) {
-            if (!el || el.tomselect) return;
-            const self = this;
-            new TomSelect(el, {
-                valueField: 'id',
-                labelField: 'text',
-                searchField: ['text'],
-                maxOptions: 30,
-                placeholder: el.getAttribute('placeholder'),
-                dropdownParent: 'body',
-                load(query, callback) {
-                    const params = new URLSearchParams({ q: query, chofer_id: self.cab.chofer_id || '' });
-                    window.request(`${self.urls.buscarClientes}?${params}`, { json: true }).then((d) => callback(d.results)).catch(() => callback());
-                },
-                render: { no_results: () => '<div class="no-results p-2 text-slate-400">Sin resultados</div>' },
-                onChange(value) {
-                    if (!value) return;
-                    onPick(Number(value));
-                    this.clear(true);
-                    this.clearOptions();
-                },
-            });
+        /* ---------------- Búsqueda por nombre en la misma celda ---------------- */
+        // Lista de sugerencias flotante: { fila, lista, indice, top, left, width, cargando }.
+        sugerencias: null,
+        temporizador: null,
+
+        escribirNombre(fila, event, alElegir) {
+            fila.cliente_id = null;
+            fila.codigo = '';
+            fila.error = '';
+            if ('precio' in fila) fila.precio = '';
+            clearTimeout(this.temporizador);
+            const texto = String(fila.texto || '').trim();
+            if (texto.length < 2) { this.sugerencias = null; return; }
+            const r = event.target.getBoundingClientRect();
+            this.sugerencias = { fila, alElegir, lista: [], indice: 0, top: r.bottom, left: r.left, width: Math.max(r.width, 360), cargando: true };
+            this.temporizador = setTimeout(async () => {
+                try {
+                    const params = new URLSearchParams({ q: texto, chofer_id: this.cab.chofer_id || '' });
+                    const data = await window.request(`${this.urls.buscarClientes}?${params}`, { json: true });
+                    if (this.sugerencias?.fila === fila) Object.assign(this.sugerencias, { lista: data.results || [], indice: 0, cargando: false });
+                } catch (e) {
+                    this.sugerencias = null;
+                }
+            }, 250);
+        },
+        teclaNombre(event) {
+            const s = this.sugerencias;
+            if (!s) return;
+            if (event.key === 'ArrowDown') { event.preventDefault(); s.indice = Math.min(s.indice + 1, s.lista.length - 1); }
+            if (event.key === 'ArrowUp') { event.preventDefault(); s.indice = Math.max(s.indice - 1, 0); }
+            if (event.key === 'Enter' && s.lista[s.indice]) { event.preventDefault(); this.elegirSugerencia(s.lista[s.indice]); }
+            if (event.key === 'Escape') this.sugerencias = null;
+        },
+        cerrarSugerencias() {
+            setTimeout(() => { this.sugerencias = null; }, 150);
+        },
+        async elegirSugerencia(opcion) {
+            const s = this.sugerencias;
+            this.sugerencias = null;
+            if (!s) return;
+            try {
+                const cliente = await this.datosCliente({ cliente_id: opcion.id });
+                await s.alElegir(s.fila, cliente);
+            } catch (e) {
+                window.handleRequestError(e);
+            }
         },
 
         async datosCliente(params) {
@@ -94,7 +120,7 @@ export default function liquidacionEditor(config) {
         /* ---------------- Hoja de ventas ---------------- */
         filaVacia(empresaId = null) {
             return {
-                uid: uid(), codigo: '', cliente_id: null, producto_id: productoPorCodigo('S10')?.id ?? this.productos[0]?.id,
+                uid: uid(), codigo: '', texto: '', cliente_id: null, producto_id: productoPorCodigo('S10')?.id ?? this.productos[0]?.id,
                 empresa_id: empresaId ?? this.empresaDefecto, cantidad: '', precio: '', vacios_devueltos: '',
                 metodo_pago: 'efectivo', monto_credito: '', numero_operacion: '', observacion: '', error: '',
             };
@@ -110,33 +136,41 @@ export default function liquidacionEditor(config) {
             const codigo = String(item.codigo || '').trim();
             if (!codigo) { item.cliente_id = null; return; }
             try {
-                const cliente = await this.datosCliente({ codigo });
-                item.cliente_id = cliente.id;
-                item.codigo = cliente.codigo;
-                if (cliente.precios?.[item.producto_id] === undefined) item.producto_id = this.productoSugerido(cliente);
-                item.precio = cliente.precios?.[item.producto_id] ?? '';
-                if (cliente.deuda > 0) window.notify('info', `${cliente.nombre} debe ${this.money(cliente.deuda)}`);
+                this.asignarCliente(item, await this.datosCliente({ codigo }), false);
             } catch (e) {
                 item.cliente_id = null;
+                item.texto = '';
                 item.precio = '';
                 item.error = e.status === 404 ? 'Código no existe' : 'Error';
             }
         },
 
-        /** Desde el buscador por nombre: usa la primera fila vacía. */
-        async agregarCliente(id) {
-            try {
-                const cliente = await this.datosCliente({ cliente_id: id });
-                let fila = this.items.find((i) => !i.cliente_id && !i.codigo && !(+i.cantidad));
-                if (!fila) { this.agregarFilas(3); fila = this.items.find((i) => !i.cliente_id && !i.codigo); }
-                fila.codigo = cliente.codigo;
-                fila.cliente_id = cliente.id;
-                fila.producto_id = this.productoSugerido(cliente);
-                fila.precio = cliente.precios?.[fila.producto_id] ?? '';
-                this.$nextTick(() => document.querySelector(`[data-fila="${fila.uid}"] [data-col="cantidad"]`)?.focus());
-            } catch (e) {
-                window.handleRequestError(e);
+        /** Llena la fila con el cliente (por código o por nombre) y su precio vigente, que no se edita. */
+        asignarCliente(item, cliente, enfocar = true) {
+            item.cliente_id = cliente.id;
+            item.codigo = cliente.codigo;
+            item.texto = cliente.nombre;
+            item.error = '';
+            if (cliente.precios?.[item.producto_id] === undefined) item.producto_id = this.productoSugerido(cliente);
+            this.aplicarPrecio(item);
+            if (cliente.deuda > 0) window.notify('info', `${cliente.nombre} debe ${this.money(cliente.deuda)}`);
+            if (enfocar) this.$nextTick(() => document.querySelector(`[data-fila="${item.uid}"] [data-col="cantidad"]`)?.focus());
+        },
+
+        /** El precio depende de la fecha de venta: al cambiarla se vuelven a traer los precios vigentes. */
+        async recargarPrecios() {
+            const ids = [...new Set(this.items.filter((i) => i.cliente_id).map((i) => i.cliente_id))];
+            ids.forEach((id) => { if (this.clientes[id]) this.clientes[id].precios = null; });
+            for (const id of ids) {
+                try { await this.datosCliente({ cliente_id: id }); } catch (e) { /* se marca en la fila */ }
             }
+            this.items.filter((i) => i.cliente_id).forEach((i) => this.aplicarPrecio(i));
+        },
+
+        aplicarPrecio(item) {
+            const precio = this.clientes[item.cliente_id]?.precios?.[item.producto_id];
+            item.precio = precio ?? '';
+            item.error = item.cliente_id && precio === undefined ? `Sin precio de ${this.codigoProducto(item.producto_id)}` : '';
         },
 
         productoSugerido(cliente) {
@@ -146,10 +180,7 @@ export default function liquidacionEditor(config) {
         },
 
         cambiarProducto(item) {
-            if (!item.cliente_id) return;
-            const precio = this.clientes[item.cliente_id]?.precios?.[item.producto_id];
-            item.precio = precio ?? '';
-            if (precio === undefined) window.notify('warning', 'El cliente no tiene precio para esta presentación; escríbelo.');
+            if (item.cliente_id) this.aplicarPrecio(item);
         },
 
         async quitarItem(item) {
@@ -195,20 +226,25 @@ export default function liquidacionEditor(config) {
 
         /* ---------------- Cobranzas y varios ---------------- */
         agregarCobranza() {
-            this.cobranzas.push({ uid: uid(), codigo: '', cliente_id: null, monto: '', metodo_pago: 'efectivo', numero_operacion: '', error: '' });
+            this.cobranzas.push({ uid: uid(), codigo: '', texto: '', cliente_id: null, monto: '', metodo_pago: 'efectivo', numero_operacion: '', error: '' });
         },
         async buscarCodigoCobranza(c) {
             c.error = '';
             if (!String(c.codigo || '').trim()) { c.cliente_id = null; return; }
             try {
-                const cliente = await this.datosCliente({ codigo: String(c.codigo).trim() });
-                c.cliente_id = cliente.id;
-                if (!(cliente.deuda > 0)) c.error = 'Sin deuda';
-                else if (!c.monto) c.monto = cliente.deuda;
+                this.asignarCobranza(c, await this.datosCliente({ codigo: String(c.codigo).trim() }));
             } catch (e) {
                 c.cliente_id = null;
+                c.texto = '';
                 c.error = e.status === 404 ? 'Código no existe' : 'Error';
             }
+        },
+        asignarCobranza(c, cliente) {
+            c.cliente_id = cliente.id;
+            c.codigo = cliente.codigo;
+            c.texto = cliente.nombre;
+            c.error = cliente.deuda > 0 ? '' : 'Sin deuda';
+            if (cliente.deuda > 0 && !c.monto) c.monto = cliente.deuda;
         },
         agregarGasto() { this.gastos.push({ uid: uid(), concepto: '', monto: '', comprobante: '' }); },
 
@@ -288,7 +324,7 @@ export default function liquidacionEditor(config) {
                     if ((+valores[v] || 0) > 0) fises.push({ cliente_id: cliente === 'sin' ? null : +cliente, valor: v, cantidad: +valores[v] });
                 });
             });
-            const limpiar = ({ uid: _u, codigo: _c, error: _e, ...resto }) => resto;
+            const limpiar = ({ uid: _u, codigo: _c, texto: _t, error: _e, ...resto }) => resto;
             return {
                 ...this.cab,
                 efectivo_entregado: this.cab.efectivo_entregado === '' ? null : this.cab.efectivo_entregado,
@@ -310,8 +346,13 @@ export default function liquidacionEditor(config) {
             }
             const sinCliente = filas.filter((i) => !i.cliente_id).length;
             const sinCantidad = filas.filter((i) => !(+i.cantidad > 0)).length;
-            if (sinCliente || sinCantidad) {
-                window.alertError('Revisa la hoja', [sinCliente && `${sinCliente} fila(s) con cantidad pero sin código de cliente válido.`, sinCantidad && `${sinCantidad} fila(s) sin cantidad.`].filter(Boolean).join(' '));
+            const sinPrecio = filas.filter((i) => i.cliente_id && i.precio === '').length;
+            if (sinCliente || sinCantidad || sinPrecio) {
+                window.alertError('Revisa la hoja', [
+                    sinCliente && `${sinCliente} fila(s) con cantidad pero sin cliente válido.`,
+                    sinCantidad && `${sinCantidad} fila(s) sin cantidad.`,
+                    sinPrecio && `${sinPrecio} fila(s) sin precio: registra el precio del cliente en «Precios de venta».`,
+                ].filter(Boolean).join(' '));
                 return;
             }
             this.guardando = true;
