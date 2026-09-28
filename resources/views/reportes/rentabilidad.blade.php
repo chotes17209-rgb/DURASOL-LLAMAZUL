@@ -19,21 +19,24 @@
 @endphp
 <x-layouts.app title="Rentabilidad" breadcrumb="Gerencia">
     <x-slot:actions>
-        <form method="GET" class="flex items-end gap-2">
-            <div>
-                <label class="form-label">Mes</label>
+        <x-export :url="route('reportes.rentabilidad', $exportar)"/>
+    </x-slot:actions>
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb">
+                <label>Mes</label>
                 <input type="month" name="mes" value="{{ $mes }}" class="form-input w-56" onchange="this.form.submit()">
             </div>
-            <div>
-                <label class="form-label">Empresa</label>
-                <select name="empresa_id" class="form-input w-40" onchange="this.form.submit()">
+            <div class="fb">
+                <label>Empresa</label>
+                <select name="empresa_id" class="form-input w-48" onchange="this.form.submit()">
                     <option value="">Consolidado</option>
                     @foreach ($empresas as $id => $nombre)<option value="{{ $id }}" @selected((int) request('empresa_id') === $id)>{{ $nombre }}</option>@endforeach
                 </select>
             </div>
+            <button class="btn btn-primary">Aplicar</button>
         </form>
-        <x-export :url="route('reportes.rentabilidad', $exportar)"/>
-    </x-slot:actions>
+    </x-slot:filters>
 
     <section class="doc-head">
         <div class="doc-band">

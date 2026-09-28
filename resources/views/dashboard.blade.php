@@ -1,11 +1,14 @@
 @php($u = auth()->user())
 <x-layouts.app title="Panel de control" :breadcrumb="'Resumen al '.$fecha->translatedFormat('l d \\d\\e F \\d\\e Y')">
-    <x-slot:actions>
-        <form method="GET" class="flex items-center gap-2">
-            <label class="text-xs text-slate-500">Día de venta</label>
-            <input type="date" name="fecha" value="{{ $fecha->format('Y-m-d') }}" class="form-input w-36" onchange="this.form.submit()">
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb">
+                <label>Día de venta</label>
+                <input type="date" name="fecha" value="{{ $fecha->format('Y-m-d') }}" class="form-input w-44" onchange="this.form.submit()">
+            </div>
+            <button class="btn btn-primary">Aplicar</button>
         </form>
-    </x-slot:actions>
+    </x-slot:filters>
 
     @php($totalStock = \App\Services\AlmacenService::totalesPorPresentacion($stock))
     <dl class="ledger !grid-cols-2 lg:!grid-cols-5">

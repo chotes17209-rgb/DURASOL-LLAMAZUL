@@ -9,20 +9,21 @@
     }
 @endphp
 <x-layouts.app title="Arqueo de efectivo" breadcrumb="Caja">
-    <x-slot:actions>
-        <form method="GET" class="flex items-end gap-2">
-            <div>
-                <label class="form-label">Caja</label>
-                <select name="caja" class="form-input w-40" onchange="this.form.submit()">
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb">
+                <label>Caja</label>
+                <select name="caja" class="form-input w-44" onchange="this.form.submit()">
                     @foreach (\App\Models\Arqueo::CAJAS as $valor => $texto)<option value="{{ $valor }}" @selected($caja === $valor)>{{ $texto }}</option>@endforeach
                 </select>
             </div>
-            <div>
-                <label class="form-label">Fecha</label>
-                <input type="date" name="fecha" class="form-input w-40" value="{{ $fecha->format('Y-m-d') }}" max="{{ today()->format('Y-m-d') }}" onchange="this.form.submit()">
+            <div class="fb">
+                <label>Fecha del arqueo</label>
+                <input type="date" name="fecha" class="form-input w-44" value="{{ $fecha->format('Y-m-d') }}" max="{{ today()->format('Y-m-d') }}" onchange="this.form.submit()">
             </div>
+            <button class="btn btn-primary">Aplicar</button>
         </form>
-    </x-slot:actions>
+    </x-slot:filters>
 
     @include('caja._tabs')
 

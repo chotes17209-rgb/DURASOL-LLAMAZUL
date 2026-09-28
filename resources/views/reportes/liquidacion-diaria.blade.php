@@ -1,11 +1,16 @@
 <x-layouts.app title="Hoja de liquidación diaria" breadcrumb="Reportes">
     <x-slot:actions>
-        <form method="GET" class="flex items-center gap-2">
-            <label class="text-xs text-slate-500">Fecha</label>
-            <input type="date" name="fecha" value="{{ $fecha->format('Y-m-d') }}" class="form-input w-36" onchange="this.form.submit()">
-        </form>
         <x-export :url="route('reportes.liquidacion-diaria', ['fecha' => $fecha->toDateString()])"/>
     </x-slot:actions>
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb">
+                <label>Fecha</label>
+                <input type="date" name="fecha" value="{{ $fecha->format('Y-m-d') }}" class="form-input w-44" onchange="this.form.submit()">
+            </div>
+            <button class="btn btn-primary">Aplicar</button>
+        </form>
+    </x-slot:filters>
 
     <p class="help mb-3">
         <b>{{ ucfirst($fecha->translatedFormat('l d \\d\\e F \\d\\e Y')) }}</b> · Por depositar = venta + cobranza − crédito − varios − FISE − vouchers − depósitos.

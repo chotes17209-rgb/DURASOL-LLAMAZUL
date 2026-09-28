@@ -78,17 +78,22 @@
 </aside>
 
 <div class="pt-14 lg:pl-60">
-    {{-- Encabezado de la página --}}
+    {{-- Encabezado de la página (estilo Fiori): ruta, título, acciones y barra de filtros --}}
     <div class="page-head">
-        <div class="min-w-0">
-            <p class="page-crumb">
-                <span>{{ $seccionActual }}</span>
-                @if ($breadcrumb && $breadcrumb !== $seccionActual)<x-heroicon-m-chevron-right class="h-3 w-3 text-slate-400"/><span>{{ $breadcrumb }}</span>@endif
-            </p>
-            <h1 class="page-title">{{ $title ?? 'Inicio' }}</h1>
+        <div class="page-head-top">
+            <div class="min-w-0">
+                <p class="page-crumb">
+                    <span>{{ $seccionActual }}</span>
+                    @if ($breadcrumb && $breadcrumb !== $seccionActual)<x-heroicon-m-chevron-right class="h-3 w-3 text-slate-400"/><span>{{ $breadcrumb }}</span>@endif
+                </p>
+                <h1 class="page-title">{{ $title ?? 'Inicio' }}</h1>
+            </div>
+            @isset($actions)
+                <div class="page-actions no-print">{{ $actions }}</div>
+            @endisset
         </div>
-        @isset($actions)
-            <div class="no-print flex flex-wrap items-center gap-2">{{ $actions }}</div>
+        @isset($filters)
+            <div class="filter-bar no-print">{{ $filters }}</div>
         @endisset
     </div>
     <main class="px-3 pt-4 pb-8 sm:px-6">

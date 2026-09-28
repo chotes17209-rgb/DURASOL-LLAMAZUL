@@ -45,7 +45,7 @@
 
 @layer base {
     html { font-size: 13.5px; -webkit-font-smoothing: antialiased; }
-    body { @apply bg-[#f2f4f8] text-[#1f2937]; }
+    body { @apply bg-[#f5f6f7] text-[#1d2d3e]; }
     [x-cloak] { display: none !important; }
     input[type='number'] { -moz-appearance: textfield; }
     input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -60,42 +60,49 @@
 
 @layer components {
     /* Estructura */
-    .app-header { @apply fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-line bg-white/95 backdrop-blur; }
+    .app-header { @apply fixed inset-x-0 top-0 z-30 flex h-14 items-center bg-white; box-shadow: 0 0 .25rem rgb(34 53 72 / .15), 0 .125rem .5rem rgb(34 53 72 / .08); }
     .app-brand { @apply flex h-full min-w-60 shrink-0 items-center gap-2 border-r border-line pr-5 pl-3 max-lg:min-w-0 max-lg:border-r-0 max-lg:pr-2 sm:gap-3 sm:pl-4; }
     .app-avatar { @apply flex h-8 w-8 items-center justify-center rounded-md bg-brand-800 text-[12px] font-semibold text-white; }
     .app-sidebar { @apply fixed top-14 bottom-0 left-0 z-20 flex w-60 flex-col overflow-y-auto bg-[#0f1f44]; }
-    .app-modal { @apply relative w-full overflow-hidden rounded-lg border border-slate-300 bg-white; box-shadow: 0 20px 40px -16px rgb(15 23 42 / .35); }
-    .page-head { @apply flex flex-wrap items-end justify-between gap-3 px-3 pt-5 pb-1 sm:px-6; }
-    .page-crumb { @apply flex items-center gap-1.5 text-[12px] text-slate-500; }
-    .page-title { @apply mt-0.5 text-[20px] font-semibold text-slate-900; }
+    .app-modal { @apply relative w-full overflow-hidden rounded-xl border border-[#e5e8ec] bg-white; box-shadow: 0 1rem 2.5rem rgb(34 53 72 / .25); }
+    .page-head { @apply border-b border-[#e5e8ec] bg-white px-3 pt-4 pb-3 sm:px-6; box-shadow: 0 .125rem .25rem rgb(34 53 72 / .05); }
+    .page-head-top { @apply flex flex-wrap items-center justify-between gap-3; }
+    .page-actions { @apply flex flex-wrap items-center gap-2; }
+    /* Barra de filtros (list report): etiquetas arriba, campos alineados y botón Aplicar */
+    .filter-bar { @apply mt-3 flex flex-wrap items-end gap-x-4 gap-y-3 border-t border-[#eef0f2] pt-3; }
+    .filter-bar > form { @apply flex flex-wrap items-end gap-x-4 gap-y-3; }
+    .fb { @apply flex flex-col gap-1; }
+    .fb > label { @apply text-[12px] font-medium text-[#556b82]; }
+    .page-crumb { @apply flex items-center gap-1.5 text-[12px] text-[#556b82]; }
+    .page-title { @apply mt-0.5 text-[20px] font-semibold text-[#1d2d3e]; }
 
     /* Paneles */
-    .card { @apply rounded-lg border border-slate-200 bg-white; box-shadow: 0 1px 2px rgb(16 24 40 / .05); }
-    .card > .table-wrap:last-child, .card > table:last-child { @apply rounded-b-lg; }
-    .card-header { @apply flex min-h-11 items-center justify-between gap-3 border-b border-slate-200 px-4 py-2.5; }
-    .card-title { @apply text-[14px] font-semibold text-slate-900; }
+    .card { @apply rounded-xl border border-[#e5e8ec] bg-white; box-shadow: 0 0 .125rem rgb(34 53 72 / .12), 0 .125rem .5rem rgb(34 53 72 / .08); }
+    .card > .table-wrap:last-child, .card > table:last-child { @apply rounded-b-xl; }
+    .card-header { @apply flex min-h-12 items-center justify-between gap-3 border-b border-[#eef0f2] px-4 py-2.5; }
+    .card-title { @apply text-[14.5px] font-semibold text-[#1d2d3e]; }
     .card-body { @apply p-4; }
     .section-title { @apply mb-2 border-b border-line-soft pb-1 text-[13px] font-semibold text-slate-800; }
 
     /* Botones */
-    .btn { @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-md border px-3.5 text-[13px] font-medium whitespace-nowrap transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50; }
+    .btn { @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[13px] font-semibold whitespace-nowrap transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50; }
     .btn svg { @apply h-4 w-4; }
     .btn-sm { @apply h-7 px-2.5 text-xs; }
-    .btn-primary { @apply border-brand-800 bg-brand-800 text-white hover:bg-brand-900; }
+    .btn-primary { @apply border-brand-800 bg-brand-800 text-white hover:border-brand-900 hover:bg-brand-900; }
     .btn-accent { @apply border-brand-800 bg-brand-800 text-white hover:bg-brand-900; }
-    .btn-secondary { @apply border-slate-300 bg-white text-slate-700 shadow-[0_1px_1px_rgb(16_24_40/.04)] hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900; }
+    .btn-secondary { @apply border-[#bcc3ca] bg-white text-brand-800 hover:border-brand-700 hover:bg-[#f1f6fc]; }
     .btn-success { @apply border-emerald-600 bg-white text-emerald-700 hover:bg-emerald-50; }
     .btn-danger { @apply border-red-300 bg-white text-red-700 hover:bg-red-50; }
     .btn-warning { @apply border-amber-300 bg-white text-amber-800 hover:bg-amber-50; }
-    .btn-ghost { @apply border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900; }
+    .btn-ghost { @apply border-transparent text-brand-800 hover:bg-[#eaecee]; }
     .btn-icon { @apply inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-800; }
     .btn-icon svg { @apply h-4 w-4; }
     .btn-icon.danger { @apply hover:bg-red-50 hover:text-red-700; }
     .btn-icon.info { @apply hover:bg-brand-50 hover:text-brand-700; }
 
     /* Formularios */
-    .form-label { @apply mb-1 block text-[12px] font-medium text-slate-600; }
-    .form-input { @apply block h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-[13px] text-slate-900 shadow-[0_1px_1px_rgb(16_24_40/.03)] transition placeholder:text-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500; }
+    .form-label { @apply mb-1 block text-[12px] font-medium text-[#556b82]; }
+    .form-input { @apply block h-9 w-full rounded-lg border border-[#bcc3ca] bg-white px-3 text-[13px] text-[#1d2d3e] transition placeholder:text-slate-400 hover:border-brand-600 focus:border-brand-700 focus:ring-2 focus:ring-brand-100 focus:outline-none disabled:bg-[#f5f6f7] disabled:text-slate-500; }
     textarea.form-input { @apply h-auto py-2; }
     select.form-input { @apply pr-8; }
     .form-input.is-invalid { @apply border-red-500 focus:ring-red-100; }
@@ -106,11 +113,11 @@
     /* Tablas */
     .table-wrap { @apply overflow-x-auto; }
     .table { @apply min-w-full border-collapse text-[13px]; }
-    .table thead th { @apply border-b border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-[12px] font-semibold whitespace-nowrap text-slate-600; }
-    .table tbody td { @apply border-b border-slate-100 px-3 py-2 align-middle text-slate-800; }
+    .table thead th { @apply border-b border-[#e5e8ec] bg-white px-3 py-2.5 text-left text-[12px] font-semibold whitespace-nowrap text-[#556b82]; }
+    .table tbody td { @apply border-b border-[#eef0f2] px-3 py-2 align-middle text-[#1d2d3e]; }
     .table tbody tr { @apply transition-colors; }
-    .table tbody tr:hover td { @apply bg-[#f6f8fc]; }
-    .table tfoot td { @apply border-t border-slate-300 bg-slate-50 px-3 py-2.5 font-semibold text-slate-900; }
+    .table tbody tr:hover td { @apply bg-[#f5f8fc]; }
+    .table tfoot td { @apply border-t border-[#d5dadd] bg-[#f5f6f7] px-3 py-2.5 font-semibold text-[#1d2d3e]; }
     .table td.text-right, .table th.text-right { @apply whitespace-nowrap tabular-nums; }
     .table-compact thead th { @apply px-2.5 py-2; }
     .table-compact tbody td { @apply px-2.5 py-1.5; }
@@ -137,23 +144,23 @@
     .badge-violet { @apply bg-slate-50 text-slate-700 ring-slate-200; }
 
     /* Barra de progreso y selector segmentado */
-    .progress { @apply h-1.5 w-full overflow-hidden bg-slate-200; }
-    .progress > span { @apply block h-full bg-brand-800; }
-    .segmented { @apply inline-flex rounded-md border border-slate-300 bg-white p-0.5; }
-    .segmented > a, .segmented > button { @apply rounded px-4 py-1.5 text-[13px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900; }
-    .segmented > .active { @apply bg-brand-800 text-white hover:bg-brand-800 hover:text-white; }
+    .progress { @apply h-2 w-full overflow-hidden rounded-full bg-[#e5e8ec]; }
+    .progress > span { @apply block h-full rounded-full bg-brand-700; }
+    .segmented { @apply inline-flex rounded-lg border border-[#bcc3ca] bg-white p-0.5; }
+    .segmented > a, .segmented > button { @apply rounded-md px-4 py-1.5 text-[13px] font-semibold text-brand-800 transition hover:bg-[#f1f6fc]; }
+    .segmented > .active { @apply bg-brand-800 text-white hover:bg-brand-800; }
 
     /* Menú lateral */
     .nav-section { @apply mt-5 mb-1.5 px-5 text-[11px] font-semibold tracking-wide text-[#8b9bbd] uppercase first:mt-3; }
     .nav-link { @apply mx-3 flex items-center gap-2.5 rounded-md px-3 py-[7px] text-[13px] text-[#c9d3e6] transition hover:bg-white/[.06] hover:text-white; }
-    .nav-link.active { @apply bg-white/[.12] font-semibold text-white shadow-[inset_3px_0_0_#ffffff]; }
+    .nav-link.active { @apply bg-white/[.14] font-semibold text-white shadow-[inset_3px_0_0_#ffffff]; }
     .nav-link svg { @apply h-[17px] w-[17px] shrink-0 text-[#7f90b5]; }
     .nav-link.active svg { @apply text-white; }
 
     /* Pestañas */
     .tabs { @apply flex gap-1 overflow-x-auto border-b border-slate-200; }
-    .tab { @apply -mb-px border-b-2 border-transparent px-3.5 py-2.5 text-[13px] font-medium whitespace-nowrap text-slate-500 transition hover:text-slate-900; }
-    .tab.active { @apply border-brand-700 font-semibold text-brand-900; }
+    .tab { @apply -mb-px border-b-[3px] border-transparent px-3.5 py-2.5 text-[13px] font-semibold whitespace-nowrap text-[#556b82] transition hover:text-brand-800; }
+    .tab.active { @apply border-brand-800 text-brand-800; }
 
     /* Indicadores */
     .kpi { @apply rounded-lg border border-slate-200 bg-white px-4 py-3; }
@@ -165,26 +172,25 @@
     .dl-grid > div { @apply -mr-px -mb-px border-r border-b border-slate-100 px-3 py-2.5; }
     .dl-grid dt { @apply text-[12px] text-slate-500; }
     .dl-grid dd { @apply mt-0.5 min-h-5 text-[13px] font-medium text-slate-900; }
-
-    .help { @apply rounded-md border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-600; }
+    .help { @apply rounded-lg border border-[#d1e8ff] bg-[#f0f7ff] px-3.5 py-2.5 text-xs text-[#1d2d3e]; }
 
     /* Documento (liquidación, parte): cabecera, indicadores y cuadre */
-    .doc-head { @apply overflow-hidden rounded-lg border border-slate-200 bg-white; box-shadow: 0 1px 2px rgb(16 24 40 / .05); }
-    .doc-band { @apply flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3 text-slate-900; }
+    .doc-head { @apply overflow-hidden rounded-xl border border-[#e5e8ec] bg-white; box-shadow: 0 0 .125rem rgb(34 53 72 / .12), 0 .125rem .5rem rgb(34 53 72 / .08); }
+    .doc-band { @apply flex flex-wrap items-center justify-between gap-3 border-b border-[#eef0f2] bg-[#f7f9fb] px-5 py-3 text-[#1d2d3e]; }
     .doc-num { @apply font-mono text-[18px] font-semibold text-brand-900; }
     .doc-tag { @apply rounded bg-white px-2 py-0.5 text-[11.5px] font-medium text-slate-700 ring-1 ring-slate-300; }
 
     /* Indicadores en fila: tarjetas separadas */
     .ledger { @apply grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7; }
-    .ledger > .ledger-cell { @apply rounded-lg border border-slate-200 bg-white; }
+    .ledger > .ledger-cell { @apply rounded-xl border border-[#e5e8ec] bg-white; box-shadow: 0 0 .125rem rgb(34 53 72 / .12), 0 .125rem .5rem rgb(34 53 72 / .08); }
     .ledger-cell { @apply border-r border-b border-slate-100 px-4 py-3 xl:border-b-0; }
-    .ledger-cell dt { @apply truncate text-[12px] font-medium text-slate-500; }
-    .ledger-cell dd { @apply mt-1 text-[19px] font-semibold tracking-tight text-slate-900 tabular-nums; }
+    .ledger-cell dt { @apply truncate text-[12.5px] font-medium text-[#556b82]; }
+    .ledger-cell dd { @apply mt-1 text-[22px] font-semibold tracking-tight text-[#1d2d3e] tabular-nums; }
     .ledger-cell > p { @apply mt-0.5 text-[12px] text-slate-500; }
     .ledger-total, .ledger > .ledger-total { @apply !border-brand-800 !bg-brand-800 text-white; }
     .ledger-total dt, .ledger-total > p, .ledger-total > p a { @apply text-[#c9d6f0]; }
     .ledger-total dd { @apply text-white; }
-    .table .th-group th { @apply border-b border-slate-200 bg-slate-100 py-1.5 text-center text-[12px] font-semibold text-slate-700; }
+    .table .th-group th { @apply border-b border-[#e5e8ec] bg-[#f5f6f7] py-1.5 text-center text-[12px] font-semibold text-[#556b82]; }
     .recibo { @apply w-full text-[13px]; }
     .recibo td { @apply border-b border-slate-100 px-4 py-2; }
     .recibo td:last-child { @apply text-right tabular-nums; }

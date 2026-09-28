@@ -30,27 +30,28 @@
 @endphp
 <x-layouts.app title="Compras en planta" breadcrumb="Compras y precios">
     <x-slot:actions>
-        <form method="GET" class="flex items-end gap-2">
-            <input type="hidden" name="empresa" value="{{ $vista }}">
-            <div>
-                <label class="form-label">Mes</label>
-                <input type="month" name="mes" value="{{ $c['mes']->format('Y-m') }}" class="form-input w-56" onchange="this.form.submit()">
-            </div>
-        </form>
         <x-export :url="route('compras.index', ['empresa' => $vista, 'mes' => $c['mes']->format('Y-m')])"/>
         <button class="btn btn-secondary" data-modal-url="{{ route('compras.cuotas', ['mes' => $c['mes']->format('Y-m')]) }}" data-modal-size="md"><x-heroicon-o-flag/> Cuotas del mes</button>
         <button class="btn btn-primary" data-modal-url="{{ route('compras.create', ['empresa' => $vista, 'fecha' => $c['mes']->isSameMonth($hoy) ? $hoy->toDateString() : $c['mes']->copy()->endOfMonth()->toDateString()]) }}" data-modal-size="md"><x-heroicon-o-plus/> Registrar compra</button>
     </x-slot:actions>
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb">
+                <label>Empresa</label>
+                <select name="empresa" class="form-input w-48" onchange="this.form.submit()">
+                    @foreach ($empresas as $e)<option value="{{ $e->id }}" @selected($vista === (string) $e->id)>{{ $e->nombre }}</option>@endforeach
+                    <option value="global" @selected($vista === 'global')>Global (todas)</option>
+                </select>
+            </div>
+            <div class="fb">
+                <label>Mes</label>
+                <input type="month" name="mes" value="{{ $c['mes']->format('Y-m') }}" class="form-input w-56" onchange="this.form.submit()">
+            </div>
+            <button class="btn btn-primary">Aplicar</button>
+        </form>
+        <p class="ml-auto self-center text-[12.5px] text-[#556b82]">{{ ucfirst($c['mes']->translatedFormat('F Y')) }} · {{ $c['dias_con_compra'] }} días con compra</p>
+    </x-slot:filters>
 
-    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <nav class="segmented">
-            @foreach ($empresas as $e)
-                <a href="{{ route('compras.index', ['empresa' => $e->id, 'mes' => $c['mes']->format('Y-m')]) }}" @class(['active' => $vista === (string) $e->id])>{{ $e->nombre }}</a>
-            @endforeach
-            <a href="{{ route('compras.index', ['empresa' => 'global', 'mes' => $c['mes']->format('Y-m')]) }}" @class(['active' => $vista === 'global'])>Global</a>
-        </nav>
-        <p class="text-[13px] text-slate-500">{{ ucfirst($c['mes']->translatedFormat('F Y')) }} · {{ $c['dias_con_compra'] }} días con compra</p>
-    </div>
 
     <dl class="ledger !grid-cols-2 lg:!grid-cols-4">
         @foreach (['S10', 'S45', 'M10'] as $k)

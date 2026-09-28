@@ -1,13 +1,15 @@
 @php($t = fn ($k) => array_sum(array_column($dias, $k)))
 <x-layouts.app title="Caja por día" breadcrumb="Reportes">
     <x-slot:actions>
-        <form method="GET" class="flex items-center gap-2">
-            <input type="date" name="desde" value="{{ $desde->format('Y-m-d') }}" class="form-input w-40">
-            <input type="date" name="hasta" value="{{ $hasta->format('Y-m-d') }}" class="form-input w-40">
-            <button class="btn btn-primary">Ver</button>
-        </form>
         <x-export :url="route('reportes.caja-diaria', ['desde' => $desde->toDateString(), 'hasta' => $hasta->toDateString()])"/>
     </x-slot:actions>
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb"><label>Desde</label><input type="date" name="desde" value="{{ $desde->format('Y-m-d') }}" class="form-input w-44"></div>
+            <div class="fb"><label>Hasta</label><input type="date" name="hasta" value="{{ $hasta->format('Y-m-d') }}" class="form-input w-44"></div>
+            <button class="btn btn-primary">Aplicar</button>
+        </form>
+    </x-slot:filters>
     <p class="help mb-3">General = venta + cobranza − crédito − gastos − FISE. Saldo = general − depósitos (igual que la hoja «CAJA GNRAL» del Excel).</p>
     <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-6">
         <x-cifra label="Balones" :value="num($t('balones'))"/>

@@ -1,13 +1,18 @@
 <x-layouts.app title="Stock de almacén" breadcrumb="Logística">
     <x-slot:actions>
-        <form method="GET" class="flex items-center gap-2">
-            <label class="text-xs text-slate-500">Al</label>
-            <input type="date" name="fecha" value="{{ $fecha->toDateString() }}" class="form-input w-36" onchange="this.form.submit()">
-        </form>
         <x-export :url="route('logistica.stock', ['fecha' => $fecha->toDateString()])"/>
-        <a href="{{ route('logistica.stock.kardex') }}" class="btn btn-secondary">Kardex</a>
-        <a href="{{ route('logistica.partes.show', $fecha->toDateString()) }}" class="btn btn-primary">Parte del día</a>
+        <a href="{{ route('logistica.stock.kardex') }}" class="btn btn-secondary"><x-heroicon-o-queue-list/> Kardex</a>
+        <a href="{{ route('logistica.partes.show', $fecha->toDateString()) }}" class="btn btn-primary"><x-heroicon-o-clipboard-document-list/> Parte del día</a>
     </x-slot:actions>
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb">
+                <label>Stock al</label>
+                <input type="date" name="fecha" value="{{ $fecha->toDateString() }}" class="form-input w-44" onchange="this.form.submit()">
+            </div>
+            <button class="btn btn-primary">Aplicar</button>
+        </form>
+    </x-slot:filters>
 
     @php
         $total = \App\Services\AlmacenService::totalesPorPresentacion($control);

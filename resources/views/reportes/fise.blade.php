@@ -1,13 +1,16 @@
 <x-layouts.app title="Consolidado de vales FISE" breadcrumb="Reportes">
     <x-slot:actions>
-        <form method="GET" class="flex items-end gap-2">
-            <div>
-                <label class="form-label">Mes</label>
-                <input type="month" name="mes" value="{{ $mes->format('Y-m') }}" class="form-input w-56" onchange="this.form.submit()">
-            </div>
-        </form>
         <x-export :url="route('reportes.fise', ['mes' => $mes->format('Y-m')])"/>
     </x-slot:actions>
+    <x-slot:filters>
+        <form method="GET">
+            <div class="fb">
+                <label>Mes</label>
+                <input type="month" name="mes" value="{{ $mes->format('Y-m') }}" class="form-input w-56" onchange="this.form.submit()">
+            </div>
+            <button class="btn btn-primary">Aplicar</button>
+        </form>
+    </x-slot:filters>
 
     <dl class="ledger !grid-cols-2 lg:!grid-cols-5">
         <x-cifra label="Periodo" :value="ucfirst($mes->translatedFormat('F Y'))"/>

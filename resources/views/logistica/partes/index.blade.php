@@ -1,10 +1,13 @@
 <x-layouts.app title="Partes diarios" breadcrumb="Logística">
-    <x-slot:actions>
-        <form method="GET" action="{{ route('logistica.partes.abrir') }}" class="flex items-center gap-2">
-            <input type="date" name="fecha" value="{{ today()->toDateString() }}" class="form-input w-36">
-            <button class="btn btn-primary">Abrir parte</button>
+    <x-slot:filters>
+        <form method="GET" action="{{ route('logistica.partes.abrir') }}">
+            <div class="fb">
+                <label>Fecha del parte</label>
+                <input type="date" name="fecha" value="{{ today()->toDateString() }}" class="form-input w-44">
+            </div>
+            <button class="btn btn-primary"><x-heroicon-o-document-plus/> Abrir parte</button>
         </form>
-    </x-slot:actions>
+    </x-slot:filters>
     @php($c = $hoy['control'])
     <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-6">
         @php($t = \App\Services\AlmacenService::totalesPorPresentacion($c))
