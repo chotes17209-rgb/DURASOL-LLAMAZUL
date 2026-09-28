@@ -16,6 +16,9 @@ class CajaChicaMovimiento extends Model
 
     public const GASTO = 'gasto';
 
+    /** Saldo inicial de la caja chica: se registra una sola vez; luego el saldo pasa de un día al siguiente. */
+    public const APERTURA = 'apertura';
+
     protected $table = 'caja_chica_movimientos';
 
     protected $fillable = [
@@ -47,13 +50,20 @@ class CajaChicaMovimiento extends Model
         return $this->tipo === self::REPOSICION;
     }
 
+    public function esApertura(): bool
+    {
+        return $this->tipo === self::APERTURA;
+    }
+
     public function montoConSigno(): float
     {
-        return $this->esReposicion() ? (float) $this->monto : -(float) $this->monto;
+        return $this->tipo === self::GASTO ? -(float) $this->monto : (float) $this->monto;
     }
 
     public function auditLabel(): string
     {
-        return ($this->esReposicion() ? 'Reposición' : 'Gasto').' caja chica S/ '.$this->monto.' '.$this->fecha?->format('d/m/Y');
+        return match ($this->tipo) {
+            self::APERTURA => 'Saldo inicial', self::REPOSICION => 'Reposición', default => 'Gasto'
+        }.' caja chica S/ '.$this->monto.' '.$this->fecha?->format('d/m/Y');
     }
 }

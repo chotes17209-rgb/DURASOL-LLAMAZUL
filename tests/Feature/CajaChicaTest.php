@@ -39,6 +39,27 @@ class CajaChicaTest extends TestCase
         $this->assertSame(0, CajaMovimiento::count());
     }
 
+    public function test_saldo_inicial_una_sola_vez_y_luego_se_arrastra_del_dia_anterior(): void
+    {
+        $this->movimiento(['tipo' => 'apertura', 'concepto' => 'Saldo inicial', 'monto' => 3192.50]);
+        $this->movimiento(['tipo' => 'gasto', 'concepto' => 'Peajes', 'monto' => 811.40]);
+
+        // La apertura no sale de la caja general.
+        $this->assertSame(0, CajaMovimiento::count());
+        $this->como('caja')->get(route('caja.chica.index', ['desde' => '2026-09-26']))->assertOk()
+            ->assertSee('3,192.50')->assertSee('2,381.10')->assertSee('Apertura de caja chica')->assertDontSee('Registrar saldo inicial');
+
+        // El 27 el saldo inicial es el saldo final del 26.
+        $this->como('caja')->get(route('caja.chica.index', ['desde' => '2026-09-27']))->assertOk()
+            ->assertSee('2,381.10')->assertSee('Saldo final del día anterior');
+
+        // No se puede registrar un segundo saldo inicial ni movimientos anteriores a él.
+        $this->como('caja')->postJson(route('caja.chica.store'), ['fecha' => '2026-09-27', 'tipo' => 'apertura', 'concepto' => 'Saldo inicial', 'descripcion' => 'X', 'monto' => 10])
+            ->assertStatus(422)->assertJsonValidationErrors('monto');
+        $this->como('caja')->postJson(route('caja.chica.store'), ['fecha' => '2026-09-25', 'tipo' => 'gasto', 'concepto' => 'Peajes', 'descripcion' => 'X', 'monto' => 10])
+            ->assertStatus(422)->assertJsonValidationErrors('fecha');
+    }
+
     public function test_arqueo_cuenta_denominaciones_y_calcula_diferencia(): void
     {
         $this->movimiento(['tipo' => 'reposicion', 'concepto' => 'Reposición de fondo', 'monto' => 500]);

@@ -24,22 +24,27 @@ class CajaChicaService
         $filas = CajaChicaMovimiento::where('fecha', '<=', $fecha->toDateString())
             ->selectRaw('tipo, SUM(monto) as total')->groupBy('tipo')->pluck('total', 'tipo');
 
-        return round((float) ($filas[CajaChicaMovimiento::REPOSICION] ?? 0) - (float) ($filas[CajaChicaMovimiento::GASTO] ?? 0), 2);
+        return round((float) ($filas[CajaChicaMovimiento::APERTURA] ?? 0) + (float) ($filas[CajaChicaMovimiento::REPOSICION] ?? 0)
+            - (float) ($filas[CajaChicaMovimiento::GASTO] ?? 0), 2);
     }
 
     /**
      * Movimientos de un rango con el saldo acumulado fila por fila (como el reporte impreso).
      *
-     * @return array{saldo_inicial: float, reposiciones: float, gastos: float, saldo_final: float, filas: Collection, por_concepto: Collection}
+     * El saldo inicial es el saldo final del día anterior; el día de apertura, el monto de la apertura.
+     *
+     * @return array{saldo_inicial: float, apertura: ?CajaChicaMovimiento, reposiciones: float, gastos: float, saldo_final: float, filas: Collection, por_concepto: Collection}
      */
     public function resumen(Carbon $desde, Carbon $hasta, ?string $concepto = null): array
     {
-        $saldo = $saldoInicial = $this->saldoAl($desde->copy()->subDay());
-
-        $movimientos = CajaChicaMovimiento::with(['vehiculo', 'chofer', 'user'])
+        $todos = CajaChicaMovimiento::with(['vehiculo', 'chofer', 'user'])
             ->whereBetween('fecha', [$desde->toDateString(), $hasta->toDateString()])
             ->orderBy('fecha')->orderByRaw("CASE WHEN tipo = 'reposicion' THEN 0 ELSE 1 END")->orderBy('id')
             ->get();
+        $apertura = $todos->firstWhere('tipo', CajaChicaMovimiento::APERTURA);
+        $movimientos = $todos->where('tipo', '!=', CajaChicaMovimiento::APERTURA)->values();
+
+        $saldo = $saldoInicial = round($this->saldoAl($desde->copy()->subDay()) + (float) ($apertura?->monto ?? 0), 2);
 
         $filas = $movimientos->map(function (CajaChicaMovimiento $m) use (&$saldo) {
             $saldo = round($saldo + $m->montoConSigno(), 2);
@@ -51,6 +56,7 @@ class CajaChicaService
 
         return [
             'saldo_inicial' => $saldoInicial,
+            'apertura' => $apertura,
             'reposiciones' => round((float) $movimientos->where('tipo', CajaChicaMovimiento::REPOSICION)->sum('monto'), 2),
             'gastos' => round((float) $gastos->sum('monto'), 2),
             'saldo_final' => $saldo,

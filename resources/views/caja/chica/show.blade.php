@@ -1,6 +1,6 @@
-<x-modal :title="($m->esReposicion() ? 'Reposición' : 'Gasto').' de caja chica · '.fecha($m->fecha)" :subtitle="$m->descripcion">
+<x-modal :title="($m->esApertura() ? 'Saldo inicial' : ($m->esReposicion() ? 'Reposición' : 'Gasto')).' de caja chica · '.fecha($m->fecha)" :subtitle="$m->descripcion">
     <dl class="dl-grid">
-        <div><dt>Tipo</dt><dd>{{ $m->esReposicion() ? 'Reposición de fondo' : 'Gasto' }}</dd></div>
+        <div><dt>Tipo</dt><dd>{{ $m->esApertura() ? 'Saldo inicial' : ($m->esReposicion() ? 'Reposición de fondo' : 'Gasto') }}</dd></div>
         <div><dt>Concepto</dt><dd>{{ $m->concepto }}</dd></div>
         <div><dt>Monto</dt><dd>{{ soles($m->monto) }}</dd></div>
         <div><dt>N° comprobante</dt><dd>{{ $m->comprobante ?? '—' }}</dd></div>

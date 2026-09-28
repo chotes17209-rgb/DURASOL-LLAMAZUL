@@ -10,7 +10,10 @@
         <tbody>
         <tr class="bg-panel">
             <td></td><td></td><td colspan="2" class="font-semibold text-slate-900">SALDO INICIAL</td><td></td>
-            <td class="text-right font-semibold">{{ num($resumen['saldo_inicial'], 2) }}</td><td colspan="7"></td>
+            <td class="text-right font-semibold">{{ num($resumen['saldo_inicial'], 2) }}</td>
+            <td colspan="5"></td>
+            <td class="text-[12px] text-slate-500">{{ $resumen['apertura'] ? 'Apertura de caja chica' : 'Saldo final del día anterior' }}</td>
+            <td>@if ($resumen['apertura'])<x-row-actions size="md" :edit="route('caja.chica.edit', $resumen['apertura'])" :delete="route('caja.chica.destroy', $resumen['apertura'])"/>@endif</td>
         </tr>
         @forelse ($resumen['filas'] as $i => $f)
             @php($m = $f['movimiento'])

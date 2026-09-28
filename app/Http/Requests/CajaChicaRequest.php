@@ -12,7 +12,7 @@ class CajaChicaRequest extends FormRequest
     {
         return [
             'fecha' => ['required', 'date', 'before_or_equal:today'],
-            'tipo' => ['required', Rule::in([CajaChicaMovimiento::REPOSICION, CajaChicaMovimiento::GASTO])],
+            'tipo' => ['required', Rule::in([CajaChicaMovimiento::APERTURA, CajaChicaMovimiento::REPOSICION, CajaChicaMovimiento::GASTO])],
             'concepto' => ['required', 'string', 'max:60'],
             'descripcion' => ['required', 'string', 'max:255'],
             'monto' => ['required', 'numeric', 'gt:0', 'max:999999'],

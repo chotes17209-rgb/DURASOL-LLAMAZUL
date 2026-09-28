@@ -11,6 +11,7 @@ use App\Services\CajaChicaService;
 use App\Support\Reporte;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /** Caja chica: gastos menores con comprobante y reposiciones del fondo desde caja general. */
@@ -32,26 +33,34 @@ class CajaChicaController extends Controller
         }
 
         $conceptos = collect(config('erp.caja_chica.conceptos'))->mapWithKeys(fn ($c) => [$c => $c]);
+        $hayApertura = CajaChicaMovimiento::where('tipo', CajaChicaMovimiento::APERTURA)->exists();
 
-        return $this->tableOrPage($request, 'caja.chica.index', 'caja.chica._table', compact('resumen', 'desde', 'hasta', 'conceptos'));
+        return $this->tableOrPage($request, 'caja.chica.index', 'caja.chica._table', compact('resumen', 'desde', 'hasta', 'conceptos', 'hayApertura'));
     }
 
     public function create(Request $request): View
     {
-        $reposicion = $request->tipo === CajaChicaMovimiento::REPOSICION;
+        $tipo = in_array($request->tipo, [CajaChicaMovimiento::APERTURA, CajaChicaMovimiento::REPOSICION], true) ? $request->tipo : CajaChicaMovimiento::GASTO;
 
         return $this->form(new CajaChicaMovimiento([
-            'fecha' => today(),
-            'tipo' => $reposicion ? CajaChicaMovimiento::REPOSICION : CajaChicaMovimiento::GASTO,
-            'concepto' => $reposicion ? 'Reposición de fondo' : null,
+            'fecha' => $request->date('fecha') ?? today(),
+            'tipo' => $tipo,
+            'concepto' => match ($tipo) {
+                CajaChicaMovimiento::APERTURA => 'Saldo inicial', CajaChicaMovimiento::REPOSICION => 'Reposición de fondo', default => null
+            },
         ]));
     }
 
     public function store(CajaChicaRequest $request): JsonResponse
     {
+        $this->validarApertura($request);
         $m = $this->cajaChica->guardar(null, $request->validated());
 
-        return $this->ok($m->esReposicion() ? 'Reposición registrada; se descontó de la caja general.' : 'Gasto de caja chica registrado.', ['reloadPage' => true]);
+        return $this->ok(match ($m->tipo) {
+            CajaChicaMovimiento::APERTURA => 'Saldo inicial registrado. Desde el día siguiente el saldo se arrastra automáticamente.',
+            CajaChicaMovimiento::REPOSICION => 'Reposición registrada; se descontó de la caja general.',
+            default => 'Gasto de caja chica registrado.',
+        }, ['reloadPage' => true]);
     }
 
     public function show(CajaChicaMovimiento $movimiento): View
@@ -66,6 +75,7 @@ class CajaChicaController extends Controller
 
     public function update(CajaChicaRequest $request, CajaChicaMovimiento $movimiento): JsonResponse
     {
+        $this->validarApertura($request, $movimiento);
         $this->cajaChica->guardar($movimiento, $request->validated());
 
         return $this->ok('Movimiento de caja chica actualizado.', ['reloadPage' => true]);
@@ -76,6 +86,27 @@ class CajaChicaController extends Controller
         $this->cajaChica->eliminar($movimiento);
 
         return $this->ok('Movimiento de caja chica eliminado.', ['reloadPage' => true]);
+    }
+
+    /** Solo existe un saldo inicial, y ningún movimiento puede quedar antes de él. */
+    private function validarApertura(Request $request, ?CajaChicaMovimiento $actual = null): void
+    {
+        if ($request->tipo !== CajaChicaMovimiento::APERTURA) {
+            $apertura = CajaChicaMovimiento::where('tipo', CajaChicaMovimiento::APERTURA)->first();
+            if ($apertura && $request->date('fecha')->lt($apertura->fecha)) {
+                throw ValidationException::withMessages(['fecha' => 'La fecha es anterior al saldo inicial de la caja chica ('.$apertura->fecha->format('d/m/Y').').']);
+            }
+
+            return;
+        }
+        $otra = CajaChicaMovimiento::where('tipo', CajaChicaMovimiento::APERTURA)->when($actual, fn ($q) => $q->whereKeyNot($actual->id))->exists();
+        if ($otra) {
+            throw ValidationException::withMessages(['monto' => 'La caja chica ya tiene saldo inicial; desde entonces el saldo se toma del día anterior.']);
+        }
+        $anterior = CajaChicaMovimiento::where('tipo', '!=', CajaChicaMovimiento::APERTURA)->where('fecha', '<', $request->date('fecha')->toDateString())->exists();
+        if ($anterior) {
+            throw ValidationException::withMessages(['fecha' => 'Hay movimientos anteriores a esa fecha; el saldo inicial debe ser la fecha del primer movimiento.']);
+        }
     }
 
     private function form(CajaChicaMovimiento $movimiento): View

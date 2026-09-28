@@ -1,11 +1,21 @@
 <x-layouts.app title="Caja chica" breadcrumb="Caja">
     <x-slot:actions>
         <x-export :url="route('caja.chica.index')"/>
+        @unless ($hayApertura)
+            <button class="btn btn-secondary" data-modal-url="{{ route('caja.chica.create', ['tipo' => 'apertura', 'fecha' => $desde->format('Y-m-d')]) }}" data-modal-size="md"><x-heroicon-o-flag class="h-4 w-4"/> Saldo inicial</button>
+        @endunless
         <button class="btn btn-secondary" data-modal-url="{{ route('caja.chica.create', ['tipo' => 'reposicion']) }}" data-modal-size="md"><x-heroicon-o-arrow-down-circle class="h-4 w-4 text-emerald-700"/> Reposición de fondo</button>
         <button class="btn btn-primary" data-modal-url="{{ route('caja.chica.create') }}" data-modal-size="lg"><x-heroicon-o-plus class="h-4 w-4"/> Registrar gasto</button>
     </x-slot:actions>
 
     @include('caja._tabs')
+
+    @unless ($hayApertura)
+        <div class="help mb-4 flex items-center justify-between border-amber-300 bg-amber-50 text-amber-900">
+            <span>La caja chica aún no tiene saldo inicial. Regístrelo una sola vez; desde el día siguiente el saldo inicial se toma automáticamente del saldo final del día anterior.</span>
+            <button class="btn btn-secondary btn-sm" data-modal-url="{{ route('caja.chica.create', ['tipo' => 'apertura', 'fecha' => $desde->format('Y-m-d')]) }}" data-modal-size="md">Registrar saldo inicial</button>
+        </div>
+    @endunless
 
     <dl class="ledger !grid-cols-2 lg:!grid-cols-4">
         <x-cifra label="Saldo inicial" :value="soles($resumen['saldo_inicial'])" :hint="'al '.fecha($desde->copy()->subDay())"/>
