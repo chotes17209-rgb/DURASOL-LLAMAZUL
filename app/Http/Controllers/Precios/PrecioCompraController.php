@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Precios;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PreciosCompraRequest;
+use App\Models\Empresa;
 use App\Models\Instalacion;
 use App\Models\PrecioCompra;
 use App\Models\Producto;

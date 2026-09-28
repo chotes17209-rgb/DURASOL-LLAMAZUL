@@ -144,7 +144,7 @@ class ModulosTest extends TestCase
         $rutas = ['dashboard', 'logistica.stock', 'logistica.stock.kardex', 'logistica.partes.index',
             'liquidaciones.index', 'liquidaciones.create', 'clientes.index', 'creditos.index', 'precios.compra.index',
             'precios.venta.index', 'caja.index', 'caja.depositos.index', 'reportes.liquidacion-diaria', 'reportes.ventas', 'reportes.caja-diaria',
-            'vehiculos.index', 'documentos.index', 'choferes.index', 'instalaciones.index', 'empresas.index', 'productos.index', 'usuarios.index', 'historial.index'];
+            'vehiculos.index', 'documentos.index', 'precios.compra.historial', 'precios.venta.historial', 'cuentas-bancarias.index', 'logistica.partes.index', 'choferes.index', 'instalaciones.index', 'empresas.index', 'productos.index', 'usuarios.index', 'historial.index'];
         foreach ($rutas as $ruta) {
             $this->como('admin')->get(route($ruta))->assertOk();
         }
