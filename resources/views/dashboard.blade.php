@@ -9,7 +9,13 @@
 
     <dl class="ledger !grid-cols-2 lg:!grid-cols-5">
         <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p class="text-[12px] text-slate-500">{{ num($balonesDia) }} balones</p></div>
-        <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd><p class="text-[12px] text-slate-500">{{ num($balonesMes) }} balones</p></div>
+        <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd>
+            @if ($utilidadMes !== null)
+                <p><a href="{{ route('reportes.rentabilidad', ['mes' => $fecha->format('Y-m')]) }}" class="hover:text-brand-800 hover:underline">Utilidad bruta {{ soles($utilidadMes) }}{{ $ventaMes > 0 ? ' · '.number_format($utilidadMes / $ventaMes * 100, 1).' %' : '' }}</a></p>
+            @else
+                <p>{{ num($balonesMes) }} balones</p>
+            @endif
+        </div>
         @php($totalStock = \App\Services\AlmacenService::totalesPorPresentacion($stock))
         <div class="ledger-cell"><dt>Stock S-10 (llenos + cambios)</dt><dd>{{ num($totalStock['S10']) }}</dd><p class="text-[12px] text-slate-500">S-45 {{ num($totalStock['S45']) }} · M-10 {{ num($totalStock['M10']) }}</p></div>
         @if ($u->hasRole('liquidaciones', 'caja'))

@@ -22,7 +22,7 @@ class Producto extends Model
 
     protected $fillable = [
         'codigo', 'nombre', 'marca', 'capacidad_kg', 'envase_id', 'tipo',
-        'se_compra_en_planta', 'controla_stock', 'orden', 'activo',
+        'se_compra_en_planta', 'costo_referencial', 'controla_stock', 'orden', 'activo',
     ];
 
     protected function casts(): array

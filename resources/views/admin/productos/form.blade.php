@@ -8,7 +8,8 @@
         <x-field.input name="capacidad_kg" type="number" label="Capacidad (kg)" :value="$producto->capacidad_kg" min="1"/>
         <x-field.select name="envase_id" label="Envase vacío que genera" :options="$envases" :selected="$producto->envase_id" placeholder="— Ninguno —"/>
         <x-field.input name="orden" type="number" label="Orden en pantallas" :value="$producto->orden ?? 0" min="0"/>
-        <div></div>
+        <x-field.input name="costo_referencial" type="number" step="0.01" min="0" label="Costo referencial (S/)" prefix="S/" :value="$producto->costo_referencial"
+                       hint="Para rentabilidad de lo que no se compra en planta (Contigas, envases, reguladores)."/>
         <x-field.toggle name="se_compra_en_planta" label="Se compra en planta Solgas" :checked="$producto->se_compra_en_planta"/>
         <x-field.toggle name="controla_stock" label="Controla stock" :checked="$producto->controla_stock"/>
         <x-field.toggle name="activo" label="Producto activo" :checked="$producto->activo"/>

@@ -52,6 +52,10 @@ class CatalogoSeeder extends Seeder
         $envase45 = Producto::where('codigo', 'S45')->value('id');
         Producto::whereIn('codigo', ['S10', 'M10', 'C10', 'K10'])->update(['envase_id' => $envase10]);
         Producto::whereIn('codigo', ['S45', 'C45', 'K45'])->update(['envase_id' => $envase45]);
+        // Costo referencial de lo que no se compra en planta (para la rentabilidad).
+        foreach (['C10' => 30.90, 'C45' => 148.20, 'K10' => 66.00] as $codigo => $costo) {
+            Producto::where('codigo', $codigo)->whereNull('costo_referencial')->update(['costo_referencial' => $costo]);
+        }
 
         $durasol = Empresa::where('nombre', 'DURASOL')->value('id');
         $llamazul = Empresa::where('nombre', 'LLAMAZUL')->value('id');

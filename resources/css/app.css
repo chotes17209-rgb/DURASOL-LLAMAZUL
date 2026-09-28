@@ -173,6 +173,7 @@
     .recibo { @apply w-full text-[13px]; }
     .recibo td { @apply border-b border-line-soft px-4 py-1.5; }
     .recibo td:last-child { @apply text-right tabular-nums; }
+    .recibo td + td { @apply text-right whitespace-nowrap tabular-nums; }
     .recibo tr.resta td { @apply text-slate-600; }
     .recibo tr.subtotal td { @apply border-t border-t-slate-500 font-semibold text-slate-900; }
     .recibo tr.final td { @apply border-t-[3px] border-b-0 border-double border-t-slate-800 bg-brand-50 py-2.5 text-[14.5px] font-semibold text-brand-900; }

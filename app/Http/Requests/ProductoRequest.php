@@ -25,6 +25,7 @@ class ProductoRequest extends FormRequest
             'envase_id' => ['nullable', 'exists:productos,id'],
             'tipo' => ['required', Rule::in([Producto::TIPO_GAS, Producto::TIPO_ENVASE, Producto::TIPO_ACCESORIO])],
             'se_compra_en_planta' => ['boolean'],
+            'costo_referencial' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'controla_stock' => ['boolean'],
             'orden' => ['nullable', 'integer', 'min:0'],
             'activo' => ['boolean'],

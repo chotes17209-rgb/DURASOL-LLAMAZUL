@@ -32,6 +32,11 @@ class DashboardController extends Controller
         $balonesDia = (int) $itemsBase()->where('liquidaciones.fecha_venta', $fecha->toDateString())->sum('liquidacion_items.cantidad');
         $balonesMes = (int) $itemsBase()->whereBetween('liquidaciones.fecha_venta', [$inicioMes->toDateString(), $fecha->toDateString()])->sum('liquidacion_items.cantidad');
 
+        // Utilidad bruta del mes (solo gerencia): venta valorizada menos costo a la fecha de venta.
+        $utilidadMes = $request->user()->isAdmin() ? (float) $itemsBase()->where('liquidacion_items.total', '>', 0)
+            ->whereBetween('liquidaciones.fecha_venta', [$inicioMes->toDateString(), $fecha->toDateString()])
+            ->selectRaw('SUM(liquidacion_items.total - liquidacion_items.cantidad * COALESCE(liquidacion_items.costo_unitario, 0)) as u')->value('u') : null;
+
         // Ventas de los últimos 30 días (gráfico).
         $desde30 = $fecha->copy()->subDays(29);
         $serie = $liqValidas()->whereBetween('fecha_venta', [$desde30->toDateString(), $fecha->toDateString()])
@@ -92,6 +97,7 @@ class DashboardController extends Controller
             'porProducto' => $porProducto,
             'topChoferes' => $topChoferes,
             'graficoVentas' => $graficoVentas,
+            'utilidadMes' => $utilidadMes,
             'graficoProductos' => $graficoProductos,
             'alertasDocs' => collect($alertasDocs)->sortBy(fn ($a) => ['vencido' => 0, 'por_vencer' => 1, 'sin_registro' => 2][$a['estado']])->take(8),
             'docsCriticos' => $docsCriticos,

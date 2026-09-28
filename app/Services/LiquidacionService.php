@@ -28,6 +28,7 @@ class LiquidacionService
         private readonly CuentaService $cuentas,
         private readonly CajaService $caja,
         private readonly PrecioService $precios,
+        private readonly CostoService $costos,
     ) {}
 
     /** Crea o actualiza una liquidación en borrador con todo su detalle. */
@@ -83,6 +84,7 @@ class LiquidacionService
                     'cantidad' => $cantidad,
                     'precio' => $precio,
                     'total' => $total,
+                    'costo_unitario' => $this->costos->costoUnitario((int) $item['empresa_id'], (int) $item['producto_id'], $data['fecha_venta']),
                     'vacios_devueltos' => (int) ($item['vacios_devueltos'] ?? 0),
                     'metodo_pago' => $item['metodo_pago'] ?? MetodoPago::Efectivo->value,
                     'monto_credito' => $credito,

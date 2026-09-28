@@ -19,6 +19,7 @@ use App\Models\PrecioCompra;
 use App\Models\Producto;
 use App\Models\Vehiculo;
 use App\Services\AlmacenService;
+use App\Services\CostoService;
 use App\Services\LiquidacionService;
 use App\Support\AuditLogger;
 use Illuminate\Database\Seeder;
@@ -60,6 +61,8 @@ class ExcelSeeder extends Seeder
 
     private array $empresas = [];
 
+    private CostoService $costos;
+
     public function run(): void
     {
         AuditLogger::withoutAuditing(function () {
@@ -67,6 +70,7 @@ class ExcelSeeder extends Seeder
             $data = $this->leer('data.json');
 
             $this->productos = Producto::pluck('id', 'codigo')->all();
+            $this->costos = app(CostoService::class);
             $this->empresas = Empresa::pluck('id', 'nombre')->all();
 
             $this->vehiculosYChoferes($data['placas']);
@@ -81,6 +85,7 @@ class ExcelSeeder extends Seeder
             $this->parte14Setiembre($instalaciones);
             $this->parte25Setiembre($instalaciones);
             $this->depositos();
+            $this->comprasHistoricas();
             $this->command?->info('Partes de almacén y depósitos importados.');
         });
     }
@@ -290,6 +295,20 @@ class ExcelSeeder extends Seeder
     private function ventas(): void
     {
         $filas = $this->leer('ventas.json');
+        // Costo del Excel (columna P) por fecha, empresa y presentación: se toma el más frecuente,
+        // así un costo mal digitado en una fila no distorsiona la rentabilidad.
+        $costosExcel = [];
+        foreach ($filas as $f) {
+            if (! empty($f[14])) {
+                $k = $f[0].'|'.mb_strtoupper((string) $f[2]).'|'.$f[7];
+                $costosExcel[$k][(string) $f[14]] = ($costosExcel[$k][(string) $f[14]] ?? 0) + 1;
+            }
+        }
+        $costosExcel = array_map(function ($c) {
+            arsort($c);
+
+            return (float) array_key_first($c);
+        }, $costosExcel);
         $grupos = [];
         foreach ($filas as $f) {
             if (! $f[0]) {
@@ -328,6 +347,7 @@ class ExcelSeeder extends Seeder
             $orden = 0;
             foreach ($filasGrupo as $f) {
                 [, , $empresa, $codigo, , , $nombreCliente, $presentacion, $cantidad, $precio, $total, $balones, $credito, $cobranza] = $f;
+                $costoExcel = $costosExcel[$f[0].'|'.mb_strtoupper((string) $empresa).'|'.$presentacion] ?? null;
                 $clienteId = $this->clienteId($codigo, $nombreCliente, $chofer);
                 $empresaId = $this->empresas[mb_strtoupper((string) $empresa)] ?? $this->empresas['DURASOL'];
 
@@ -339,6 +359,8 @@ class ExcelSeeder extends Seeder
                         'producto_id' => $this->productos[$presentacion], 'cantidad' => (int) $cantidad,
                         // Se respeta el total del Excel; el precio sale de total / cantidad.
                         'precio' => round($total / $cantidad, 2), 'total' => round($total, 2),
+                        // Precio de compra de la hoja VENTAS (columna P); si falta, el costo vigente a la fecha.
+                        'costo_unitario' => $costoExcel ?: $this->costos->costoUnitario($empresaId, $this->productos[$presentacion], $fecha),
                         'vacios_devueltos' => (int) ($balones ?? 0), 'metodo_pago' => MetodoPago::Efectivo->value,
                         'monto_credito' => round($credito, 2), 'orden' => $orden++, 'created_at' => now(), 'updated_at' => now(),
                     ]);
@@ -613,6 +635,23 @@ class ExcelSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    /** Compras en planta de agosto (hoja STOCK): no hay parte diario de esas fechas. */
+    private function comprasHistoricas(): void
+    {
+        $filas = [];
+        foreach ($this->leer('compras_agosto.json') as [$fecha, $porEmpresa]) {
+            foreach ($porEmpresa as $empresa => $cantidades) {
+                foreach ($cantidades as $codigo => $cantidad) {
+                    if ($cantidad > 0 && isset($this->empresas[$empresa], $this->productos[$codigo])) {
+                        $filas[] = ['fecha' => $fecha, 'empresa_id' => $this->empresas[$empresa], 'producto_id' => $this->productos[$codigo],
+                            'cantidad' => (int) $cantidad, 'origen' => 'excel', 'created_at' => now(), 'updated_at' => now()];
+                    }
+                }
+            }
+        }
+        DB::table('compras_planta')->insert($filas);
     }
 
     private function leer(string $archivo): array

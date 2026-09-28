@@ -36,10 +36,14 @@ class Menu
                 ['label' => 'Arqueo de efectivo', 'route' => 'caja.arqueos.index', 'match' => 'caja.arqueos.*', 'icon' => 'calculator', 'roles' => [Rol::Caja]],
                 ['label' => 'Depósitos', 'route' => 'caja.depositos.index', 'match' => 'caja.depositos.*', 'icon' => 'building-library', 'roles' => [Rol::Caja]],
             ]],
+            ['titulo' => 'Gerencia', 'items' => [
+                ['label' => 'Rentabilidad', 'route' => 'reportes.rentabilidad', 'match' => 'reportes.rentabilidad', 'icon' => 'presentation-chart-line', 'roles' => [Rol::Admin]],
+            ]],
             ['titulo' => 'Reportes', 'items' => [
                 ['label' => 'Liquidación diaria', 'route' => 'reportes.liquidacion-diaria', 'match' => 'reportes.liquidacion-diaria', 'icon' => 'document-chart-bar', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
                 ['label' => 'Detalle de ventas', 'route' => 'reportes.ventas', 'match' => 'reportes.ventas', 'icon' => 'table-cells', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
                 ['label' => 'Caja por día', 'route' => 'reportes.caja-diaria', 'match' => 'reportes.caja-diaria', 'icon' => 'calendar-days', 'roles' => [Rol::Caja]],
+                ['label' => 'Consolidado FISE', 'route' => 'reportes.fise', 'match' => 'reportes.fise', 'icon' => 'ticket', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
             ]],
             ['titulo' => 'Flota y personal', 'items' => [
                 ['label' => 'Vehículos', 'route' => 'vehiculos.index', 'match' => ['vehiculos.*', 'documentos.*', 'mantenimientos.*'], 'icon' => 'truck', 'roles' => [Rol::Logistica]],

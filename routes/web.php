@@ -20,6 +20,7 @@ use App\Http\Controllers\Logistica\ParteController;
 use App\Http\Controllers\Logistica\StockController;
 use App\Http\Controllers\Precios\PrecioCompraController;
 use App\Http\Controllers\Precios\PrecioVentaController;
+use App\Http\Controllers\RentabilidadController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\Ventas\ClienteController;
 use App\Http\Controllers\Ventas\CreditoController;
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function () {
 
     /* ------------------------------ Administración ------------------------------ */
     Route::middleware('role:admin')->group(function () {
+        Route::get('reportes/rentabilidad', [RentabilidadController::class, 'index'])->name('reportes.rentabilidad');
         Route::resource('empresas', EmpresaController::class);
         Route::resource('productos', ProductoController::class);
         Route::resource('usuarios', UsuarioController::class)->parameters(['usuarios' => 'usuario']);
@@ -111,6 +113,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('reportes/liquidacion-diaria', [ReporteController::class, 'liquidacionDiaria'])->name('reportes.liquidacion-diaria');
         Route::get('reportes/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
+        Route::get('reportes/fise', [ReporteController::class, 'fise'])->name('reportes.fise');
         Route::get('reportes/ventas/exportar', [ReporteController::class, 'exportarVentas'])->name('reportes.ventas.exportar');
     });
 

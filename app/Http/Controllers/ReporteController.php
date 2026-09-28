@@ -10,6 +10,7 @@ use App\Models\Chofer;
 use App\Models\Deposito;
 use App\Models\Empresa;
 use App\Models\Liquidacion;
+use App\Models\LiquidacionFise;
 use App\Models\LiquidacionItem;
 use App\Models\Producto;
 use App\Support\Reporte;
@@ -252,6 +253,76 @@ class ReporteController extends Controller
     }
 
     /** Formato de descarga pedido (?formato=pdf|xlsx) o null para ver en pantalla. */
+    /**
+     * Consolidado de vales FISE del mes: una fila por día y, por cada responsable,
+     * la cantidad de vales de S/ 20, 30 y 43 (hoja FISES del Excel).
+     */
+    public function fise(Request $request)
+    {
+        $mes = preg_match('/^\d{4}-\d{2}$/', (string) $request->mes) ? Carbon::parse($request->mes.'-01') : today()->startOfMonth();
+        $desde = $mes->copy()->startOfMonth();
+        $hasta = $mes->copy()->endOfMonth();
+        $valores = LiquidacionFise::VALORES;
+
+        $registros = LiquidacionFise::query()
+            ->join('liquidaciones as l', 'l.id', '=', 'liquidacion_fises.liquidacion_id')
+            ->join('choferes as c', 'c.id', '=', 'l.chofer_id')
+            ->whereNull('l.deleted_at')->where('l.estado', '!=', EstadoLiquidacion::Anulada->value)
+            ->whereBetween('l.fecha_venta', [$desde->toDateString(), $hasta->toDateString()])
+            ->selectRaw('l.fecha_venta as fecha, c.alias as responsable, liquidacion_fises.valor, SUM(liquidacion_fises.cantidad) as cantidad')
+            ->groupBy('l.fecha_venta', 'c.alias', 'liquidacion_fises.valor')
+            ->get();
+
+        $responsables = $registros->groupBy('responsable')->map(fn ($g) => $g->sum(fn ($r) => $r->cantidad * $r->valor))->sortDesc()->keys()->values();
+        $celdas = [];
+        foreach ($registros as $r) {
+            $celdas[substr((string) $r->fecha, 0, 10)][$r->responsable][(int) $r->valor] = (int) $r->cantidad;
+        }
+        $dias = collect(range(0, $desde->diffInDays($hasta)))->map(fn ($n) => $desde->copy()->addDays($n));
+        $importeDia = fn (string $f) => array_sum(array_map(fn ($porValor) => array_sum(array_map(fn ($v, $n) => $v * $n, array_keys($porValor), $porValor)), $celdas[$f] ?? []));
+        $cantidad = fn (?string $resp, int $valor) => array_sum(array_map(fn ($d) => $resp ? ($d[$resp][$valor] ?? 0) : array_sum(array_map(fn ($x) => $x[$valor] ?? 0, $d)), $celdas));
+        $importeResp = fn (string $resp) => array_sum(array_map(fn ($v) => $v * $cantidad($resp, $v), $valores));
+        $total = array_sum(array_map(fn ($v) => $v * $cantidad(null, $v), $valores));
+
+        if ($formato = $this->formato($request)) {
+            $cols = ['Fecha' => 'texto'];
+            foreach ($responsables as $resp) {
+                foreach ($valores as $v) {
+                    $cols[$resp.' '.$v] = 'entero';
+                }
+            }
+            $cols['Importe'] = 'decimal';
+            $filas = $dias->map(function ($d) use ($responsables, $valores, $celdas, $importeDia) {
+                $f = $d->toDateString();
+                $fila = [$d->format('d/m')];
+                foreach ($responsables as $resp) {
+                    foreach ($valores as $v) {
+                        $fila[] = $celdas[$f][$resp][$v] ?? 0;
+                    }
+                }
+                $fila[] = $importeDia($f);
+
+                return $fila;
+            });
+            $totalFila = ['TOTAL'];
+            foreach ($responsables as $resp) {
+                foreach ($valores as $v) {
+                    $totalFila[] = $cantidad($resp, $v);
+                }
+            }
+            $totalFila[] = $total;
+
+            return (new Reporte('Consolidado de vales FISE', ucfirst($mes->translatedFormat('F Y')), true))
+                ->tabla('Cantidad de vales por día y responsable', $cols, $filas, $totalFila)
+                ->tabla('Importe por responsable', ['Responsable' => 'texto', 'S/ 20' => 'entero', 'S/ 30' => 'entero', 'S/ 43' => 'entero', 'Importe' => 'decimal'],
+                    $responsables->map(fn ($resp) => array_merge([$resp], array_map(fn ($v) => $cantidad($resp, $v), $valores), [$importeResp($resp)])),
+                    array_merge(['TOTAL'], array_map(fn ($v) => $cantidad(null, $v), $valores), [$total]))
+                ->descargar($formato, 'fise-'.$mes->format('Y-m'));
+        }
+
+        return view('reportes.fise', compact('mes', 'valores', 'responsables', 'celdas', 'dias', 'importeDia', 'cantidad', 'importeResp', 'total'));
+    }
+
     private function formato(Request $request): ?string
     {
         return in_array($request->formato, ['pdf', 'xlsx'], true) ? $request->formato : null;
