@@ -18,9 +18,8 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request, AlmacenService $almacen, CajaService $caja): View
     {
-        // Referencia: el último día con ventas (la liquidación es del día anterior).
-        $ultimaVenta = Liquidacion::where('estado', '!=', EstadoLiquidacion::Anulada)->max('fecha_venta');
-        $fecha = $request->date('fecha') ?? ($ultimaVenta ? Carbon::parse($ultimaVenta) : today());
+        // Referencia: las ventas de ayer, que son las que se liquidan hoy.
+        $fecha = $request->date('fecha') ?? today()->subDay();
         $inicioMes = $fecha->copy()->startOfMonth();
 
         $liqValidas = fn () => Liquidacion::where('estado', '!=', EstadoLiquidacion::Anulada);

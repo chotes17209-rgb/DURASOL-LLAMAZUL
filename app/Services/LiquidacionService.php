@@ -26,6 +26,7 @@ class LiquidacionService
     public function __construct(
         private readonly CuentaService $cuentas,
         private readonly CajaService $caja,
+        private readonly PrecioService $precios,
     ) {}
 
     /** Crea o actualiza una liquidación en borrador con todo su detalle. */
@@ -57,10 +58,18 @@ class LiquidacionService
                 $liquidacion->updateQuietly(['codigo' => $this->codigoPara($liquidacion->id)]);
             }
 
+            // El precio no se digita: es el vigente del cliente a la fecha de venta (como el BUSCARV del Excel).
+            $items = array_values($data['items'] ?? []);
+            $vigentes = $this->precios->preciosVentaVigentes(array_unique(array_column($items, 'cliente_id')), $data['fecha_venta']);
+            $sinPrecio = array_filter($items, fn ($item) => ! isset($vigentes[$item['cliente_id']][$item['producto_id']]));
+            if ($sinPrecio) {
+                throw ValidationException::withMessages(['items' => count($sinPrecio).' venta(s) sin precio vigente para el cliente. Regístralo en «Precios de venta».']);
+            }
+
             $liquidacion->items()->delete();
-            foreach (array_values($data['items'] ?? []) as $i => $item) {
+            foreach ($items as $i => $item) {
                 $cantidad = (int) $item['cantidad'];
-                $precio = round((float) $item['precio'], 2);
+                $precio = round((float) $vigentes[$item['cliente_id']][$item['producto_id']], 2);
                 $total = round($cantidad * $precio, 2);
                 $credito = ! empty($item['es_credito'])
                     ? round(min($total, (float) ($item['monto_credito'] ?? $total) ?: $total), 2)

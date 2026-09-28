@@ -14,8 +14,9 @@ class LiquidacionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'fecha_venta' => ['required', 'date', 'before_or_equal:today'],
-            'fecha_liquidacion' => ['required', 'date', 'after_or_equal:fecha_venta'],
+            // Se liquida al día siguiente de la venta (o después, en las rutas largas).
+            'fecha_venta' => ['required', 'date', 'before:today'],
+            'fecha_liquidacion' => ['required', 'date', 'after:fecha_venta', 'before_or_equal:today'],
             'chofer_id' => ['required', 'exists:choferes,id'],
             'vehiculo_id' => ['nullable', 'exists:vehiculos,id'],
             'tipo' => ['required', Rule::enum(TipoChofer::class)],
@@ -65,6 +66,15 @@ class LiquidacionRequest extends FormRequest
                 }
             }
         }];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'fecha_venta.before' => 'La liquidación se hace al día siguiente: la fecha de venta debe ser de ayer o antes.',
+            'fecha_liquidacion.after' => 'La fecha de liquidación debe ser posterior a la fecha de venta.',
+            'fecha_liquidacion.before_or_equal' => 'La fecha de liquidación no puede ser futura.',
+        ];
     }
 
     public function attributes(): array
