@@ -40,9 +40,9 @@
             @elseif ($parte->esEditable())
                 <span class="badge badge-green">Abierto</span>
             @else
-                <span class="badge badge-slate">Cerrado por {{ $parte->cerradoPor?->name }} el {{ $parte->cerrado_at?->format('d/m/Y H:i') }}</span>
+                <span class="badge badge-slate">Cerrado{{ $parte->cerradoPor ? ' por '.$parte->cerradoPor->name : '' }}{{ $parte->cerrado_at ? ' el '.$parte->cerrado_at->format('d/m/Y H:i') : '' }}</span>
             @endif
-            <p class="text-xs text-slate-500">El stock inicial es el final del día anterior. Escribe las cantidades como en la hoja; las filas vacías no se guardan. <b>Enter</b> baja a la siguiente fila.</p>
+            <p class="text-xs text-slate-500" x-show="editable">El stock inicial es el final del día anterior. Escribe las cantidades como en la hoja; las filas vacías no se guardan. <b>Enter</b> baja a la siguiente fila.</p>
         </div>
 
         <div class="tabs mb-4">

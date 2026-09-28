@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\Cliente;
+use App\Models\Empresa;
 use App\Models\Instalacion;
 use App\Models\PrecioCompra;
 use App\Models\PrecioVenta;
+use App\Models\Producto;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -176,6 +179,29 @@ class PrecioService
         }
 
         return $cambios;
+    }
+
+    /**
+     * Datos del cuadro de instalaciones (pantallas de instalaciones y de precios de compra).
+     * Filtros: q (código, responsable, placa, nombre), empresa_id, estado (pendiente | inactivas).
+     */
+    public function cuadroInstalaciones(Request $request): array
+    {
+        $vigentes = $this->preciosCompraVigentes();
+        $instalaciones = Instalacion::with(['empresa', 'chofer', 'vehiculo'])
+            ->where('activo', $request->estado !== 'inactivas')
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('codigo', 'like', "%$t%")->orWhere('nombre', 'like', "%$t%")
+                ->orWhere('responsable', 'like', '%'.mb_strtoupper($t).'%')->orWhere('placas', 'like', '%'.mb_strtoupper($t).'%')))
+            ->when($request->empresa_id, fn ($q, $e) => $q->where('empresa_id', $e))
+            ->orderBy('empresa_id')->orderBy('responsable')->orderBy('codigo')->get()
+            ->when($request->estado === 'pendiente', fn ($c) => $c->filter(fn ($i) => collect($vigentes[$i->id] ?? [])->contains('validado', false)));
+
+        return [
+            'instalaciones' => $instalaciones,
+            'vigentes' => $vigentes,
+            'productos' => Producto::dePlanta()->get(),
+            'empresas' => Empresa::activas()->pluck('nombre', 'id'),
+        ];
     }
 
     /** Historial de precios de venta de un cliente agrupado por producto. */

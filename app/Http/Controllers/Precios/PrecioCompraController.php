@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Precios;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PreciosCompraRequest;
-use App\Models\Empresa;
 use App\Models\Instalacion;
 use App\Models\PrecioCompra;
 use App\Models\Producto;
@@ -20,13 +19,9 @@ class PrecioCompraController extends Controller
 {
     public function __construct(private readonly PrecioService $precios) {}
 
-    public function index(): View
+    public function index(Request $request)
     {
-        $empresas = Empresa::activas()->with(['instalaciones' => fn ($q) => $q->with(['chofer', 'vehiculo'])->orderBy('codigo')])->get();
-        $productos = $this->productosCompra();
-        $vigentes = $this->precios->preciosCompraVigentes();
-
-        return view('precios.compra.index', compact('empresas', 'productos', 'vigentes'));
+        return $this->tableOrPage($request, 'precios.compra.index', 'precios.compra._tabla', $this->precios->cuadroInstalaciones($request));
     }
 
     public function create(Request $request): View
@@ -35,7 +30,7 @@ class PrecioCompraController extends Controller
 
         return view('precios.compra.form', [
             'instalacion' => $instalacion,
-            'productos' => $this->productosCompra(),
+            'productos' => Producto::dePlanta()->get(),
             'vigentes' => $this->precios->preciosCompraVigentes()[$instalacion->id] ?? [],
         ]);
     }
@@ -52,7 +47,7 @@ class PrecioCompraController extends Controller
 
     public function historial(Request $request)
     {
-        $registros = PrecioCompra::with(['empresa', 'instalacion', 'producto', 'user'])
+        $registros = PrecioCompra::with(['empresa', 'instalacion', 'producto', 'user', 'validadoPor'])
             ->when($request->empresa_id, fn ($q, $e) => $q->where('empresa_id', $e))
             ->when($request->instalacion_id, fn ($q, $i) => $q->where('instalacion_id', $i))
             ->when($request->producto_id, fn ($q, $p) => $q->where('producto_id', $p))
@@ -65,15 +60,19 @@ class PrecioCompraController extends Controller
         return $this->tableOrPage($request, 'precios.compra.historial', 'precios.compra._historial', compact('registros', 'empresas', 'instalaciones', 'productos'));
     }
 
+    /** Marca como validados los precios vigentes de la instalación (ya figuran en las facturas). */
+    public function validar(Instalacion $instalacion): JsonResponse
+    {
+        $ids = collect($this->precios->preciosCompraVigentes()[$instalacion->id] ?? [])->where('validado', false)->pluck('id');
+        PrecioCompra::whereIn('id', $ids)->get()->each->update(['validado' => true, 'validado_por' => auth()->id(), 'validado_at' => now()]);
+
+        return $this->ok("Precios de {$instalacion->codigo} validados.", ['reloadPage' => true]);
+    }
+
     public function destroy(PrecioCompra $precio): JsonResponse
     {
         $precio->delete();
 
         return $this->ok('Registro de precio de compra eliminado.');
-    }
-
-    private function productosCompra()
-    {
-        return Producto::activos()->get();
     }
 }

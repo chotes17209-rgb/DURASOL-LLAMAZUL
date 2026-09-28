@@ -86,6 +86,7 @@
     /* Celdas editables (parte diario, liquidación) */
     .cell-input { @apply h-7 w-full rounded-none border border-transparent bg-transparent px-1.5 text-right text-[13px] tabular-nums hover:border-line focus:border-brand-500 focus:bg-white focus:ring-0 focus:outline-none; }
     .cell-input.text-left { @apply text-left; }
+    .cell-input:disabled { @apply appearance-none bg-transparent text-slate-800 opacity-100 hover:border-transparent; }
 
     /* Etiquetas de estado */
     .badge { @apply inline-flex items-center rounded-sm border px-1.5 py-px text-[11px] font-medium whitespace-nowrap; }

@@ -46,8 +46,6 @@ Route::middleware('auth')->group(function () {
         Route::get('historial', [HistorialController::class, 'index'])->name('historial.index');
         Route::post('liquidaciones/{liquidacion}/reabrir', [LiquidacionController::class, 'reabrir'])->name('liquidaciones.reabrir');
         Route::post('logistica/partes/{fecha}/reabrir', [ParteController::class, 'reabrir'])->name('logistica.partes.reabrir');
-        Route::get('precios/compra/crear', [PrecioCompraController::class, 'create'])->name('precios.compra.create');
-        Route::post('precios/compra', [PrecioCompraController::class, 'store'])->name('precios.compra.store');
         Route::delete('precios/compra/{precio}', [PrecioCompraController::class, 'destroy'])->name('precios.compra.destroy');
     });
 
@@ -85,6 +83,9 @@ Route::middleware('auth')->group(function () {
 
         Route::get('precios/compra', [PrecioCompraController::class, 'index'])->name('precios.compra.index');
         Route::get('precios/compra/historial', [PrecioCompraController::class, 'historial'])->name('precios.compra.historial');
+        Route::get('precios/compra/crear', [PrecioCompraController::class, 'create'])->name('precios.compra.create');
+        Route::post('precios/compra', [PrecioCompraController::class, 'store'])->name('precios.compra.store');
+        Route::post('precios/compra/{instalacion}/validar', [PrecioCompraController::class, 'validar'])->name('precios.compra.validar');
     });
 
     /* ------------------------------ Ventas ------------------------------ */

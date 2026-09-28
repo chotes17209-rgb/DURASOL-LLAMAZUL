@@ -35,6 +35,7 @@ export default function parteEditor(config) {
     });
     // Siempre algunas filas libres para escribir, como en la hoja.
     Object.keys(bloques).forEach((b) => {
+        if (!config.editable) return;
         const libres = Math.max(3, 8 - bloques[b].length);
         for (let i = 0; i < libres; i++) bloques[b].push(vacia(b));
     });

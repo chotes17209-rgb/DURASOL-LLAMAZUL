@@ -15,9 +15,9 @@
 
 {{-- Barra superior con las marcas --}}
 <header class="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-line bg-white">
-    <div class="flex h-full w-60 shrink-0 items-center gap-3 border-r border-line px-4 max-lg:w-auto max-lg:border-r-0">
+    <div class="flex h-full min-w-60 shrink-0 items-center gap-3 border-r border-line px-4 max-lg:border-r-0">
         <button class="btn-icon lg:hidden" @click="menu = !menu" title="Menú"><x-heroicon-o-bars-3/></button>
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
             <img src="{{ asset('img/durasol.jpg') }}" alt="Mr. Durasol Perú S.A.C." class="h-9 w-auto">
             <span class="h-6 w-px bg-line"></span>
             <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="h-5 w-auto">

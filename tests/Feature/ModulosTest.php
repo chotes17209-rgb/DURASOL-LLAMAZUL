@@ -6,6 +6,8 @@ use App\Models\Audit;
 use App\Models\CajaMovimiento;
 use App\Models\Cliente;
 use App\Models\CuentaBancaria;
+use App\Models\Instalacion;
+use App\Models\PrecioCompra;
 use App\Models\PrecioVenta;
 use App\Models\User;
 use App\Models\Vehiculo;
@@ -39,7 +41,8 @@ class ModulosTest extends TestCase
         $this->como('liquidaciones')->get(route('precios.venta.index'))->assertOk();
         $this->como('liquidaciones')->get(route('precios.compra.index'))->assertForbidden();
         $this->como('logistica')->get(route('precios.compra.index'))->assertOk();
-        $this->como('logistica')->get(route('precios.compra.create', ['instalacion_id' => $this->instalacion()->id]))->assertForbidden();
+        $this->como('logistica')->get(route('precios.compra.create', ['instalacion_id' => $this->instalacion()->id]))->assertOk();
+        $this->como('caja')->get(route('precios.compra.index'))->assertForbidden();
 
         foreach (['admin', 'logistica', 'caja', 'liquidaciones'] as $usuario) {
             $this->como($usuario)->get(route('dashboard'))->assertOk();
@@ -102,6 +105,28 @@ class ModulosTest extends TestCase
         $this->como('logistica')->postJson(route('instalaciones.store'), ['codigo' => '1234', 'nombre' => 'X', 'empresa_id' => $this->empresa()->id])
             ->assertStatus(422)->assertJsonValidationErrors('codigo');
         $this->como('logistica')->postJson(route('instalaciones.store'), ['codigo' => '12345678', 'nombre' => 'X', 'empresa_id' => $this->empresa()->id])->assertOk();
+    }
+
+    public function test_instalacion_con_precios_y_validacion(): void
+    {
+        $s10 = $this->producto('S10')->id;
+        $this->como('logistica')->postJson(route('instalaciones.store'), [
+            'codigo' => '62170831', 'nombre' => 'AGUILAR · P.HUA', 'empresa_id' => $this->empresa()->id, 'planta' => 'p.hua', 'responsable' => 'aguilar',
+            'placas' => 'w6d-892', 'precios' => [$s10 => 41.30], 'vigente_desde' => '2026-09-01', 'activo' => 1,
+        ])->assertOk();
+        $instalacion = Instalacion::where('codigo', '62170831')->firstOrFail();
+        $this->assertSame(['W6D-892'], $instalacion->listaPlacas());
+        $precio = PrecioCompra::where('instalacion_id', $instalacion->id)->firstOrFail();
+        $this->assertFalse($precio->validado);
+
+        $this->como('logistica')->get(route('precios.compra.index', ['estado' => 'pendiente']))->assertOk()->assertSee('62170831')->assertSee('No validado');
+        $this->como('logistica')->postJson(route('precios.compra.validar', $instalacion))->assertOk();
+        $this->assertTrue($precio->fresh()->validado);
+
+        // Cambio de precio: nueva fila no validada, la anterior queda en el historial.
+        $this->como('logistica')->postJson(route('precios.compra.store'), ['instalacion_id' => $instalacion->id, 'vigente_desde' => '2026-09-20', 'precios' => [$s10 => 41.80]])->assertOk();
+        $this->assertSame(2, PrecioCompra::where('instalacion_id', $instalacion->id)->count());
+        $this->como('logistica')->get(route('instalaciones.index'))->assertOk()->assertSee('41.80');
     }
 
     public function test_deposito_sale_de_caja(): void

@@ -13,22 +13,14 @@ use App\Models\Vehiculo;
 use App\Services\PrecioService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class InstalacionController extends Controller
 {
     public function index(Request $request, PrecioService $precios)
     {
-        $instalaciones = Instalacion::with(['empresa', 'chofer', 'vehiculo'])
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('codigo', 'like', "%$t%")->orWhere('nombre', 'like', "%$t%")))
-            ->when($request->empresa_id, fn ($q, $e) => $q->where('empresa_id', $e))
-            ->orderBy('empresa_id')->orderBy('codigo')->paginate(25)->withQueryString();
-
-        $vigentes = $precios->preciosCompraVigentes();
-        $productos = Producto::dePlanta()->get();
-        $empresas = Empresa::activas()->pluck('nombre', 'id');
-
-        return $this->tableOrPage($request, 'flota.instalaciones.index', 'flota.instalaciones._table', compact('instalaciones', 'vigentes', 'productos', 'empresas'));
+        return $this->tableOrPage($request, 'flota.instalaciones.index', 'flota.instalaciones._table', $precios->cuadroInstalaciones($request));
     }
 
     public function create(): View
@@ -36,11 +28,16 @@ class InstalacionController extends Controller
         return $this->form(new Instalacion(['activo' => true]));
     }
 
-    public function store(InstalacionRequest $request): JsonResponse
+    public function store(InstalacionRequest $request, PrecioService $precios): JsonResponse
     {
-        $instalacion = Instalacion::create($request->validated());
+        $instalacion = DB::transaction(function () use ($request, $precios) {
+            $instalacion = Instalacion::create($request->safe()->except(['precios', 'vigente_desde']));
+            $precios->guardarPreciosCompra($instalacion, $request->input('precios', []), $request->date('vigente_desde') ?? today(), 'Precio inicial');
 
-        return $this->ok("Instalación {$instalacion->codigo} registrada. Recuerda cargar sus precios de compra.");
+            return $instalacion;
+        });
+
+        return $this->ok("Instalación {$instalacion->codigo} registrada.", ['reloadPage' => true]);
     }
 
     public function show(Instalacion $instalacion, PrecioService $precios): View
@@ -58,11 +55,15 @@ class InstalacionController extends Controller
         return $this->form($instalacion);
     }
 
-    public function update(InstalacionRequest $request, Instalacion $instalacion): JsonResponse
+    public function update(InstalacionRequest $request, Instalacion $instalacion, PrecioService $precios): JsonResponse
     {
-        $instalacion->update($request->validated());
+        $cambios = DB::transaction(function () use ($request, $instalacion, $precios) {
+            $instalacion->update($request->safe()->except(['precios', 'vigente_desde']));
 
-        return $this->ok("Instalación {$instalacion->codigo} actualizada.");
+            return $precios->guardarPreciosCompra($instalacion, $request->input('precios', []), $request->date('vigente_desde') ?? today(), 'Cambio de precio');
+        });
+
+        return $this->ok("Instalación {$instalacion->codigo} actualizada".($cambios ? " con {$cambios} precio(s) nuevo(s) por validar." : '.'), ['reloadPage' => true]);
     }
 
     public function destroy(Instalacion $instalacion): JsonResponse
@@ -77,6 +78,8 @@ class InstalacionController extends Controller
     {
         return view('flota.instalaciones.form', [
             'instalacion' => $instalacion,
+            'productos' => Producto::dePlanta()->get(),
+            'vigentes' => app(PrecioService::class)->preciosCompraVigentes()[$instalacion->id] ?? [],
             'empresas' => Empresa::activas()->pluck('nombre', 'id'),
             'choferes' => Chofer::activos()->pluck('alias', 'id'),
             'vehiculos' => Vehiculo::operativos()->pluck('placa', 'id'),
