@@ -190,8 +190,8 @@ class PrecioService
         $vigentes = $this->preciosCompraVigentes();
         $instalaciones = Instalacion::with(['empresa', 'chofer', 'vehiculo'])
             ->where('activo', $request->estado !== 'inactivas')
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('codigo', 'like', "%$t%")->orWhere('nombre', 'like', "%$t%")
-                ->orWhere('responsable', 'like', '%'.mb_strtoupper($t).'%')->orWhere('placas', 'like', '%'.mb_strtoupper($t).'%')))
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->whereLike('codigo', "%$t%")->orWhereLike('nombre', "%$t%")
+                ->orWhereLike('responsable', '%'.mb_strtoupper($t).'%')->orWhereLike('placas', '%'.mb_strtoupper($t).'%')))
             ->when($request->empresa_id, fn ($q, $e) => $q->where('empresa_id', $e))
             ->orderBy('empresa_id')->orderBy('responsable')->orderBy('codigo')->get()
             ->when($request->estado === 'pendiente', fn ($c) => $c->filter(fn ($i) => collect($vigentes[$i->id] ?? [])->contains('validado', false)));

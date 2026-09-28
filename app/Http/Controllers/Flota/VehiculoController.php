@@ -16,7 +16,7 @@ class VehiculoController extends Controller
     public function index(Request $request)
     {
         $vehiculos = Vehiculo::with(['empresa', 'choferes', 'documentos'])
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('placa', 'like', "%$t%")->orWhere('marca', 'like', "%$t%")->orWhere('modelo', 'like', "%$t%")))
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->whereLike('placa', "%$t%")->orWhereLike('marca', "%$t%")->orWhereLike('modelo', "%$t%")))
             ->when($request->estado, fn ($q, $e) => $q->where('estado', $e))
             ->orderBy('placa')->paginate(25)->withQueryString();
 

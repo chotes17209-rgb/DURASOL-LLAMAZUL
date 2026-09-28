@@ -14,7 +14,7 @@ class EmpresaController extends Controller
     public function index(Request $request)
     {
         $empresas = Empresa::withCount('instalaciones')
-            ->when($request->q, fn ($q, $t) => $q->where('nombre', 'like', "%$t%")->orWhere('ruc', 'like', "%$t%"))
+            ->when($request->q, fn ($q, $t) => $q->whereLike('nombre', "%$t%")->orWhereLike('ruc', "%$t%"))
             ->orderBy('nombre')->paginate(20)->withQueryString();
 
         return $this->tableOrPage($request, 'admin.empresas.index', 'admin.empresas._table', compact('empresas'));

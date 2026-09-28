@@ -59,15 +59,21 @@ class Cliente extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $q) use ($texto) {
-            $q->where('nombre', 'like', "%{$texto}%")
-                ->orWhere('conocido_como', 'like', "%{$texto}%")
-                ->orWhere('direccion', 'like', "%{$texto}%")
-                ->orWhere('documento', 'like', "%{$texto}%");
-            if (ctype_digit($texto)) {
-                $q->orWhere('codigo', (int) $texto);
-            }
-        });
+        $texto = trim($texto);
+        if (ctype_digit($texto)) {
+            return $query->where(fn (Builder $q) => $q->where('codigo', (int) $texto)->orWhereLike('documento', "%{$texto}%"));
+        }
+
+        // Cada palabra debe aparecer en el nombre, el "conocido como", la dirección o el documento,
+        // sin distinguir mayúsculas (en PostgreSQL se usa ILIKE): «wilson ramos» encuentra «RAMOS TORRES WILSON».
+        foreach (preg_split('/\s+/', $texto) as $palabra) {
+            $query->where(fn (Builder $q) => $q->whereLike('nombre', "%{$palabra}%")
+                ->orWhereLike('conocido_como', "%{$palabra}%")
+                ->orWhereLike('direccion', "%{$palabra}%")
+                ->orWhereLike('documento', "%{$palabra}%"));
+        }
+
+        return $query;
     }
 
     public function deudaPendiente(): float

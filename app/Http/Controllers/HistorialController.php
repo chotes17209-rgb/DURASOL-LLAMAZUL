@@ -20,10 +20,12 @@ class HistorialController extends Controller
             ->when($request->hasta, fn ($q, $h) => $q->where('created_at', '<=', $h.' 23:59:59'))
             ->when($request->q, function ($q, $t) {
                 // Las columnas JSON se comparan como texto (sintaxis distinta en MySQL y PostgreSQL).
-                $comoTexto = DB::getDriverName() === 'pgsql' ? '%s::text' : 'CAST(%s AS CHAR)';
-                $q->where(fn ($w) => $w->where('description', 'like', "%$t%")
-                    ->orWhereRaw(sprintf($comoTexto, 'new_values').' like ?', ["%$t%"])
-                    ->orWhereRaw(sprintf($comoTexto, 'old_values').' like ?', ["%$t%"]));
+                $pg = DB::getDriverName() === 'pgsql';
+                $comoTexto = $pg ? '%s::text' : 'CAST(%s AS CHAR)';
+                $like = $pg ? ' ilike ?' : ' like ?';
+                $q->where(fn ($w) => $w->whereLike('description', "%$t%")
+                    ->orWhereRaw(sprintf($comoTexto, 'new_values').$like, ["%$t%"])
+                    ->orWhereRaw(sprintf($comoTexto, 'old_values').$like, ["%$t%"]));
             })
             ->latest('id')->paginate(40)->withQueryString();
 

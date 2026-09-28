@@ -30,7 +30,7 @@ class ParteController extends Controller
     public function index(Request $request)
     {
         $partes = Parte::withCount('filas')
-            ->when($request->mes, fn ($q, $m) => $q->where('fecha', 'like', "$m%"))
+            ->when($request->mes, fn ($q, $m) => $q->whereBetween('fecha', [Carbon::parse($m.'-01')->startOfMonth()->toDateString(), Carbon::parse($m.'-01')->endOfMonth()->toDateString()]))
             ->orderByDesc('fecha')->paginate(31)->withQueryString();
 
         $resumen = [];

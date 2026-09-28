@@ -37,7 +37,7 @@ class LiquidacionController extends Controller
     public function index(Request $request)
     {
         $liquidaciones = Liquidacion::with(['chofer', 'vehiculo'])->withSum('items as balones', 'cantidad')
-            ->when($request->q, fn ($q, $t) => $q->where('codigo', 'like', "%$t%"))
+            ->when($request->q, fn ($q, $t) => $q->whereLike('codigo', "%$t%"))
             ->when($request->chofer_id, fn ($q, $c) => $q->where('chofer_id', $c))
             ->when($request->estado, fn ($q, $e) => $q->where('estado', $e))
             ->when($request->desde, fn ($q, $d) => $q->where('fecha_venta', '>=', $d))

@@ -17,7 +17,7 @@ class ChoferController extends Controller
     public function index(Request $request)
     {
         $choferes = Chofer::with('vehiculo')->withCount('clientes')
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('alias', 'like', "%$t%")->orWhere('nombre_completo', 'like', "%$t%")->orWhere('dni', 'like', "%$t%")))
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->whereLike('alias', "%$t%")->orWhereLike('nombre_completo', "%$t%")->orWhereLike('dni', "%$t%")))
             ->when($request->tipo, fn ($q, $t) => $q->where('tipo', $t))
             ->when($request->filled('activo'), fn ($q) => $q->where('activo', $request->boolean('activo')))
             ->orderByDesc('activo')->orderBy('alias')->paginate(25)->withQueryString();

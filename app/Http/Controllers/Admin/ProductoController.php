@@ -15,7 +15,7 @@ class ProductoController extends Controller
     public function index(Request $request)
     {
         $productos = Producto::with('envase')
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('codigo', 'like', "%$t%")->orWhere('nombre', 'like', "%$t%")))
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->whereLike('codigo', "%$t%")->orWhereLike('nombre', "%$t%")))
             ->orderBy('orden')->orderBy('codigo')->paginate(30)->withQueryString();
 
         return $this->tableOrPage($request, 'admin.productos.index', 'admin.productos._table', compact('productos'));

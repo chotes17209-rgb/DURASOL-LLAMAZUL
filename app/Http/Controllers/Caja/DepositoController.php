@@ -25,7 +25,7 @@ class DepositoController extends Controller
     {
         $depositos = Deposito::with(['cuentaBancaria', 'empresa', 'chofer', 'user'])
             ->when($request->cuenta_bancaria_id, fn ($q, $c) => $q->where('cuenta_bancaria_id', $c))
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('depositante', 'like', "%$t%")->orWhere('numero_operacion', 'like', "%$t%")))
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->whereLike('depositante', "%$t%")->orWhereLike('numero_operacion', "%$t%")))
             ->when($request->desde, fn ($q, $d) => $q->where('fecha', '>=', $d))
             ->when($request->hasta, fn ($q, $h) => $q->where('fecha', '<=', $h))
             ->orderByDesc('fecha')->orderByDesc('id')->paginate(30)->withQueryString();

@@ -174,6 +174,18 @@ class LiquidacionTest extends TestCase
             ->assertJsonValidationErrors(['fecha_venta', 'chofer_id', 'items.0.cliente_id', 'items.0.cantidad']);
     }
 
+    public function test_busqueda_de_clientes_sin_distinguir_mayusculas_y_por_palabras(): void
+    {
+        $wilson = $this->cliente(['S10' => 45], 'RAMOS TORRES WILSON');
+        $this->cliente(['S10' => 45], 'BODEGA ROSA');
+
+        foreach (['wilson', 'Wilson', 'wilson ramos', 'torres wil'] as $texto) {
+            $ids = collect($this->como('liquidaciones')->getJson(route('buscar.clientes', ['q' => $texto]))->assertOk()->json('results'))->pluck('id');
+            $this->assertSame([$wilson->id], $ids->all(), "Búsqueda «{$texto}»");
+        }
+        $this->como('liquidaciones')->get(route('clientes.index', ['q' => 'wilson']))->assertOk()->assertSee('RAMOS TORRES WILSON')->assertDontSee('BODEGA ROSA');
+    }
+
     public function test_datos_del_cliente_devuelve_precios_vigentes(): void
     {
         $cliente = $this->cliente(['S10' => 45]);

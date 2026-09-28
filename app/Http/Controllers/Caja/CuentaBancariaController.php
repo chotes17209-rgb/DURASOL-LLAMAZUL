@@ -16,7 +16,7 @@ class CuentaBancariaController extends Controller
     public function index(Request $request)
     {
         $cuentas = CuentaBancaria::with('empresa')->withSum('depositos as total_depositado', 'monto')
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('banco', 'like', "%$t%")->orWhere('alias', 'like', "%$t%")))
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->whereLike('banco', "%$t%")->orWhereLike('alias', "%$t%")))
             ->orderBy('banco')->paginate(25)->withQueryString();
 
         return $this->tableOrPage($request, 'caja.cuentas.index', 'caja.cuentas._table', compact('cuentas'));

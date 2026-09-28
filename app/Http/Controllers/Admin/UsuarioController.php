@@ -15,7 +15,7 @@ class UsuarioController extends Controller
     public function index(Request $request)
     {
         $usuarios = User::query()
-            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->where('name', 'like', "%$t%")->orWhere('username', 'like', "%$t%")))
+            ->when($request->q, fn ($q, $t) => $q->where(fn ($w) => $w->whereLike('name', "%$t%")->orWhereLike('username', "%$t%")))
             ->when($request->role, fn ($q, $r) => $q->where('role', $r))
             ->orderBy('name')->paginate(20)->withQueryString();
 
