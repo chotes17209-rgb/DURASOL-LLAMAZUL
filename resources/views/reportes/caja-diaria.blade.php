@@ -9,6 +9,14 @@
         <x-export :url="route('reportes.caja-diaria', ['desde' => $desde->toDateString(), 'hasta' => $hasta->toDateString()])"/>
     </x-slot:actions>
     <p class="help mb-3">General = venta + cobranza − crédito − gastos − FISE. Saldo = general − depósitos (igual que la hoja «CAJA GNRAL» del Excel).</p>
+    <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-6">
+        <x-cifra label="Balones" :value="num($t('balones'))"/>
+        <x-cifra label="Importe total" :value="soles($t('venta'))"/>
+        <x-cifra label="(+) Cobranza" :value="soles($t('cobranza'))"/>
+        <x-cifra label="(−) Crédito" :value="soles($t('credito'))" tone="red"/>
+        <x-cifra label="Depósitos" :value="soles($t('depositos'))"/>
+        <x-cifra label="Saldo del periodo" :value="soles($t('saldo'))" total/>
+    </dl>
     <div class="card">
         <div class="table-wrap">
             <table class="table table-compact">

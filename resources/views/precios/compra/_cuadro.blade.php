@@ -3,7 +3,18 @@
     precios de compra vigentes y si el último cambio de precio ya se validó en las facturas.
     $modo: 'instalaciones' (CRUD) o 'precios' (editar / validar precios).
 --}}
-@php($puedeEditar = auth()->user()->hasRole('logistica'))
+@php
+    $puedeEditar = auth()->user()->hasRole('logistica');
+    $pendientes = $instalaciones->filter(fn ($i) => collect($vigentes[$i->id] ?? [])->contains('validado', false));
+    $porEmpresa = $instalaciones->groupBy(fn ($i) => $i->empresa?->nombre)->map->count();
+@endphp
+<dl class="ledger mb-3 !grid-cols-2 lg:!grid-cols-4">
+    @foreach ($porEmpresa as $empresa => $cantidad)
+        <x-cifra :label="'Instalaciones '.$empresa" :value="num($cantidad)"/>
+    @endforeach
+    <x-cifra label="Precios no validados" :value="num($pendientes->count())" :tone="$pendientes->isNotEmpty() ? 'red' : 'green'" hint="instalaciones con precio sin factura"/>
+    <x-cifra label="Instalaciones activas" :value="num($instalaciones->count())" total/>
+</dl>
 @forelse ($instalaciones->groupBy(fn ($i) => $i->empresa?->nombre) as $empresa => $lista)
     <div class="card mb-4">
         <div class="card-header">
