@@ -5,6 +5,7 @@
  *
  *   Contado       = Total − Crédito
  *   Por depositar = Venta total + Cobranza − Crédito − Varios − FISE − Vouchers
+ *   Efectivo a entregar = Por depositar − Depósitos
  */
 let secuencia = 0;
 const uid = () => `n${++secuencia}`;
@@ -26,6 +27,8 @@ export default function liquidacionEditor(config) {
         fises: config.fises || {},
         cobranzas: [],
         gastos: config.gastos || [],
+        depositos: config.depositos || [],
+        destinosDeposito: config.destinosDeposito || [],
         clientes: config.clientes || {},
         cuadre: {},
         guardando: false,
@@ -41,6 +44,7 @@ export default function liquidacionEditor(config) {
                 this.agregarFilas(Math.max(3, 10 - this.items.length));
                 if (!this.cobranzas.length) this.agregarCobranza();
                 if (!this.gastos.length) this.agregarGasto();
+                if (!this.depositos.length) this.agregarDeposito();
             }
 
             this.$nextTick(() => { this.sucio = false; });
@@ -55,7 +59,7 @@ export default function liquidacionEditor(config) {
                 this.cargarCuadre();
                 if (this.editable) this.recargarPrecios();
             });
-            ['items', 'fises', 'cobranzas', 'gastos', 'cab'].forEach((k) => this.$watch(k, () => { this.sucio = true; }));
+            ['items', 'fises', 'cobranzas', 'gastos', 'depositos', 'cab'].forEach((k) => this.$watch(k, () => { this.sucio = true; }));
             window.addEventListener('beforeunload', (e) => {
                 if (this.sucio && this.editable) { e.preventDefault(); e.returnValue = ''; }
             });
@@ -277,6 +281,7 @@ export default function liquidacionEditor(config) {
             if (cliente.deuda > 0 && !c.monto) c.monto = cliente.deuda;
         },
         agregarGasto() { this.gastos.push({ uid: uid(), concepto: '', monto: '', comprobante: '' }); },
+        agregarDeposito() { this.depositos.push({ uid: uid(), destino: '', numero_operacion: '', monto: '' }); },
 
         /* ---------------- Totales (misma fórmula que el servidor) ---------------- */
         get totalVenta() { return this.round(this.items.reduce((s, i) => s + this.totalItem(i), 0)); },
@@ -295,10 +300,13 @@ export default function liquidacionEditor(config) {
         get efectivo() {
             return this.round(this.totalVenta + this.totalCobranzas - this.totalCredito - this.totalVouchers - this.totalFises - this.totalGastos);
         },
+        get totalDepositos() { return this.round(this.depositos.reduce((s, d) => s + (+d.monto || 0), 0)); },
+        /** Lo que el chofer entrega en efectivo: lo por depositar menos lo que ya depositó (BCP, Yape...). */
+        get efectivoAEntregar() { return this.round(this.efectivo - this.totalDepositos); },
         get diferencia() {
             const e = this.cab.efectivo_entregado;
             if (e === '' || e === null || e === undefined) return null;
-            return this.round(+e - this.efectivo);
+            return this.round(+e - this.efectivoAEntregar);
         },
         cantidadPor(codigo) {
             return this.items.filter((i) => this.codigoProducto(i.producto_id) === codigo).reduce((s, i) => s + (+i.cantidad || 0), 0);
@@ -363,6 +371,7 @@ export default function liquidacionEditor(config) {
                 fises,
                 cobranzas: this.cobranzas.filter((c) => c.cliente_id || +c.monto > 0).map(limpiar),
                 gastos: this.gastos.filter((g) => g.concepto || g.monto).map(({ uid: _u, ...g }) => g),
+                depositos: this.depositos.filter((d) => d.destino || +d.monto > 0).map(({ uid: _u, ...d }) => ({ ...d, destino: (d.destino || '').trim().toUpperCase() })),
             };
         },
 

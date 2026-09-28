@@ -51,6 +51,10 @@ class LiquidacionRequest extends FormRequest
             'gastos.*.concepto' => ['required', 'string', 'max:150'],
             'gastos.*.monto' => ['required', 'numeric', 'gt:0'],
             'gastos.*.comprobante' => ['nullable', 'string', 'max:60'],
+            'depositos' => ['array'],
+            'depositos.*.destino' => ['required', 'string', 'max:100'],
+            'depositos.*.numero_operacion' => ['nullable', 'string', 'max:40'],
+            'depositos.*.monto' => ['required', 'numeric', 'gt:0'],
         ];
     }
 
@@ -87,6 +91,8 @@ class LiquidacionRequest extends FormRequest
             'cobranzas.*.monto' => 'monto de cobranza',
             'gastos.*.concepto' => 'concepto del gasto',
             'gastos.*.monto' => 'monto del gasto',
+            'depositos.*.destino' => 'cuenta o destino del depósito',
+            'depositos.*.monto' => 'monto del depósito',
         ];
     }
 }

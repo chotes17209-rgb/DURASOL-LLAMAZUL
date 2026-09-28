@@ -82,6 +82,29 @@ class LiquidacionTest extends TestCase
         $this->assertSame(EstadoLiquidacion::Borrador, $liquidacion->fresh()->estado);
     }
 
+    public function test_depositos_se_descuentan_del_efectivo_a_entregar(): void
+    {
+        $cliente = $this->cliente(['S10' => 45]);
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload([
+            'items' => [['cliente_id' => $cliente->id, 'empresa_id' => $this->empresa()->id, 'producto_id' => $this->producto('S10')->id, 'cantidad' => 20, 'precio' => 45, 'metodo_pago' => 'efectivo']],
+            'depositos' => [['destino' => 'BCP - DURASOL', 'monto' => 500], ['destino' => 'YAPE', 'numero_operacion' => '123', 'monto' => 150.5]],
+        ]))->assertOk();
+        $liquidacion = Liquidacion::firstOrFail();
+
+        // Por depositar 900; depositado 650.50 → entrega 249.50 en efectivo.
+        $this->assertSame('900.00', $liquidacion->efectivo_esperado);
+        $this->assertSame('650.50', $liquidacion->total_depositos);
+        $this->assertSame(249.5, $liquidacion->efectivoAEntregar());
+        $this->assertSame(['BCP - DURASOL', 'YAPE'], $liquidacion->depositos()->pluck('destino')->all());
+
+        $this->como('caja')->postJson(route('liquidaciones.cerrar.store', $liquidacion), ['efectivo_entregado' => 249.5])->assertOk();
+        $this->assertSame('0.00', $liquidacion->fresh()->diferencia);
+        $this->assertSame(249.5, (float) CajaMovimiento::where('tipo', 'ingreso')->sum('monto'));
+
+        $this->como('liquidaciones')->get(route('liquidaciones.show', $liquidacion))->assertOk()->assertSee('BCP - DURASOL');
+        $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24']))->assertOk()->assertSee('YAPE');
+    }
+
     public function test_precio_vigente_fechas_y_borrador(): void
     {
         $cliente = $this->cliente(['S10' => 45]);

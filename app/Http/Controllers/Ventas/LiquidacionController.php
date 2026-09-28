@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LiquidacionRequest;
 use App\Models\Chofer;
 use App\Models\Cliente;
+use App\Models\CuentaBancaria;
 use App\Models\CuentaPorCobrar;
 use App\Models\Empresa;
 use App\Models\Liquidacion;
@@ -72,7 +73,7 @@ class LiquidacionController extends Controller
     public function show(Request $request, Liquidacion $liquidacion)
     {
         $liquidacion->load(['chofer', 'vehiculo', 'user', 'cerradaPor', 'items.cliente', 'items.producto', 'items.empresa',
-            'fises.cliente', 'gastos', 'cobranzas.cliente', 'cuentasPorCobrar']);
+            'fises.cliente', 'gastos', 'depositos', 'cobranzas.cliente', 'cuentasPorCobrar']);
         if (in_array($request->formato, ['pdf', 'xlsx'], true)) {
             return $this->reporte($liquidacion)->descargar($request->formato, 'liquidacion-'.$liquidacion->codigo);
         }
@@ -196,7 +197,7 @@ class LiquidacionController extends Controller
     /** Liquidación individual en el formato de la hoja REGISTRO. */
     private function reporte(Liquidacion $l): Reporte
     {
-        $l->loadMissing(['items.cliente', 'items.producto', 'items.empresa', 'fises.cliente', 'gastos', 'cobranzas.cliente', 'chofer', 'vehiculo']);
+        $l->loadMissing(['items.cliente', 'items.producto', 'items.empresa', 'fises.cliente', 'gastos', 'depositos', 'cobranzas.cliente', 'chofer', 'vehiculo']);
         $periodo = $l->tipo === TipoChofer::Ruta
             ? 'Ruta: atención (salida) el '.$l->fecha_venta->format('d/m/Y').' · venta y liquidación el '.$l->fecha_liquidacion->format('d/m/Y')
             : 'Venta del '.$l->fecha_venta->format('d/m/Y').' · liquidada el '.$l->fecha_liquidacion->format('d/m/Y');
@@ -224,9 +225,15 @@ class LiquidacionController extends Controller
                 $l->gastos->map(fn ($g) => [$g->concepto, $g->comprobante, $g->monto]), ['TOTAL', '', $l->total_gastos]);
         }
 
+        if ($l->depositos->isNotEmpty()) {
+            $reporte->tabla('Depósitos (−)', ['Cuenta / destino' => 'texto', 'N° operación' => 'texto', 'Monto' => 'decimal'],
+                $l->depositos->map(fn ($d) => [$d->destino, $d->numero_operacion, $d->monto]), ['TOTAL', '', $l->total_depositos]);
+        }
+
         return $reporte->tabla('Resumen', ['Venta total' => 'decimal', 'Cobranza' => 'decimal', 'Crédito' => 'decimal', 'Varios' => 'decimal', 'FISE' => 'decimal',
-            'Vouchers' => 'decimal', 'Por depositar' => 'decimal', 'Entregado' => 'decimal', 'Diferencia' => 'decimal'],
-            [[$l->total_venta, $l->total_cobranzas, $l->total_credito, $l->total_gastos, $l->total_fises, $l->total_vouchers, $l->efectivo_esperado, $l->efectivo_entregado, $l->diferencia]]);
+            'Vouchers' => 'decimal', 'Por depositar' => 'decimal', 'Depósitos' => 'decimal', 'Efectivo a entregar' => 'decimal', 'Entregado' => 'decimal', 'Diferencia' => 'decimal'],
+            [[$l->total_venta, $l->total_cobranzas, $l->total_credito, $l->total_gastos, $l->total_fises, $l->total_vouchers, $l->efectivo_esperado, $l->total_depositos,
+                round((float) $l->efectivo_esperado - (float) $l->total_depositos, 2), $l->efectivo_entregado, $l->diferencia]]);
     }
 
     /** Stock real del almacén hoy (igual a la pantalla de stock): llenos, cambios, total y vacíos. */
@@ -257,7 +264,7 @@ class LiquidacionController extends Controller
 
     private function editor(Liquidacion $liquidacion): View
     {
-        $liquidacion->loadMissing(['items.cliente', 'fises', 'cobranzas.cliente', 'gastos']);
+        $liquidacion->loadMissing(['items.cliente', 'fises', 'cobranzas.cliente', 'gastos', 'depositos']);
         $choferes = Chofer::vendedores()->get();
         $productos = Producto::activos()->get();
 
@@ -305,6 +312,11 @@ class LiquidacionController extends Controller
             'fises' => (object) $fises,
             'cobranzas' => $liquidacion->cobranzas->map(fn ($c) => ['uid' => (string) $c->id, 'cliente_id' => $c->cliente_id, 'monto' => (float) $c->monto, 'metodo_pago' => $c->metodo_pago->value, 'numero_operacion' => $c->numero_operacion ?? ''])->values(),
             'gastos' => $liquidacion->gastos->map(fn ($g) => ['uid' => (string) $g->id, 'concepto' => $g->concepto, 'monto' => (float) $g->monto, 'comprobante' => $g->comprobante ?? ''])->values(),
+            'depositos' => $liquidacion->depositos->map(fn ($d) => ['uid' => (string) $d->id, 'destino' => $d->destino, 'numero_operacion' => $d->numero_operacion ?? '', 'monto' => (float) $d->monto])->values(),
+            // Sugerencias para el destino del depósito (se puede escribir cualquier otro).
+            'destinosDeposito' => CuentaBancaria::activas()->with('empresa')->get()
+                ->map(fn ($c) => mb_strtoupper($c->banco.' - '.($c->empresa?->nombre ?? $c->alias)))
+                ->merge(['YAPE', 'PLIN', 'TRANSFERENCIA', 'EFECTIVO A CAJA'])->unique()->values(),
             'clientes' => (object) $clientes,
             'productos' => $productos->map(fn ($p) => ['id' => $p->id, 'codigo' => $p->codigo, 'nombre' => $p->nombre])->values(),
             'empresas' => Empresa::activas()->get(['id', 'nombre'])->values(),

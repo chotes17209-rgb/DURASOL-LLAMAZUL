@@ -79,17 +79,17 @@
         </div>
 
         <div class="card">
-            <div class="card-header"><p class="card-title">Depósitos realizados</p></div>
+            <div class="card-header"><p class="card-title">Depósitos (−)</p></div>
             <table class="table table-compact">
-                <thead><tr><th>Responsable</th><th>Banco</th><th>Empresa</th><th>Quién</th><th class="text-right">Importe</th></tr></thead>
+                <thead><tr><th>Responsable</th><th>Cuenta / destino</th><th>Detalle</th><th class="text-right">Importe</th></tr></thead>
                 <tbody>
                 @forelse ($depositos as $d)
-                    <tr><td>{{ $d->chofer?->alias }}</td><td>{{ $d->cuentaBancaria?->banco }}</td><td>{{ $d->empresa?->nombre ?? $d->cuentaBancaria?->alias }}</td><td>{{ $d->depositante }}</td><td class="text-right">{{ num($d->monto, 2) }}</td></tr>
+                    <tr><td>{{ $d['responsable'] }}</td><td class="font-medium">{{ $d['destino'] }}</td><td class="text-xs text-slate-500">{{ $d['detalle'] }}</td><td class="text-right">{{ num($d['monto'], 2) }}</td></tr>
                 @empty
-                    <tr><td colspan="5" class="py-5 text-center text-slate-400">Sin depósitos este día.</td></tr>
+                    <tr><td colspan="4" class="py-5 text-center text-slate-400">Sin depósitos este día.</td></tr>
                 @endforelse
                 </tbody>
-                <tfoot><tr><td colspan="4">TOTAL</td><td class="text-right">{{ num($depositos->sum('monto'), 2) }}</td></tr></tfoot>
+                <tfoot><tr><td colspan="3">TOTAL</td><td class="text-right">{{ num($depositos->sum('monto'), 2) }}</td></tr></tfoot>
             </table>
             <p class="border-t border-line px-3 py-2 text-xs text-slate-500">Otros egresos de caja del día: <b class="text-slate-800">{{ soles($gastosCaja) }}</b></p>
         </div>

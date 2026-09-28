@@ -43,7 +43,7 @@
                 <div class="divide-y divide-slate-100">
                     @forelse ($porCerrar as $l)
                         <div class="flex items-center justify-between gap-3 px-5 py-3 text-sm">
-                            <div><p class="font-semibold">{{ $l->chofer->alias }} · {{ $l->codigo }}</p><p class="text-xs text-slate-500">Venta {{ fecha($l->fecha_venta) }} · esperado {{ soles($l->efectivo_esperado) }}</p></div>
+                            <div><p class="font-semibold">{{ $l->chofer->alias }} · {{ $l->codigo }}</p><p class="text-xs text-slate-500">Venta {{ fecha($l->fecha_venta) }} · efectivo a entregar {{ soles($l->efectivoAEntregar()) }}</p></div>
                             <button class="btn btn-success btn-sm" data-modal-url="{{ route('liquidaciones.cerrar', $l) }}" data-modal-size="md">Cerrar</button>
                         </div>
                     @empty

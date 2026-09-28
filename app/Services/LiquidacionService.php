@@ -19,7 +19,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Reglas de la liquidación diaria.
  *
- *   Efectivo a entregar = Venta total + Cobranzas − Créditos − Vouchers (Yape/Plin/transferencias) − FISE − Gastos
+ *   Por depositar       = Venta total + Cobranzas − Créditos − Vouchers (Yape/Plin/transferencias) − FISE − Gastos
+ *   Efectivo a entregar = Por depositar − Depósitos (BCP, Yape... que el chofer ya depositó)
  */
 class LiquidacionService
 {
@@ -123,6 +124,15 @@ class LiquidacionService
                 ]);
             }
 
+            $liquidacion->depositos()->delete();
+            foreach ($data['depositos'] ?? [] as $deposito) {
+                $liquidacion->depositos()->create([
+                    'destino' => $deposito['destino'],
+                    'numero_operacion' => $deposito['numero_operacion'] ?? null,
+                    'monto' => round((float) $deposito['monto'], 2),
+                ]);
+            }
+
             return $this->recalcular($liquidacion);
         });
     }
@@ -130,7 +140,7 @@ class LiquidacionService
     /** Recalcula y guarda los totales a partir del detalle. */
     public function recalcular(Liquidacion $liquidacion): Liquidacion
     {
-        $liquidacion->load(['items', 'fises', 'cobranzas', 'gastos']);
+        $liquidacion->load(['items', 'fises', 'cobranzas', 'gastos', 'depositos']);
         $totales = $this->calcular(
             $liquidacion->items->map(fn ($i) => [
                 'total' => (float) $i->total,
@@ -142,8 +152,9 @@ class LiquidacionService
             $liquidacion->gastos->map(fn ($g) => ['monto' => (float) $g->monto])->all(),
         );
 
+        $totales['total_depositos'] = round((float) $liquidacion->depositos->sum('monto'), 2);
         $entregado = $liquidacion->efectivo_entregado;
-        $totales['diferencia'] = $entregado === null ? 0 : round((float) $entregado - $totales['efectivo_esperado'], 2);
+        $totales['diferencia'] = $entregado === null ? 0 : round((float) $entregado - $this->efectivoAEntregar($totales), 2);
 
         $liquidacion->updateQuietly($totales);
 
@@ -189,6 +200,14 @@ class LiquidacionService
             'total_gastos' => round($totalGastos, 2),
             'efectivo_esperado' => round($venta + $cobranzasTotal - $credito - $vouchers - $totalFises - $totalGastos, 2),
         ];
+    }
+
+    /** Efectivo que el chofer debe entregar: lo por depositar menos lo que ya depositó. */
+    public function efectivoAEntregar(array|Liquidacion $totales): float
+    {
+        $t = $totales instanceof Liquidacion ? $totales->only(['efectivo_esperado', 'total_depositos']) : $totales;
+
+        return round((float) $t['efectivo_esperado'] - (float) ($t['total_depositos'] ?? 0), 2);
     }
 
     /**
@@ -239,7 +258,7 @@ class LiquidacionService
                 );
             }
 
-            $efectivo = (float) ($liquidacion->efectivo_entregado ?? $liquidacion->efectivo_esperado);
+            $efectivo = (float) ($liquidacion->efectivo_entregado ?? $this->efectivoAEntregar($liquidacion));
             $this->caja->registrarPara(
                 $liquidacion,
                 $efectivo >= 0 ? CajaMovimiento::INGRESO : CajaMovimiento::EGRESO,

@@ -166,6 +166,7 @@
     .recibo td:last-child { @apply text-right font-medium tabular-nums; }
     .recibo tr.resta td { @apply text-slate-600; }
     .recibo tr.final td { @apply border-0 bg-brand-800 py-3 text-[15px] font-semibold text-white; }
+    .recibo tr.subtotal td { @apply border-b border-solid border-line bg-panel font-semibold text-brand-900; }
 
     /* Lista de sugerencias (búsqueda de clientes en celdas) */
     .sugerencias { @apply fixed z-[60] max-h-72 overflow-y-auto rounded border border-brand-800/30 bg-white text-[13px]; box-shadow: 0 12px 28px -8px rgb(10 26 56 / .35); }

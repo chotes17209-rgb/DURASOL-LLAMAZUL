@@ -23,7 +23,7 @@ class Liquidacion extends Model
     protected $fillable = [
         'codigo', 'fecha_venta', 'fecha_liquidacion', 'chofer_id', 'vehiculo_id', 'tipo', 'estado',
         'total_venta', 'total_credito', 'total_vouchers', 'total_fises', 'total_cobranzas',
-        'total_cobranzas_efectivo', 'total_gastos', 'efectivo_esperado', 'efectivo_entregado', 'diferencia',
+        'total_cobranzas_efectivo', 'total_gastos', 'total_depositos', 'efectivo_esperado', 'efectivo_entregado', 'diferencia',
         'historico', 'observaciones', 'user_id', 'cerrada_por', 'cerrada_at',
     ];
 
@@ -43,6 +43,7 @@ class Liquidacion extends Model
             'total_cobranzas' => 'decimal:2',
             'total_cobranzas_efectivo' => 'decimal:2',
             'total_gastos' => 'decimal:2',
+            'total_depositos' => 'decimal:2',
             'efectivo_esperado' => 'decimal:2',
             'efectivo_entregado' => 'decimal:2',
             'diferencia' => 'decimal:2',
@@ -77,6 +78,17 @@ class Liquidacion extends Model
     public function fises(): HasMany
     {
         return $this->hasMany(LiquidacionFise::class);
+    }
+
+    /** Efectivo que el chofer debe entregar: lo por depositar menos lo que ya depositó. */
+    public function efectivoAEntregar(): float
+    {
+        return round((float) $this->efectivo_esperado - (float) $this->total_depositos, 2);
+    }
+
+    public function depositos(): HasMany
+    {
+        return $this->hasMany(LiquidacionDeposito::class);
     }
 
     public function gastos(): HasMany

@@ -95,9 +95,9 @@
             <div class="ledger-cell"><dt>Venta total</dt><dd x-text="dec(totalVenta)"></dd></div>
             <div class="ledger-cell"><dt>(+) Cobranza</dt><dd x-text="dec(totalCobranzas)"></dd></div>
             <div class="ledger-cell"><dt>(−) Crédito</dt><dd x-text="dec(totalCredito)"></dd></div>
-            <div class="ledger-cell"><dt>(−) FISE</dt><dd x-text="dec(totalFises)"></dd></div>
-            <div class="ledger-cell"><dt>(−) Vouchers y varios</dt><dd x-text="dec(totalGastos + totalVouchers)"></dd></div>
-            <div class="ledger-cell ledger-total border-r-0"><dt>Por depositar</dt><dd x-text="'S/ ' + dec(efectivo)"></dd></div>
+            <div class="ledger-cell"><dt>(−) FISE, vouchers y varios</dt><dd x-text="dec(totalFises + totalGastos + totalVouchers)"></dd></div>
+            <div class="ledger-cell"><dt>Por depositar</dt><dd x-text="dec(efectivo)"></dd></div>
+            <div class="ledger-cell ledger-total border-r-0"><dt>Efectivo a entregar</dt><dd x-text="'S/ ' + dec(efectivoAEntregar)"></dd></div>
         </dl>
 
         {{-- Registro de ventas: una fila por venta, como la hoja REGISTRO --}}
@@ -205,7 +205,7 @@
             </div>
         </section>
 
-        <div class="grid gap-4 xl:grid-cols-3">
+        <div class="grid gap-4 xl:grid-cols-2">
             {{-- Cobranzas --}}
             <section class="card">
                 <div class="card-header">
@@ -290,6 +290,34 @@
                     <tfoot><tr><td colspan="2">TOTAL</td><td class="text-right" x-text="dec(totalGastos)"></td><td></td></tr></tfoot>
                 </table>
             </section>
+
+            {{-- Depósitos: lo que el chofer depositó o transfirió; no siempre se sabe quién lo hizo --}}
+            <section class="card">
+                <div class="card-header">
+                    <div>
+                        <p class="card-title">Depósitos (−)</p>
+                        <p class="mt-0.5 text-[11px] text-slate-500">Cuenta o medio donde se depositó (BCP - Durasol, Yape...). No hace falta indicar quién depositó.</p>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" x-show="editable" @click="agregarDeposito()"><x-heroicon-o-plus/> Agregar</button>
+                </div>
+                <datalist id="destinos-deposito"><template x-for="d in destinosDeposito" :key="d"><option :value="d"></option></template></datalist>
+                <table class="table table-compact table-grid">
+                    <thead><tr><th class="w-8 text-center">N°</th><th>Cuenta / destino</th><th class="w-32">N° operación</th><th class="w-28 text-right">Monto</th><th class="w-8"></th></tr></thead>
+                    <tbody>
+                    <template x-for="(d, n) in depositos" :key="d.uid">
+                        <tr>
+                            <td class="text-center text-xs text-slate-400" x-text="n + 1"></td>
+                            <td class="!p-0"><input class="cell-input text-left font-medium uppercase" list="destinos-deposito" x-model="d.destino" placeholder="BCP - DURASOL, YAPE..."
+                                                    @keydown.enter.prevent="d === depositos[depositos.length - 1] && agregarDeposito(); $nextTick(() => $el.closest('tr').nextElementSibling?.querySelector('input')?.focus())"></td>
+                            <td class="!p-0"><input class="cell-input text-left" x-model="d.numero_operacion" placeholder="Opcional"></td>
+                            <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input font-semibold" x-model="d.monto"></td>
+                            <td class="!p-0 text-center"><button type="button" class="btn-icon danger" tabindex="-1" x-show="editable" @click="depositos.splice(depositos.indexOf(d), 1)"><x-heroicon-o-x-mark/></button></td>
+                        </tr>
+                    </template>
+                    </tbody>
+                    <tfoot><tr><td colspan="3">TOTAL DEPOSITADO</td><td class="text-right" x-text="dec(totalDepositos)"></td><td></td></tr></tfoot>
+                </table>
+            </section>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -303,7 +331,9 @@
                     <tr class="resta"><td>(−) Vales FISE</td><td x-text="dec(totalFises)"></td></tr>
                     <tr class="resta"><td>(−) Varios / gastos del chofer</td><td x-text="dec(totalGastos)"></td></tr>
                     <tr class="resta"><td>(−) Vouchers (Yape, Plin, transferencias)</td><td x-text="dec(totalVouchers)"></td></tr>
-                    <tr class="final"><td>POR DEPOSITAR</td><td x-text="'S/ ' + dec(efectivo)"></td></tr>
+                    <tr class="subtotal"><td>Por depositar</td><td x-text="dec(efectivo)"></td></tr>
+                    <tr class="resta"><td>(−) Depósitos <span class="text-xs text-slate-400" x-text="depositos.filter(d => +d.monto > 0).length ? '(' + depositos.filter(d => +d.monto > 0).map(d => (d.destino || 'sin destino').toUpperCase()).join(', ') + ')' : ''"></span></td><td x-text="dec(totalDepositos)"></td></tr>
+                    <tr class="final"><td>EFECTIVO A ENTREGAR</td><td x-text="'S/ ' + dec(efectivoAEntregar)"></td></tr>
                 </table>
                 <div class="grid gap-3 p-4 sm:grid-cols-2">
                     <div>
@@ -368,7 +398,9 @@
                 <span>Balones <b class="text-slate-800" x-text="totalBalones"></b></span>
                 <span>Venta <b class="text-slate-800" x-text="dec(totalVenta)"></b></span>
                 <span>Crédito <b class="text-slate-800" x-text="dec(totalCredito)"></b></span>
-                <span class="rounded-sm bg-brand-800 px-2 py-1 text-white">Por depositar <b class="text-[13px]" x-text="'S/ ' + dec(efectivo)"></b></span>
+                <span>Por depositar <b class="text-slate-800" x-text="dec(efectivo)"></b></span>
+                <span>Depósitos <b class="text-slate-800" x-text="dec(totalDepositos)"></b></span>
+                <span class="rounded-sm bg-brand-800 px-2 py-1 text-white">Efectivo a entregar <b class="text-[13px]" x-text="'S/ ' + dec(efectivoAEntregar)"></b></span>
                 <span class="text-amber-700" x-show="sucio && editable">● Cambios sin guardar</span>
             </p>
             <div class="flex gap-2" x-show="editable">

@@ -45,8 +45,8 @@ class ReporteController extends Controller
                 $reporte->tabla($grupo['titulo'], $cols, array_map($fila, $grupo['filas']), $total($grupo['total']));
             }
             $reporte->tabla('Por depositar por responsable', ['Responsable' => 'texto', 'Importe' => 'decimal'], collect($d['porDepositar'])->map(fn ($v, $k) => [$k, $v])->values(), ['TOTAL', array_sum($d['porDepositar'])])
-                ->tabla('Depósitos realizados', ['Fecha' => 'texto', 'Responsable' => 'texto', 'Banco / cuenta' => 'texto', 'Empresa' => 'texto', 'Quién depositó' => 'texto', 'Importe' => 'decimal'],
-                    $d['depositos']->map(fn ($x) => [fecha($x->fecha), $x->chofer?->alias, $x->cuentaBancaria?->nombreMostrar(), $x->empresa?->nombre, $x->depositante, $x->monto]), ['TOTAL', '', '', '', '', $d['depositos']->sum('monto')])
+                ->tabla('Depósitos (−)', ['Responsable' => 'texto', 'Cuenta / destino' => 'texto', 'Detalle' => 'texto', 'Importe' => 'decimal'],
+                    $d['depositos']->map(fn ($x) => [$x['responsable'], $x['destino'], $x['detalle'], $x['monto']]), ['TOTAL', '', '', $d['depositos']->sum('monto')])
                 ->tabla('Detalle de ventas por precio', ['Producto' => 'texto', 'Cantidad' => 'entero', 'P.U.' => 'decimal', 'Total' => 'decimal'],
                     $d['detallePrecios']->map(fn ($x) => [$x->producto?->codigo, $x->cantidad, $x->precio, $x->total]), ['TOTAL', $d['detallePrecios']->sum('cantidad'), '', $d['detallePrecios']->sum('total')]);
 
@@ -60,7 +60,7 @@ class ReporteController extends Controller
     private function datosLiquidacionDiaria(Carbon $fecha): array
     {
         $productos = Producto::activos()->whereIn('tipo', ['gas', 'envase'])->get();
-        $base = fn () => Liquidacion::with(['chofer', 'vehiculo', 'items'])->where('estado', '!=', EstadoLiquidacion::Anulada)->orderBy('id');
+        $base = fn () => Liquidacion::with(['chofer', 'vehiculo', 'items', 'depositos'])->where('estado', '!=', EstadoLiquidacion::Anulada)->orderBy('id');
 
         $locales = $base()->where('fecha_venta', $fecha->toDateString())->where('tipo', '!=', TipoChofer::Ruta->value)->get();
         $ruta = $base()->where('fecha_liquidacion', $fecha->toDateString())->where('tipo', TipoChofer::Ruta->value)->get();
@@ -71,7 +71,8 @@ class ReporteController extends Controller
 
         $armar = function ($liquidaciones) use ($productos, &$pendienteDeposito) {
             $filas = $liquidaciones->map(function (Liquidacion $l) use ($productos, &$pendienteDeposito) {
-                $depositado = (float) ($pendienteDeposito[$l->chofer_id] ?? 0);
+                // Lo depositado en la propia hoja (BCP, Yape...) más los depósitos de caja del chofer.
+                $depositado = round((float) $l->total_depositos + (float) ($pendienteDeposito[$l->chofer_id] ?? 0), 2);
                 unset($pendienteDeposito[$l->chofer_id]);
                 $cantidades = $productos->mapWithKeys(fn ($p) => [$p->codigo => (int) $l->items->where('producto_id', $p->id)->sum('cantidad')])->all();
 
@@ -112,6 +113,13 @@ class ReporteController extends Controller
         }
 
         $ids = $locales->pluck('id')->merge($ruta->pluck('id'));
+
+        // Depósitos anotados en las hojas de liquidación y depósitos registrados en caja, en una sola lista.
+        $listaDepositos = $locales->merge($ruta)->flatMap(fn (Liquidacion $l) => $l->depositos->map(fn ($x) => [
+            'responsable' => $l->chofer?->alias, 'destino' => $x->destino, 'detalle' => trim($l->codigo.' '.($x->numero_operacion ? 'Op. '.$x->numero_operacion : '')), 'monto' => (float) $x->monto,
+        ]))->merge($depositos->map(fn (Deposito $x) => [
+            'responsable' => $x->chofer?->alias, 'destino' => $x->cuentaBancaria?->nombreMostrar() ?? 'Depósito', 'detalle' => $x->depositante ?? $x->empresa?->nombre, 'monto' => (float) $x->monto,
+        ]))->values();
         $detallePrecios = LiquidacionItem::with('producto')->whereIn('liquidacion_id', $ids)
             ->selectRaw('producto_id, precio, SUM(cantidad) as cantidad, SUM(total) as total')
             ->groupBy('producto_id', 'precio')->orderBy('producto_id')->orderByDesc('precio')->get();
@@ -120,7 +128,7 @@ class ReporteController extends Controller
             'productos' => $productos,
             'grupos' => $grupos,
             'porDepositar' => $porDepositar,
-            'depositos' => $depositos,
+            'depositos' => $listaDepositos,
             'detallePrecios' => $detallePrecios,
             'gastosCaja' => (float) CajaMovimiento::where('fecha', $fecha->toDateString())->where('tipo', CajaMovimiento::EGRESO)
                 ->whereNotIn('categoria', [CategoriaCaja::Deposito])->sum('monto'),

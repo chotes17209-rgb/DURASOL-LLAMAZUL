@@ -2,7 +2,7 @@
 <x-modal :title="'Liquidación '.$l->codigo" :subtitle="$l->chofer->alias.' · venta '.fecha($l->fecha_venta).' · liquidada '.fecha($l->fecha_liquidacion)" icon="clipboard-document-check">
     <div x-data="{ tab: 'resumen' }">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <x-tabs :tabs="['resumen' => 'Resumen', 'ventas' => 'Ventas ('.$l->items->count().')', 'otros' => 'FISE, cobranzas y gastos', 'historial' => 'Historial']" class="mb-0"/>
+            <x-tabs :tabs="['resumen' => 'Resumen', 'ventas' => 'Ventas ('.$l->items->count().')', 'otros' => 'FISE, cobranzas, gastos y depósitos', 'historial' => 'Historial']" class="mb-0"/>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('liquidaciones.show', [$l, 'formato' => 'pdf']) }}" class="btn btn-secondary btn-sm">PDF</a>
                 <a href="{{ route('liquidaciones.show', [$l, 'formato' => 'xlsx']) }}" class="btn btn-secondary btn-sm">Excel</a>
@@ -18,11 +18,13 @@
 
         <div class="mt-5" x-show="tab === 'resumen'">
             <table class="table table-compact table-grid">
-                <thead><tr><th class="text-right">Venta total</th><th class="text-right">Cobranza</th><th class="text-right">Crédito</th><th class="text-right">Varios</th><th class="text-right">FISE</th><th class="text-right">Vouchers</th><th class="text-right">Por depositar</th><th class="text-right">Entregado</th><th class="text-right">Diferencia</th></tr></thead>
+                <thead><tr><th class="text-right">Venta total</th><th class="text-right">Cobranza</th><th class="text-right">Crédito</th><th class="text-right">Varios</th><th class="text-right">FISE</th><th class="text-right">Vouchers</th><th class="text-right">Por depositar</th><th class="text-right">Depósitos</th><th class="text-right">Efectivo a entregar</th><th class="text-right">Entregado</th><th class="text-right">Diferencia</th></tr></thead>
                 <tbody><tr>
                     <td class="text-right">{{ num($l->total_venta, 2) }}</td><td class="text-right">{{ num($l->total_cobranzas, 2) }}</td><td class="text-right">{{ num($l->total_credito, 2) }}</td>
                     <td class="text-right">{{ num($l->total_gastos, 2) }}</td><td class="text-right">{{ num($l->total_fises, 2) }}</td><td class="text-right">{{ num($l->total_vouchers, 2) }}</td>
-                    <td class="text-right font-bold text-brand-800">{{ num($l->efectivo_esperado, 2) }}</td>
+                    <td class="text-right">{{ num($l->efectivo_esperado, 2) }}</td>
+                    <td class="text-right">{{ num($l->total_depositos, 2) }}</td>
+                    <td class="text-right font-bold text-brand-800">{{ num($l->efectivoAEntregar(), 2) }}</td>
                     <td class="text-right">{{ $l->efectivo_entregado !== null ? num($l->efectivo_entregado, 2) : '—' }}</td>
                     <td class="text-right {{ $l->diferencia !== null && abs((float) $l->diferencia) >= 0.01 ? 'font-semibold text-red-700' : '' }}">{{ $l->diferencia !== null ? num($l->diferencia, 2) : '—' }}</td>
                 </tr></tbody>
@@ -107,6 +109,19 @@
                         <tr><td class="text-xs">{{ $g->concepto }} {{ $g->comprobante }}</td><td class="text-right">{{ soles($g->monto) }}</td></tr>
                     @empty
                         <tr><td colspan="2" class="text-center text-slate-400">Sin gastos.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <p class="mb-2 text-sm font-semibold">Depósitos ({{ soles($l->total_depositos) }})</p>
+                <table class="table table-compact">
+                    <thead><tr><th>Cuenta / destino</th><th>N° operación</th><th class="text-right">Monto</th></tr></thead>
+                    <tbody>
+                    @forelse ($l->depositos as $d)
+                        <tr><td class="text-xs font-medium">{{ $d->destino }}</td><td class="text-xs">{{ $d->numero_operacion }}</td><td class="text-right">{{ soles($d->monto) }}</td></tr>
+                    @empty
+                        <tr><td colspan="3" class="text-center text-slate-400">Sin depósitos.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
