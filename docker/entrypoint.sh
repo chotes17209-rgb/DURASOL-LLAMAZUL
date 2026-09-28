@@ -15,7 +15,15 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-php artisan migrate --force
+# Si la base se creó con una versión anterior (sin el parte diario), se reconstruye:
+# los datos son de demostración y se vuelven a importar del Excel.
+ESQUEMA=$(php artisan tinker --execute='echo Schema::hasTable("migrations") ? (Schema::hasTable("partes") && Schema::hasColumn("precios_compra", "validado") ? "ok" : "antiguo") : "vacio";' 2>/dev/null | tail -n1)
+if [ "$ESQUEMA" = "antiguo" ]; then
+    echo "Esquema de una versión anterior: reconstruyendo la base de datos..."
+    php artisan migrate:fresh --force
+else
+    php artisan migrate --force
+fi
 
 php artisan storage:link > /dev/null 2>&1 || true
 php artisan optimize
