@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\EnvolverVistaParcial;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Render (y cualquier proxy) termina el HTTPS antes de llegar a la app.
         $middleware->trustProxies(at: '*');
         $middleware->alias(['role' => EnsureRole::class]);
+        $middleware->appendToGroup('web', EnvolverVistaParcial::class);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
     })

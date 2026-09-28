@@ -1,8 +1,8 @@
 @if ($paginator->total() > 0)
-<nav class="flex flex-col items-center justify-between gap-2 border-t border-line bg-panel px-3 py-2 text-xs sm:flex-row">
+<nav class="flex flex-col items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2 text-xs sm:flex-row">
     <p class="text-slate-500">Mostrando <b class="text-slate-800">{{ $paginator->firstItem() }}–{{ $paginator->lastItem() }}</b> de <b class="text-slate-800">{{ num($paginator->total()) }}</b> registros</p>
     @if ($paginator->hasPages())
-    <div class="flex items-center gap-0.5">
+    <div class="flex flex-wrap items-center justify-center gap-0.5">
         @if ($paginator->onFirstPage())
             <span class="btn-icon opacity-40"><x-heroicon-o-chevron-left/></span>
         @else

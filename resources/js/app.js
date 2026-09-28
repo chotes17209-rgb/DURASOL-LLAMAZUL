@@ -350,6 +350,11 @@ document.addEventListener('click', async (e) => {
 
     if (e.target.closest('[data-modal-close]')) {
         e.preventDefault();
+        // Ficha abierta como página (sin ventana): «Cerrar» vuelve a la pantalla anterior.
+        if (!Alpine.store('modal').stack.length && e.target.closest('[data-vista-parcial]')) {
+            volverAtras();
+            return;
+        }
         Alpine.store('modal').close();
         return;
     }
@@ -444,6 +449,11 @@ document.addEventListener('submit', async (e) => {
     }
 });
 
+function volverAtras() {
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = '/';
+}
+
 export function afterSuccess(data, origin = null) {
     if (data?.redirect) {
         sessionStorage.setItem('flash', JSON.stringify({ type: data.type || 'success', message: data.message }));
@@ -453,6 +463,11 @@ export function afterSuccess(data, origin = null) {
     // Un formulario guardado cierra su modal; eliminar o accionar desde un modal solo lo recarga.
     const isForm = origin?.tagName === 'FORM';
     const inModal = origin?.closest?.('[data-modal-content]');
+    if (isForm && origin.closest('[data-vista-parcial]') && !Alpine.store('modal').stack.length && data?.keepModal !== true) {
+        if (data?.message) sessionStorage.setItem('flash', JSON.stringify({ type: data.type || 'success', message: data.message }));
+        volverAtras();
+        return;
+    }
     if (inModal && isForm && data?.keepModal !== true) Alpine.store('modal').close();
     if (inModal && !isForm && data?.closeModal) Alpine.store('modal').close();
     if (data?.message) notify(data.type || 'success', data.message);

@@ -12,7 +12,7 @@
         <x-slot:filters>
             <x-field.select name="vista" :options="['clientes' => 'Agrupado por cliente', 'detalle' => 'Detalle de créditos']" :selected="$vista" :empty="false" class="w-56"/>
             <x-search placeholder="Buscar cliente..."/>
-            <x-field.select name="chofer_id" :options="$choferes" placeholder="Todos los choferes" class="w-48" :selected="request('chofer_id')"/>
+            <x-field.select name="chofer_id" :options="$choferes" placeholder="Todos los choferes" class="w-52" :selected="request('chofer_id')"/>
         </x-slot:filters>
         @include('ventas.creditos._table')
     </x-remote-table>

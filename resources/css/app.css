@@ -51,6 +51,8 @@
     input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     ::selection { background: var(--color-brand-100); }
     .tabular-nums, td, dd { font-variant-numeric: tabular-nums; }
+    /* Las columnas de una grilla no se estiran por una tabla ancha: la tabla se desplaza dentro de su tarjeta. */
+    .grid > *, .card, main { min-width: 0; }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-thumb { background: #c9d0da; border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
     ::-webkit-scrollbar-thumb:hover { background-color: #aab3c0; }
@@ -59,11 +61,11 @@
 @layer components {
     /* Estructura */
     .app-header { @apply fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-line bg-white/95 backdrop-blur; }
-    .app-brand { @apply flex h-full min-w-60 shrink-0 items-center gap-3 border-r border-line pr-5 pl-4 max-lg:min-w-0 max-lg:border-r-0; }
+    .app-brand { @apply flex h-full min-w-60 shrink-0 items-center gap-2 border-r border-line pr-5 pl-3 max-lg:min-w-0 max-lg:border-r-0 max-lg:pr-2 sm:gap-3 sm:pl-4; }
     .app-avatar { @apply flex h-8 w-8 items-center justify-center rounded-md bg-brand-800 text-[12px] font-semibold text-white; }
     .app-sidebar { @apply fixed top-14 bottom-0 left-0 z-20 flex w-60 flex-col overflow-y-auto bg-[#0f1f44]; }
     .app-modal { @apply relative w-full overflow-hidden rounded-lg border border-slate-300 bg-white; box-shadow: 0 20px 40px -16px rgb(15 23 42 / .35); }
-    .page-head { @apply flex flex-wrap items-end justify-between gap-3 px-6 pt-5 pb-1; }
+    .page-head { @apply flex flex-wrap items-end justify-between gap-3 px-3 pt-5 pb-1 sm:px-6; }
     .page-crumb { @apply flex items-center gap-1.5 text-[12px] text-slate-500; }
     .page-title { @apply mt-0.5 text-[20px] font-semibold text-slate-900; }
 

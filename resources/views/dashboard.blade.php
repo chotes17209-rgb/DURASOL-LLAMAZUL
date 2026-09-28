@@ -7,24 +7,38 @@
         </form>
     </x-slot:actions>
 
+    @php($totalStock = \App\Services\AlmacenService::totalesPorPresentacion($stock))
     <dl class="ledger !grid-cols-2 lg:!grid-cols-5">
-        <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p class="text-[12px] text-slate-500">{{ num($balonesDia) }} balones</p></div>
-        <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd>
-            @if ($utilidadMes !== null)
-                <p><a href="{{ route('reportes.rentabilidad', ['mes' => $fecha->format('Y-m')]) }}" class="hover:text-brand-800 hover:underline">Utilidad bruta {{ soles($utilidadMes) }}{{ $ventaMes > 0 ? ' · '.number_format($utilidadMes / $ventaMes * 100, 1).' %' : '' }}</a></p>
-            @else
-                <p>{{ num($balonesMes) }} balones</p>
-            @endif
-        </div>
-        @php($totalStock = \App\Services\AlmacenService::totalesPorPresentacion($stock))
-        <div class="ledger-cell"><dt>Stock S-10 (llenos + cambios)</dt><dd>{{ num($totalStock['S10']) }}</dd><p class="text-[12px] text-slate-500">S-45 {{ num($totalStock['S45']) }} · M-10 {{ num($totalStock['M10']) }}</p></div>
-        @if ($u->hasRole('liquidaciones', 'caja'))
-            <div class="ledger-cell"><dt>Créditos por cobrar</dt><dd class="!text-red-700">{{ soles($porCobrar) }}</dd><p class="text-[12px] text-slate-500">saldo pendiente de clientes</p></div>
+        @if ($enSoles)
+            <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p>{{ num($balonesDia) }} balones</p></div>
+            <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd>
+                @if ($utilidadMes !== null)
+                    <p><a href="{{ route('reportes.rentabilidad', ['mes' => $fecha->format('Y-m')]) }}" class="hover:text-brand-800 hover:underline">Utilidad bruta {{ soles($utilidadMes) }}{{ $ventaMes > 0 ? ' · '.number_format($utilidadMes / $ventaMes * 100, 1).' %' : '' }}</a></p>
+                @else
+                    <p>{{ num($balonesMes) }} balones</p>
+                @endif
+            </div>
+        @else
+            <div class="ledger-cell"><dt>Balones vendidos el {{ $fecha->format('d/m') }}</dt><dd>{{ num($balonesDia) }}</dd><p>según liquidaciones</p></div>
+            <div class="ledger-cell"><dt>Balones vendidos en el mes</dt><dd>{{ num($balonesMes) }}</dd><p>desde el {{ $fecha->copy()->startOfMonth()->format('d/m') }}</p></div>
         @endif
-        <div class="ledger-cell ledger-total border-r-0"><dt>{{ $u->hasRole('caja') ? 'Saldo en caja hoy' : 'Liquidaciones por cerrar' }}</dt><dd>{{ $u->hasRole('caja') ? soles($saldoCaja) : $borradores }}</dd><p>{{ $borradores }} en borrador</p></div>
+        <div class="ledger-cell"><dt>Stock S-10 (llenos + cambios)</dt><dd>{{ num($totalStock['S10']) }}</dd><p>S-45 {{ num($totalStock['S45']) }} · M-10 {{ num($totalStock['M10']) }}</p></div>
+        @if ($u->hasRole('liquidaciones', 'caja'))
+            <div class="ledger-cell"><dt>Créditos por cobrar</dt><dd class="!text-red-700">{{ soles($porCobrar) }}</dd><p>saldo pendiente de clientes</p></div>
+        @else
+            @php($vacios = \App\Services\AlmacenService::totalesVacios($stock))
+            <div class="ledger-cell"><dt>Vacíos S-10</dt><dd>{{ num($vacios['S10']) }}</dd><p>S-45 {{ num($vacios['S45']) }}</p></div>
+        @endif
+        @if ($u->hasRole('caja'))
+            <div class="ledger-cell ledger-total"><dt>Saldo en caja hoy</dt><dd>{{ soles($saldoCaja) }}</dd><p>{{ $borradores }} liquidación(es) en borrador</p></div>
+        @elseif ($u->hasRole('liquidaciones'))
+            <div class="ledger-cell ledger-total"><dt>Liquidaciones por cerrar</dt><dd>{{ $borradores }}</dd><p>en borrador</p></div>
+        @else
+            <div class="ledger-cell ledger-total"><dt>Parte de hoy</dt><dd>{{ $parteHoy ? ($parteHoy->esEditable() ? 'Abierto' : 'Cerrado') : 'Sin abrir' }}</dd><p><a href="{{ route('logistica.partes.show', today()->toDateString()) }}" class="hover:underline">{{ $parteHoy ? 'Ver parte' : 'Abrir parte' }}</a></p></div>
+        @endif
     </dl>
 
-    @if ($borradores)
+    @if ($borradores && $u->hasRole('liquidaciones', 'caja'))
         <div class="help mt-3 flex items-center justify-between border-amber-300 bg-amber-50 text-amber-900">
             <span>Hay <b>{{ $borradores }}</b> liquidación(es) en borrador pendientes de cerrar.</span>
             <a href="{{ route('liquidaciones.index', ['estado' => 'borrador']) }}" class="font-semibold text-brand-700 hover:underline">Revisar</a>
@@ -33,22 +47,22 @@
 
     <div class="mt-4 grid gap-4 xl:grid-cols-3">
         <div class="card xl:col-span-2">
-            <div class="card-header"><p class="card-title">Venta diaria de los últimos 30 días (S/)</p></div>
+            <div class="card-header"><p class="card-title">{{ $enSoles ? 'Venta diaria de los últimos 30 días (S/)' : 'Balones vendidos por día (últimos 30 días)' }}</p></div>
             <div class="h-64 p-4"><canvas data-chart="{{ json_encode($graficoVentas) }}"></canvas></div>
         </div>
         <div class="card">
             <div class="card-header"><p class="card-title">Balones vendidos en el mes</p></div>
             <table class="table table-compact">
-                <thead><tr><th>Producto</th><th class="text-right">Cantidad</th><th class="text-right">Importe</th></tr></thead>
+                <thead><tr><th>Producto</th><th class="text-right">Cantidad</th>@if ($enSoles)<th class="text-right">Importe</th>@endif</tr></thead>
                 <tbody>
                 @forelse ($porProducto as $p)
-                    <tr><td class="font-medium">{{ $p->codigo }}</td><td class="text-right">{{ num($p->cantidad) }}</td><td class="text-right">{{ soles($p->total) }}</td></tr>
+                    <tr><td class="font-medium">{{ $p->codigo }}</td><td class="text-right">{{ num($p->cantidad) }}</td>@if ($enSoles)<td class="text-right">{{ soles($p->total) }}</td>@endif</tr>
                 @empty
                     <tr><td colspan="3" class="py-6 text-center text-slate-400">Sin ventas este mes.</td></tr>
                 @endforelse
                 </tbody>
                 @if ($porProducto->isNotEmpty())
-                    <tfoot><tr><td>Total</td><td class="text-right">{{ num($porProducto->sum('cantidad')) }}</td><td class="text-right">{{ soles($porProducto->sum('total')) }}</td></tr></tfoot>
+                    <tfoot><tr><td>Total</td><td class="text-right">{{ num($porProducto->sum('cantidad')) }}</td>@if ($enSoles)<td class="text-right">{{ soles($porProducto->sum('total')) }}</td>@endif</tr></tfoot>
                 @endif
             </table>
         </div>
@@ -56,12 +70,12 @@
 
     <div class="mt-4 grid gap-4 xl:grid-cols-3">
         <div class="card">
-            <div class="card-header"><p class="card-title">Venta por chofer en el mes</p></div>
+            <div class="card-header"><p class="card-title">{{ $enSoles ? 'Venta por chofer en el mes' : 'Balones por chofer en el mes' }}</p></div>
             <table class="table table-compact">
-                <thead><tr><th>Chofer</th><th class="text-right">Balones</th><th class="text-right">Importe</th></tr></thead>
+                <thead><tr><th>Chofer</th><th class="text-right">Balones</th>@if ($enSoles)<th class="text-right">Importe</th>@endif</tr></thead>
                 <tbody>
                 @forelse ($topChoferes as $c)
-                    <tr><td class="font-medium">{{ $c->alias }}</td><td class="text-right">{{ num($c->cantidad) }}</td><td class="text-right">{{ soles($c->total) }}</td></tr>
+                    <tr><td class="font-medium">{{ $c->alias }}</td><td class="text-right">{{ num($c->cantidad) }}</td>@if ($enSoles)<td class="text-right">{{ soles($c->total) }}</td>@endif</tr>
                 @empty
                     <tr><td colspan="3" class="py-6 text-center text-slate-400">Sin datos.</td></tr>
                 @endforelse

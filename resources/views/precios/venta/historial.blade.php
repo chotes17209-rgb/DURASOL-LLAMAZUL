@@ -5,7 +5,7 @@
     <x-remote-table :url="route('precios.venta.historial')">
         <x-slot:filters>
             <x-search placeholder="Buscar cliente..."/>
-            <x-field.select name="producto_id" :options="$productos" placeholder="Todos los productos" class="w-44" :selected="request('producto_id')"/>
+            <x-field.select name="producto_id" :options="$productos" placeholder="Todos los productos" class="w-52" :selected="request('producto_id')"/>
             <x-field.input name="desde" type="date" :value="request('desde')" class="w-40"/>
             <x-field.input name="hasta" type="date" :value="request('hasta')" class="w-40"/>
         </x-slot:filters>

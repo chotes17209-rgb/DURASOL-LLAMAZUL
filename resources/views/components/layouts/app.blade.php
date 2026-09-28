@@ -27,16 +27,16 @@
         <button class="btn-icon lg:hidden" @click="menu = !menu" title="Menú"><x-heroicon-o-bars-3/></button>
         <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
             <img src="{{ asset('img/durasol.jpg') }}" alt="Mr. Durasol Perú S.A.C." class="h-9 w-auto">
-            <span class="h-6 w-px bg-line"></span>
-            <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="h-5 w-auto">
+            <span class="hidden h-6 w-px bg-line min-[420px]:block"></span>
+            <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="hidden h-5 w-auto min-[420px]:block">
         </a>
     </div>
-    <div class="flex min-w-0 flex-1 items-center justify-between gap-4 px-6">
+    <div class="flex min-w-0 flex-1 items-center justify-between gap-4 px-3 sm:px-6">
         <div class="hidden min-w-0 leading-tight md:block">
             <p class="truncate text-[14px] font-semibold text-slate-900">Sistema de gestión comercial</p>
             <p class="text-[12px] text-slate-500">Mr. Durasol Perú S.A.C. · Llamazul</p>
         </div>
-        <div class="ml-auto flex items-center gap-5">
+        <div class="ml-auto flex items-center gap-3 sm:gap-5">
             <div class="hidden text-right leading-tight sm:block">
                 <p class="text-[12px] text-slate-500">Fecha</p>
                 <p class="text-[13px] font-medium text-slate-800">{{ now()->format('d/m/Y') }}</p>
@@ -52,7 +52,7 @@
             <form method="POST" action="{{ route('logout') }}" id="logout-form">@csrf</form>
             <button type="button" class="btn btn-secondary btn-sm" title="Cerrar sesión"
                     onclick="confirmAction({title: '¿Cerrar sesión?', confirmText: 'Salir'}).then(ok => ok && document.getElementById('logout-form').submit())">
-                <x-heroicon-o-arrow-right-start-on-rectangle/> Salir
+                <x-heroicon-o-arrow-right-start-on-rectangle/> <span class="hidden sm:inline">Salir</span>
             </button>
         </div>
     </div>
@@ -91,7 +91,7 @@
             <div class="no-print flex flex-wrap items-center gap-2">{{ $actions }}</div>
         @endisset
     </div>
-    <main class="px-6 pt-4 pb-8">
+    <main class="px-3 pt-4 pb-8 sm:px-6">
         {{ $slot }}
     </main>
 </div>

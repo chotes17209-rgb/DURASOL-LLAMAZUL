@@ -21,7 +21,7 @@
                     <x-field.input name="desde" label="Desde" type="date" :value="$desde->format('Y-m-d')" class="w-40"/>
                     <x-field.input name="hasta" label="Hasta" type="date" :value="$hasta->format('Y-m-d')" class="w-40"/>
                     <x-field.select name="tipo" label="Tipo" :options="['ingreso' => 'Ingresos', 'egreso' => 'Egresos']" placeholder="Todos" class="w-36" :selected="request('tipo')"/>
-                    <x-field.select name="categoria" label="Categoría" :options="\App\Enums\CategoriaCaja::options()" placeholder="Todas" class="w-48" :selected="request('categoria')"/>
+                    <x-field.select name="categoria" label="Categoría" :options="\App\Enums\CategoriaCaja::options()" placeholder="Todas" class="w-52" :selected="request('categoria')"/>
                 </x-slot:filters>
                 @include('caja._table')
             </x-remote-table>
@@ -45,7 +45,7 @@
                 <div class="divide-y divide-slate-100">
                     @forelse ($porCerrar as $l)
                         <div class="flex items-center justify-between gap-3 px-5 py-3 text-sm">
-                            <div><p class="font-semibold">{{ $l->chofer->alias }} · {{ $l->codigo }}</p><p class="text-xs text-slate-500">Venta {{ fecha($l->fecha_venta) }} · efectivo a entregar {{ soles($l->efectivoAEntregar()) }}</p></div>
+                            <div class="min-w-0"><p class="font-semibold text-slate-900">{{ $l->chofer->alias }} · <span class="font-mono text-[12px]">{{ $l->codigo }}</span></p><p class="text-xs text-slate-500">Venta {{ fecha($l->fecha_venta) }} · <span class="whitespace-nowrap">a entregar {{ soles($l->efectivoAEntregar()) }}</span></p></div>
                             <button class="btn btn-success btn-sm" data-modal-url="{{ route('liquidaciones.cerrar', $l) }}" data-modal-size="md">Cerrar</button>
                         </div>
                     @empty

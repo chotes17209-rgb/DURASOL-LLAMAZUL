@@ -15,7 +15,7 @@
         @forelse ($items as $i)
             <tr>
                 <td>{{ fecha($i->liquidacion->fecha_venta) }}</td>
-                <td><button type="button" class="font-mono text-xs text-brand-600 hover:underline" data-modal-url="{{ route('liquidaciones.show', $i->liquidacion_id) }}" data-modal-size="xl">{{ $i->liquidacion->codigo }}</button></td>
+                <td class="whitespace-nowrap"><button type="button" class="font-mono text-xs text-brand-600 hover:underline" data-modal-url="{{ route('liquidaciones.show', $i->liquidacion_id) }}" data-modal-size="xl">{{ $i->liquidacion->codigo }}</button></td>
                 <td class="text-xs">{{ $i->empresa?->nombre }}</td>
                 <td>{{ $i->liquidacion->chofer?->alias }}</td>
                 <td><span class="font-mono text-xs text-slate-400">{{ $i->cliente?->codigo }}</span> {{ $i->cliente?->nombre }}</td>

@@ -12,7 +12,7 @@
         <x-slot:filters>
             <x-search placeholder="Buscar por código, nombre, conocido como o dirección..."/>
             <x-field.select name="chofer_id" :options="$choferes" placeholder="Todos los choferes" class="w-52" :selected="request('chofer_id')"/>
-            <x-field.select name="tipo" :options="\App\Models\Cliente::TIPOS" placeholder="Todos los tipos" class="w-44" :selected="request('tipo')"/>
+            <x-field.select name="tipo" :options="\App\Models\Cliente::TIPOS" placeholder="Todos los tipos" class="w-52" :selected="request('tipo')"/>
             <x-field.select name="activo" :options="['1' => 'Activos', '0' => 'Inactivos']" placeholder="Todos" class="w-36" :selected="request('activo')"/>
         </x-slot:filters>
         @include('ventas.clientes._table')

@@ -42,6 +42,13 @@ class DashboardController extends Controller
         $serie = $liqValidas()->whereBetween('fecha_venta', [$desde30->toDateString(), $fecha->toDateString()])
             ->selectRaw('fecha_venta, SUM(total_venta) as total')->groupBy('fecha_venta')->pluck('total', 'fecha_venta')
             ->mapWithKeys(fn ($v, $k) => [Carbon::parse($k)->toDateString() => (float) $v]);
+        // Quien no maneja dinero (logística) ve la serie en balones, no en soles.
+        $enSoles = $request->user()->hasRole('liquidaciones', 'caja');
+        if (! $enSoles) {
+            $serie = $itemsBase()->whereBetween('liquidaciones.fecha_venta', [$desde30->toDateString(), $fecha->toDateString()])
+                ->selectRaw('liquidaciones.fecha_venta as f, SUM(liquidacion_items.cantidad) as total')->groupBy('liquidaciones.fecha_venta')->pluck('total', 'f')
+                ->mapWithKeys(fn ($v, $k) => [Carbon::parse($k)->toDateString() => (float) $v]);
+        }
         $labels = [];
         $valores = [];
         for ($d = $desde30->copy(); $d->lte($fecha); $d->addDay()) {
@@ -61,7 +68,7 @@ class DashboardController extends Controller
 
         $graficoVentas = [
             'type' => 'bar',
-            'data' => ['labels' => $labels, 'datasets' => [['label' => 'Venta (S/)', 'data' => $valores, 'backgroundColor' => '#1a3a80', 'borderRadius' => 0, 'maxBarThickness' => 26]]],
+            'data' => ['labels' => $labels, 'datasets' => [['label' => $enSoles ? 'Venta (S/)' : 'Balones', 'data' => $valores, 'backgroundColor' => '#1a3a80', 'borderRadius' => 0, 'maxBarThickness' => 26]]],
             'options' => ['responsive' => true, 'maintainAspectRatio' => false, 'plugins' => ['legend' => ['display' => false]],
                 'scales' => ['x' => ['grid' => ['display' => false]], 'y' => ['grid' => ['color' => '#eef2f7'], 'beginAtZero' => true]]],
         ];
@@ -97,6 +104,7 @@ class DashboardController extends Controller
             'porProducto' => $porProducto,
             'topChoferes' => $topChoferes,
             'graficoVentas' => $graficoVentas,
+            'enSoles' => $enSoles,
             'utilidadMes' => $utilidadMes,
             'graficoProductos' => $graficoProductos,
             'alertasDocs' => collect($alertasDocs)->sortBy(fn ($a) => ['vencido' => 0, 'por_vencer' => 1, 'sin_registro' => 2][$a['estado']])->take(8),

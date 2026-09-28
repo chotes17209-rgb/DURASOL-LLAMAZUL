@@ -1,0 +1,1 @@
+@include('errors.plantilla', ['codigo' => '500', 'titulo' => 'Ocurrió un error interno', 'mensaje' => 'No se pudo completar la operación. Intente nuevamente; si el problema continúa, avise al administrador.'])

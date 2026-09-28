@@ -44,6 +44,13 @@ class Audit extends Model
             'login' => 'Inició sesión',
             'logout' => 'Cerró sesión',
             'login_failed' => 'Intento de acceso fallido',
+            'exportacion' => 'Exportó',
+            'ajuste' => 'Ajustó stock',
+            'cerrada' => 'Cerró',
+            'reabierta' => 'Reabrió',
+            'anulada' => 'Anuló',
+            'cerrado' => 'Cerró',
+            'reabierto' => 'Reabrió',
             default => ucfirst(str_replace('_', ' ', $this->event)),
         };
     }

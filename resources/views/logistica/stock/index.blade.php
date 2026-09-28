@@ -15,7 +15,7 @@
         $f = fn ($llave, $campo) => num($control[$llave][$campo]);
     @endphp
     <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-5">
-        <x-cifra label="Total S-10" :value="num($total['S10'])" :hint="'llenos '.$f('lleno_s10', 'final').' + cambios '.$f('cambio_s10', 'final')" total/>
+        <x-cifra label="Total S-10" :value="num($total['S10'])" :hint="'llenos '.$f('lleno_s10', 'final').' + cambios '.$f('cambio_s10', 'final')"/>
         <x-cifra label="Total S-45" :value="num($total['S45'])" :hint="'llenos '.$f('lleno_s45', 'final').' + cambios '.$f('cambio_s45', 'final')"/>
         <x-cifra label="Total M-10" :value="num($total['M10'])" :hint="'llenos '.$f('lleno_m10', 'final').' + cambios '.$f('cambio_m10', 'final')"/>
         <x-cifra label="Vacíos S-10" :value="num($vacios['S10'])" :hint="'plomos '.$f('plomo_s10', 'final').' + colores '.$f('color_s10', 'final')"/>

@@ -8,7 +8,7 @@
     @php($c = $hoy['control'])
     <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-6">
         @php($t = \App\Services\AlmacenService::totalesPorPresentacion($c))
-        <x-cifra label="Total S-10" :value="num($t['S10'])" :hint="'llenos '.num($c['lleno_s10']['final']).' + cambios '.num($c['cambio_s10']['final'])" total/>
+        <x-cifra label="Total S-10" :value="num($t['S10'])" :hint="'llenos '.num($c['lleno_s10']['final']).' + cambios '.num($c['cambio_s10']['final'])"/>
         <x-cifra label="Total S-45" :value="num($t['S45'])" :hint="'llenos '.num($c['lleno_s45']['final']).' + cambios '.num($c['cambio_s45']['final'])"/>
         <x-cifra label="Total M-10" :value="num($t['M10'])" :hint="'llenos '.num($c['lleno_m10']['final']).' + cambios '.num($c['cambio_m10']['final'])"/>
         @php($v = \App\Services\AlmacenService::totalesVacios($c))

@@ -12,8 +12,8 @@
     <x-remote-table :url="route('liquidaciones.index')">
         <x-slot:filters>
             <x-search placeholder="Código LIQ-..."/>
-            <x-field.select name="chofer_id" :options="$choferes" placeholder="Todos los choferes" class="w-48" :selected="request('chofer_id')"/>
-            <x-field.select name="estado" :options="\App\Enums\EstadoLiquidacion::options()" placeholder="Todos los estados" class="w-44" :selected="request('estado')"/>
+            <x-field.select name="chofer_id" :options="$choferes" placeholder="Todos los choferes" class="w-52" :selected="request('chofer_id')"/>
+            <x-field.select name="estado" :options="\App\Enums\EstadoLiquidacion::options()" placeholder="Todos los estados" class="w-52" :selected="request('estado')"/>
             <x-field.input name="desde" type="date" :value="request('desde')" class="w-40"/>
             <x-field.input name="hasta" type="date" :value="request('hasta')" class="w-40"/>
         </x-slot:filters>
