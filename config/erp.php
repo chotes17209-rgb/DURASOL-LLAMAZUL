@@ -23,6 +23,24 @@ return [
         'cobranza' => 'Cobranza',
         'caja_movimiento' => 'Movimiento de caja',
         'deposito' => 'Depósito',
+        'caja_chica_movimiento' => 'Movimiento de caja chica',
+        'arqueo' => 'Arqueo de efectivo',
+    ],
+
+    // Datos de la cabecera del reporte de caja chica.
+    'caja_chica' => [
+        'sucursal' => env('CAJA_CHICA_SUCURSAL', 'HUANCAYO'),
+        'responsable' => env('CAJA_CHICA_RESPONSABLE', 'ZADITH BARTOLO'),
+        'conceptos' => [
+            'Mantenimiento de vehículo', 'Combustible', 'Peajes', 'Canje de balones', 'Estibador externo',
+            'Viáticos', 'Útiles y oficina', 'Servicios', 'Otros',
+        ],
+    ],
+
+    // Denominaciones de la moneda peruana para el arqueo de efectivo.
+    'denominaciones' => [
+        'billetes' => [200, 100, 50, 20, 10],
+        'monedas' => [5, 2, 1, 0.5, 0.2, 0.1],
     ],
 
     // Día siguiente a la venta = día en que se liquida.

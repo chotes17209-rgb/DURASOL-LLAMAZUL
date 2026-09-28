@@ -3,6 +3,7 @@
         <a href="{{ route('cuentas-bancarias.index') }}" class="btn btn-secondary"><x-heroicon-o-building-library class="h-4 w-4"/> Cuentas</a>
         <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-modal-size="md"><x-heroicon-o-plus class="h-4 w-4"/> Nuevo depósito</button>
     </x-slot:actions>
+    @include('caja._tabs')
     <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-4">
         <x-cifra label="Mes" :value="ucfirst(today()->translatedFormat('F Y'))"/>
         <x-cifra label="Depositado este mes" :value="soles($totalMes)" total/>

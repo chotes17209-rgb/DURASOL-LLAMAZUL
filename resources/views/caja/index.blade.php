@@ -5,6 +5,8 @@
         <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-modal-size="md"><x-heroicon-o-building-library class="h-4 w-4"/> Depósito</button>
     </x-slot:actions>
 
+    @include('caja._tabs')
+
     <dl class="ledger !grid-cols-2 lg:!grid-cols-4">
         <x-cifra label="Saldo inicial" :value="soles($resumen['saldo_inicial'])" :hint="'al '.fecha($desde->copy()->subDay())"/>
         <x-cifra label="(+) Ingresos" :value="soles($resumen['ingresos'])" tone="green" hint="liquidaciones, cobranzas y otros"/>

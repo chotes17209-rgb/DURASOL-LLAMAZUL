@@ -57,6 +57,8 @@ class AppServiceProvider extends ServiceProvider
             'cobranza' => Models\Cobranza::class,
             'caja_movimiento' => Models\CajaMovimiento::class,
             'deposito' => Models\Deposito::class,
+            'caja_chica_movimiento' => Models\CajaChicaMovimiento::class,
+            'arqueo' => Models\Arqueo::class,
         ]);
 
         Event::listen(Login::class, function (Login $event) {

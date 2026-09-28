@@ -31,7 +31,9 @@ class Menu
                 ['label' => 'Precios de venta', 'route' => 'precios.venta.index', 'match' => 'precios.venta.*', 'icon' => 'tag', 'roles' => [Rol::Liquidaciones]],
             ]],
             ['titulo' => 'Caja', 'items' => [
-                ['label' => 'Caja general', 'route' => 'caja.index', 'match' => 'caja.index', 'icon' => 'banknotes', 'roles' => [Rol::Caja]],
+                ['label' => 'Caja general', 'route' => 'caja.index', 'match' => ['caja.index', 'caja.movimientos.*'], 'icon' => 'banknotes', 'roles' => [Rol::Caja]],
+                ['label' => 'Caja chica', 'route' => 'caja.chica.index', 'match' => 'caja.chica.*', 'icon' => 'wallet', 'roles' => [Rol::Caja]],
+                ['label' => 'Arqueo de efectivo', 'route' => 'caja.arqueos.index', 'match' => 'caja.arqueos.*', 'icon' => 'calculator', 'roles' => [Rol::Caja]],
                 ['label' => 'Depósitos', 'route' => 'caja.depositos.index', 'match' => 'caja.depositos.*', 'icon' => 'building-library', 'roles' => [Rol::Caja]],
             ]],
             ['titulo' => 'Reportes', 'items' => [

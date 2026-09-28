@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\EmpresaController;
 use App\Http\Controllers\Admin\ProductoController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Caja\ArqueoController;
+use App\Http\Controllers\Caja\CajaChicaController;
 use App\Http\Controllers\Caja\CajaController;
 use App\Http\Controllers\Caja\CuentaBancariaController;
 use App\Http\Controllers\Caja\DepositoController;
@@ -130,6 +132,11 @@ Route::middleware('auth')->group(function () {
         Route::resource('caja/movimientos', CajaController::class)->except(['index'])
             ->names('caja.movimientos')->parameters(['movimientos' => 'movimiento']);
         Route::resource('caja/depositos', DepositoController::class)->names('caja.depositos')->parameters(['depositos' => 'deposito']);
+        Route::resource('caja/chica', CajaChicaController::class)->names('caja.chica')->parameters(['chica' => 'movimiento']);
+        Route::get('caja/arqueos', [ArqueoController::class, 'index'])->name('caja.arqueos.index');
+        Route::post('caja/arqueos', [ArqueoController::class, 'store'])->name('caja.arqueos.store');
+        Route::get('caja/arqueos/{arqueo}', [ArqueoController::class, 'show'])->name('caja.arqueos.show');
+        Route::delete('caja/arqueos/{arqueo}', [ArqueoController::class, 'destroy'])->name('caja.arqueos.destroy');
         Route::resource('cuentas-bancarias', CuentaBancariaController::class)->parameters(['cuentas-bancarias' => 'cuenta']);
         Route::get('reportes/caja-diaria', [ReporteController::class, 'cajaDiaria'])->name('reportes.caja-diaria');
     });

@@ -82,7 +82,7 @@ class CajaController extends Controller
 
     private function form(CajaMovimiento $movimiento): View
     {
-        $categorias = collect([CategoriaCaja::Gasto, CategoriaCaja::CajaChica, CategoriaCaja::Planilla, CategoriaCaja::Otro])
+        $categorias = collect([CategoriaCaja::Gasto, CategoriaCaja::Planilla, CategoriaCaja::Otro])
             ->mapWithKeys(fn ($c) => [$c->value => $c->label()]);
 
         return view('caja.form', ['movimiento' => $movimiento, 'categorias' => $categorias, 'empresas' => Empresa::activas()->pluck('nombre', 'id')]);
