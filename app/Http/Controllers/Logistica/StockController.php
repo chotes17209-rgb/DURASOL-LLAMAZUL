@@ -25,15 +25,12 @@ class StockController extends Controller
                     [array_values(AlmacenService::totalesPorPresentacion($control))])
                 ->tabla('Total vacíos (plomos + colores)', ['S-10' => 'entero', 'S-45' => 'entero'],
                     [array_values(AlmacenService::totalesVacios($control))])
-                ->tabla('Stock disponible por empresa', ['Empresa' => 'texto', 'S-10' => 'entero', 'S-45' => 'entero', 'M-10' => 'entero'],
-                    collect($this->almacen->disponiblePorEmpresa($fecha))->map(fn ($s, $e) => [$e, $s['S10'], $s['S45'], $s['M10']])->values())
                 ->descargar($request->formato, 'stock-'.$fecha->toDateString());
         }
 
         return view('logistica.stock.index', [
             'fecha' => $fecha,
             'control' => $this->almacen->controlDelDia($fecha),
-            'porEmpresa' => $this->almacen->disponiblePorEmpresa($fecha),
         ]);
     }
 

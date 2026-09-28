@@ -78,16 +78,4 @@
         </div>
     </div>
 
-    <div class="card mt-4 max-w-2xl">
-        <div class="card-header"><p class="card-title">Stock disponible por empresa (compras en planta − ventas liquidadas)</p></div>
-        <table class="table table-compact table-grid">
-            <thead><tr><th>Empresa</th><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th></tr></thead>
-            <tbody>
-            @foreach ($porEmpresa as $empresa => $s)
-                <tr><td class="font-semibold">{{ $empresa }}</td>@foreach (['S10', 'S45', 'M10'] as $c)<td class="text-right {{ $s[$c] < 0 ? 'text-red-700' : '' }}">{{ num($s[$c]) }}</td>@endforeach</tr>
-            @endforeach
-            </tbody>
-        </table>
-        <p class="px-4 py-2 text-xs text-slate-500">Considera las compras registradas en los partes (filas de planta con empresa) y las ventas de liquidaciones registradas en el sistema.</p>
-    </div>
 </x-layouts.app>
