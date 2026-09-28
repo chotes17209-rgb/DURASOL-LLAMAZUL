@@ -22,7 +22,7 @@ class Menu
                 ['label' => 'Stock y kardex', 'route' => 'logistica.stock', 'match' => 'logistica.stock*', 'icon' => 'cube', 'roles' => [Rol::Logistica, Rol::Liquidaciones]],
             ]],
             ['titulo' => 'Ventas', 'items' => [
-                ['label' => 'Liquidaciones', 'route' => 'liquidaciones.index', 'match' => 'liquidaciones.*', 'icon' => 'clipboard-document-check', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
+                ['label' => 'Liquidaciones', 'route' => 'liquidaciones.index', 'match' => ['liquidaciones.*'], 'icon' => 'clipboard-document-check', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
                 ['label' => 'Clientes', 'route' => 'clientes.index', 'match' => 'clientes.*', 'icon' => 'users', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
                 ['label' => 'Créditos y cobranzas', 'route' => 'creditos.index', 'match' => 'creditos.*', 'icon' => 'credit-card', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
             ]],
@@ -40,7 +40,7 @@ class Menu
                 ['label' => 'Caja por día', 'route' => 'reportes.caja-diaria', 'match' => 'reportes.caja-diaria', 'icon' => 'calendar-days', 'roles' => [Rol::Caja]],
             ]],
             ['titulo' => 'Flota y personal', 'items' => [
-                ['label' => 'Vehículos', 'route' => 'vehiculos.index', 'match' => 'vehiculos.*', 'icon' => 'truck', 'roles' => [Rol::Logistica]],
+                ['label' => 'Vehículos', 'route' => 'vehiculos.index', 'match' => ['vehiculos.*', 'documentos.*', 'mantenimientos.*'], 'icon' => 'truck', 'roles' => [Rol::Logistica]],
                 ['label' => 'Choferes', 'route' => 'choferes.index', 'match' => 'choferes.*', 'icon' => 'identification', 'roles' => [Rol::Logistica]],
                 ['label' => 'Instalaciones Solgas', 'route' => 'instalaciones.index', 'match' => 'instalaciones.*', 'icon' => 'map-pin', 'roles' => [Rol::Logistica]],
             ]],

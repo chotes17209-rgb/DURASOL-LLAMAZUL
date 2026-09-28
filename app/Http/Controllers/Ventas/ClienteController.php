@@ -33,7 +33,14 @@ class ClienteController extends Controller
         $vigentes = $this->precios->preciosVentaVigentes($clientes->pluck('id')->all());
         $choferes = Chofer::vendedores()->pluck('alias', 'id');
 
-        return $this->tableOrPage($request, 'ventas.clientes.index', 'ventas.clientes._table', compact('clientes', 'productos', 'vigentes', 'choferes'));
+        $resumen = $this->resumen($request, fn () => [
+            'activos' => Cliente::where('activo', true)->count(),
+            'locales' => Cliente::where('activo', true)->where('tipo', 'local')->count(),
+            'conDeuda' => CuentaPorCobrar::pendientes()->distinct('cliente_id')->count('cliente_id'),
+            'deuda' => (float) CuentaPorCobrar::pendientes()->sum('saldo'),
+        ]);
+
+        return $this->tableOrPage($request, 'ventas.clientes.index', 'ventas.clientes._table', compact('clientes', 'productos', 'vigentes', 'choferes', 'resumen'));
     }
 
     /** JSON para selects con búsqueda (Tom Select). */

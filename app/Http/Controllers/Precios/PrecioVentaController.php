@@ -33,7 +33,20 @@ class PrecioVentaController extends Controller
         $vigentes = $this->precios->preciosVentaVigentes($clientes->pluck('id')->all());
         $choferes = Chofer::vendedores()->pluck('alias', 'id');
 
-        return $this->tableOrPage($request, 'precios.venta.index', 'precios.venta._table', compact('clientes', 'productos', 'vigentes', 'choferes'));
+        $resumen = $this->resumen($request, function () {
+            $s10 = Producto::where('codigo', 'S10')->value('id');
+            $todos = collect($this->precios->preciosVentaVigentes())->map(fn ($p) => $p[$s10] ?? null)->filter();
+
+            return [
+                'clientes' => Cliente::where('activo', true)->count(),
+                'minimo' => $todos->min(),
+                'maximo' => $todos->max(),
+                'promedio' => $todos->avg(),
+                'ultimo' => PrecioVenta::max('vigente_desde'),
+            ];
+        });
+
+        return $this->tableOrPage($request, 'precios.venta.index', 'precios.venta._table', compact('clientes', 'productos', 'vigentes', 'choferes', 'resumen'));
     }
 
     public function show(Cliente $cliente): View

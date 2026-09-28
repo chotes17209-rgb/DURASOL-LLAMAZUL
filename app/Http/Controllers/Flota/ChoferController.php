@@ -6,6 +6,7 @@ use App\Enums\TipoChofer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChoferRequest;
 use App\Models\Chofer;
+use App\Models\Cliente;
 use App\Models\Vehiculo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,14 @@ class ChoferController extends Controller
             ->when($request->filled('activo'), fn ($q) => $q->where('activo', $request->boolean('activo')))
             ->orderByDesc('activo')->orderBy('alias')->paginate(25)->withQueryString();
 
-        return $this->tableOrPage($request, 'flota.choferes.index', 'flota.choferes._table', compact('choferes'));
+        $resumen = $this->resumen($request, fn () => [
+            'activos' => Chofer::where('activo', true)->count(),
+            'locales' => Chofer::where('activo', true)->where('tipo', TipoChofer::Local)->count(),
+            'ruta' => Chofer::where('activo', true)->where('tipo', TipoChofer::Ruta)->count(),
+            'clientes' => Cliente::where('activo', true)->whereNotNull('chofer_id')->count(),
+        ]);
+
+        return $this->tableOrPage($request, 'flota.choferes.index', 'flota.choferes._table', compact('choferes', 'resumen'));
     }
 
     public function create(): View

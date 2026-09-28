@@ -305,6 +305,17 @@ document.addEventListener('change', (e) => {
     if (!filters || e.target.matches('input[type=text], input[type=search]')) return;
     loadTable(filters.closest('[data-remote-table]'));
 });
+document.addEventListener('click', (e) => {
+    const boton = e.target.closest('[data-limpiar-filtros]');
+    if (!boton) return;
+    const filters = boton.closest('[data-table-filters]');
+    filters.querySelectorAll('input, select').forEach((el) => {
+        if (el.type === 'hidden' || el.type === 'checkbox') return;
+        if (el.tomselect) el.tomselect.clear(true);
+        else el.value = '';
+    });
+    loadTable(filters.closest('[data-remote-table]'));
+});
 document.addEventListener('submit', (e) => {
     const filters = e.target.closest('[data-table-filters]');
     if (!filters) return;

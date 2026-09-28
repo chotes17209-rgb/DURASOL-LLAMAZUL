@@ -15,7 +15,7 @@
     $menu = \App\Support\Menu::para(auth()->user());
     $usuario = auth()->user();
     $iniciales = collect(explode(' ', $usuario->name))->filter()->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->join('');
-    $seccionActual = collect($menu)->first(fn ($s) => collect($s['items'])->contains(fn ($i) => request()->routeIs($i['match'])))['titulo'] ?? 'General';
+    $seccionActual = collect($menu)->first(fn ($s) => collect($s['items'])->contains(fn ($i) => request()->routeIs(...(array) $i['match'])))['titulo'] ?? 'General';
 @endphp
 
 {{-- Barra corporativa: marcas, módulo actual y usuario --}}
@@ -62,7 +62,7 @@
         @foreach ($menu as $seccion)
             <p class="nav-section">{{ $seccion['titulo'] }}</p>
             @foreach ($seccion['items'] as $item)
-                <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}">
+                <a href="{{ route($item['route']) }}" class="nav-link {{ request()->routeIs(...(array) $item['match']) ? 'active' : '' }}">
                     <x-dynamic-component :component="'heroicon-o-'.$item['icon']"/>
                     <span>{{ $item['label'] }}</span>
                 </a>

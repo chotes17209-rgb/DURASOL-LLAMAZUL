@@ -16,6 +16,12 @@ abstract class Controller
     }
 
     /** Devuelve solo la tabla si la petición es AJAX (filtros/paginación), o la página completa. */
+    /** Datos de resumen de la página completa (no se recalculan al filtrar por AJAX). */
+    protected function resumen(Request $request, callable $calcular): ?array
+    {
+        return $request->ajax() ? null : $calcular();
+    }
+
     protected function tableOrPage(Request $request, string $page, string $table, array $data)
     {
         return $request->ajax() ? view($table, $data) : view($page, $data);

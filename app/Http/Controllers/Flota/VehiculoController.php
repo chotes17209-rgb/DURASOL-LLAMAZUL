@@ -20,7 +20,21 @@ class VehiculoController extends Controller
             ->when($request->estado, fn ($q, $e) => $q->where('estado', $e))
             ->orderBy('placa')->paginate(25)->withQueryString();
 
-        return $this->tableOrPage($request, 'flota.vehiculos.index', 'flota.vehiculos._table', compact('vehiculos'));
+        $resumen = $this->resumen($request, function () {
+            $todos = Vehiculo::with('documentos')->get();
+            $estados = $todos->flatMap(fn (Vehiculo $v) => collect($v->estadoDocumentos())->pluck('estado'));
+
+            return [
+                'total' => $todos->count(),
+                'operativos' => $todos->where('estado', 'operativo')->count(),
+                'vencidos' => $estados->filter(fn ($e) => $e === 'vencido')->count(),
+                'porVencer' => $estados->filter(fn ($e) => $e === 'por_vencer')->count(),
+                'sinRegistro' => $estados->filter(fn ($e) => $e === 'sin_registro')->count(),
+                'vigentes' => $estados->filter(fn ($e) => in_array($e, ['vigente', 'sin_fecha'], true))->count(),
+            ];
+        });
+
+        return $this->tableOrPage($request, 'flota.vehiculos.index', 'flota.vehiculos._table', compact('vehiculos', 'resumen'));
     }
 
     public function create(): View
