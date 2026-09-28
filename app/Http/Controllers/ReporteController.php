@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\CategoriaCaja;
 use App\Enums\EstadoLiquidacion;
 use App\Enums\TipoChofer;
+use App\Models\CajaChicaMovimiento;
 use App\Models\CajaMovimiento;
 use App\Models\Chofer;
 use App\Models\Deposito;
@@ -13,6 +14,7 @@ use App\Models\Liquidacion;
 use App\Models\LiquidacionFise;
 use App\Models\LiquidacionItem;
 use App\Models\Producto;
+use App\Support\HojaLiquidacionDiaria;
 use App\Support\Reporte;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -32,26 +34,7 @@ class ReporteController extends Controller
         $d = $this->datosLiquidacionDiaria($fecha);
 
         if ($formato = $this->formato($request)) {
-            $cols = ['Placa' => 'texto', 'Responsable' => 'texto'];
-            foreach ($d['productos'] as $p) {
-                $cols[$p->codigo] = 'entero';
-            }
-            $cols += ['Venta total' => 'decimal', 'Cobranza' => 'decimal', 'Crédito' => 'decimal', 'Varios' => 'decimal', 'FISE' => 'decimal', 'Vouchers' => 'decimal', 'Depósitos' => 'decimal', 'Por depositar' => 'decimal'];
-            $claves = ['venta', 'cobranza', 'credito', 'varios', 'fise', 'vouchers', 'depositos', 'por_depositar'];
-            $fila = fn (array $f) => array_merge([$f['placa'], $f['responsable']], array_values($f['cantidades']), array_map(fn ($k) => $f[$k], $claves));
-            $total = fn (array $t) => array_merge(['TOTALES', ''], array_values($t['cantidades']), array_map(fn ($k) => $t[$k], $claves));
-
-            $reporte = (new Reporte('Hoja de liquidación diaria', ucfirst($fecha->translatedFormat('l d \d\e F \d\e Y')), true));
-            foreach ($d['grupos'] as $grupo) {
-                $reporte->tabla($grupo['titulo'], $cols, array_map($fila, $grupo['filas']), $total($grupo['total']));
-            }
-            $reporte->tabla('Por depositar por responsable', ['Responsable' => 'texto', 'Importe' => 'decimal'], collect($d['porDepositar'])->map(fn ($v, $k) => [$k, $v])->values(), ['TOTAL', array_sum($d['porDepositar'])])
-                ->tabla('Depósitos (−)', ['Responsable' => 'texto', 'Cuenta / destino' => 'texto', 'Detalle' => 'texto', 'Importe' => 'decimal'],
-                    $d['depositos']->map(fn ($x) => [$x['responsable'], $x['destino'], $x['detalle'], $x['monto']]), ['TOTAL', '', '', $d['depositos']->sum('monto')])
-                ->tabla('Detalle de ventas por precio', ['Producto' => 'texto', 'Cantidad' => 'entero', 'P.U.' => 'decimal', 'Total' => 'decimal'],
-                    $d['detallePrecios']->map(fn ($x) => [$x->producto?->codigo, $x->cantidad, $x->precio, $x->total]), ['TOTAL', $d['detallePrecios']->sum('cantidad'), '', $d['detallePrecios']->sum('total')]);
-
-            return $reporte->descargar($formato, 'liquidacion-diaria-'.$fecha->toDateString());
+            return (new HojaLiquidacionDiaria($fecha, $d))->descargar($formato);
         }
 
         return view('reportes.liquidacion-diaria', ['fecha' => $fecha] + $d);
@@ -64,7 +47,11 @@ class ReporteController extends Controller
         $base = fn () => Liquidacion::with(['chofer', 'vehiculo', 'items', 'depositos'])->where('estado', '!=', EstadoLiquidacion::Anulada)->orderBy('id');
 
         $locales = $base()->where('fecha_venta', $fecha->toDateString())->where('tipo', '!=', TipoChofer::Ruta->value)->get();
-        $ruta = $base()->where('fecha_liquidacion', $fecha->toDateString())->where('tipo', TipoChofer::Ruta->value)->get();
+        // Ruta: las que se liquidan este día y las que siguen pendientes (salieron y aún no vuelven).
+        $ruta = $base()->where('tipo', TipoChofer::Ruta->value)
+            ->where(fn ($q) => $q->where('fecha_liquidacion', $fecha->toDateString())
+                ->orWhere(fn ($p) => $p->where('estado', EstadoLiquidacion::Borrador)->where('fecha_venta', '<=', $fecha->toDateString())))
+            ->get();
 
         // Depósitos bancarios del día por responsable (se descuentan una sola vez por chofer).
         $depositos = Deposito::with(['cuentaBancaria', 'chofer', 'empresa'])->where('fecha', $fecha->toDateString())->orderBy('id')->get();
@@ -103,7 +90,7 @@ class ReporteController extends Controller
 
         $grupos = [
             ['titulo' => 'Detalle de ventas liquidadas (reparto local y almacén)'] + $armar($locales),
-            ['titulo' => 'Liquidaciones de ruta liquidadas este día'] + $armar($ruta),
+            ['titulo' => 'Detalle de ventas de liquidaciones de ruta (liquidadas y pendientes)'] + $armar($ruta),
         ];
 
         $porDepositar = [];
@@ -116,17 +103,43 @@ class ReporteController extends Controller
         $ids = $locales->pluck('id')->merge($ruta->pluck('id'));
 
         // Depósitos anotados en las hojas de liquidación y depósitos registrados en caja, en una sola lista.
-        $listaDepositos = $locales->merge($ruta)->flatMap(fn (Liquidacion $l) => $l->depositos->map(fn ($x) => [
-            'responsable' => $l->chofer?->alias, 'destino' => $x->destino, 'detalle' => trim($l->codigo.' '.($x->numero_operacion ? 'Op. '.$x->numero_operacion : '')), 'monto' => (float) $x->monto,
-        ]))->merge($depositos->map(fn (Deposito $x) => [
-            'responsable' => $x->chofer?->alias, 'destino' => $x->cuentaBancaria?->nombreMostrar() ?? 'Depósito', 'detalle' => $x->depositante ?? $x->empresa?->nombre, 'monto' => (float) $x->monto,
+        $listaDepositos = $locales->merge($ruta)->flatMap(function (Liquidacion $l) {
+            return $l->depositos->map(function ($x) use ($l) {
+                [$banco, $empresa] = array_pad(array_map('trim', explode(' - ', (string) $x->destino, 2)), 2, null);
+
+                return [
+                    'responsable' => $l->chofer?->alias, 'fecha' => $l->fecha_liquidacion, 'banco' => $banco, 'empresa' => $empresa,
+                    'quien' => $l->chofer?->alias, 'operacion' => $x->numero_operacion, 'destino' => $x->destino,
+                    'detalle' => trim($l->codigo.' '.($x->numero_operacion ? 'Op. '.$x->numero_operacion : '')), 'monto' => (float) $x->monto,
+                ];
+            });
+        })->merge($depositos->map(fn (Deposito $x) => [
+            'responsable' => $x->chofer?->alias, 'fecha' => $x->fecha, 'banco' => $x->cuentaBancaria?->banco, 'empresa' => $x->empresa?->nombre ?? $x->cuentaBancaria?->alias,
+            'quien' => $x->depositante, 'operacion' => $x->numero_operacion, 'destino' => $x->cuentaBancaria?->nombreMostrar() ?? 'Depósito',
+            'detalle' => $x->depositante ?? $x->empresa?->nombre, 'monto' => (float) $x->monto,
         ]))->values();
         $detallePrecios = LiquidacionItem::with('producto')->whereIn('liquidacion_id', $ids)
             ->selectRaw('producto_id, precio, SUM(cantidad) as cantidad, SUM(total) as total')
             ->groupBy('producto_id', 'precio')->orderBy('producto_id')->orderByDesc('precio')->get();
 
+        // Detalle de ventas por precio, agrupado por presentación (columna derecha de la hoja).
+        $porProducto = $detallePrecios->groupBy(fn ($x) => $x->producto?->codigo)->map(fn ($g) => [
+            'filas' => $g, 'cantidad' => (int) $g->sum('cantidad'), 'total' => round((float) $g->sum('total'), 2),
+        ]);
+
+        $totalPorDepositar = round(array_sum($porDepositar), 2);
+        $asignacionCajaChica = round((float) CajaChicaMovimiento::where('tipo', CajaChicaMovimiento::REPOSICION)->where('fecha', $fecha->toDateString())->sum('monto'), 2);
+        $planilla = round((float) CajaMovimiento::where('tipo', CajaMovimiento::EGRESO)->where('categoria', CategoriaCaja::Planilla)->where('fecha', $fecha->toDateString())->sum('monto'), 2);
+
         return [
             'productos' => $productos,
+            'porProductoPrecio' => $porProducto,
+            'resumenDeposito' => [
+                'por_depositar' => $totalPorDepositar,
+                'caja_chica' => $asignacionCajaChica,
+                'planilla' => $planilla,
+                'total' => round($totalPorDepositar - $asignacionCajaChica - $planilla, 2),
+            ],
             'grupos' => $grupos,
             'porDepositar' => $porDepositar,
             'depositos' => $listaDepositos,

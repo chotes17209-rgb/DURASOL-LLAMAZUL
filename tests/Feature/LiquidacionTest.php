@@ -8,6 +8,7 @@ use App\Models\Audit;
 use App\Models\CajaMovimiento;
 use App\Models\CuentaPorCobrar;
 use App\Models\Liquidacion;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class LiquidacionTest extends TestCase
@@ -102,7 +103,19 @@ class LiquidacionTest extends TestCase
         $this->assertSame(249.5, (float) CajaMovimiento::where('tipo', 'ingreso')->sum('monto'));
 
         $this->como('liquidaciones')->get(route('liquidaciones.show', $liquidacion))->assertOk()->assertSee('BCP - DURASOL');
-        $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24']))->assertOk()->assertSee('YAPE');
+        $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24']))->assertOk()->assertSee('YAPE')
+            ->assertSee('HOJA DE LIQUIDACIÓN DIARIA')->assertSee('TOTAL A DEPOSITAR');
+
+        // Excel y PDF de la hoja diaria en una sola hoja.
+        $xlsx = $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24', 'formato' => 'xlsx']))->assertOk()->streamedContent();
+        $archivo = tempnam(sys_get_temp_dir(), 'hoja');
+        file_put_contents($archivo, $xlsx);
+        $libro = IOFactory::load($archivo);
+        unlink($archivo);
+        $this->assertSame(1, $libro->getSheetCount());
+        $this->assertSame('HOJA DE LIQUIDACIÓN DIARIA', $libro->getSheet(0)->getCell('A2')->getValue());
+        $pdf = $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24', 'formato' => 'pdf']))->assertOk();
+        $this->assertStringStartsWith('%PDF', $pdf->getContent());
     }
 
     public function test_precio_vigente_fechas_y_borrador(): void

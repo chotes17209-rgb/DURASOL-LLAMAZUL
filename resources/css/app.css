@@ -181,6 +181,22 @@
     .doc-tag { @apply rounded bg-white px-2 py-0.5 text-[11.5px] font-medium text-slate-700 ring-1 ring-slate-300; }
 
     /* Indicadores en fila: tarjetas separadas */
+    /* Hoja tipo Excel (hoja de liquidación diaria) */
+    .hoja { @apply rounded-xl border border-[#bcc3ca] bg-white p-4; box-shadow: 0 0 .125rem rgb(34 53 72 / .12), 0 .125rem .5rem rgb(34 53 72 / .08); }
+    .hoja-titulo { @apply border-2 border-[#1d2d3e] py-1.5 text-center text-[15px] font-bold tracking-wide text-[#1d2d3e]; }
+    .hoja-seccion { @apply mt-5 mb-1.5 text-[12px] font-bold uppercase tracking-wide text-[#1d2d3e]; }
+    .hoja table { @apply w-full border-collapse text-[12px] tabular-nums; }
+    .hoja th { @apply border border-[#8a96a3] bg-[#d6e4f5] px-1.5 py-1 text-center text-[11px] font-semibold text-[#1d2d3e] whitespace-nowrap; }
+    .hoja td { @apply border border-[#c3cad2] px-1.5 py-[3px] whitespace-nowrap; }
+    .hoja td.n { @apply text-right; }
+    .hoja td.rojo { @apply font-semibold text-[#c00000]; }
+    .hoja tr.total td { @apply bg-[#d6e4f5] font-bold; }
+    .hoja tr.sub td { @apply bg-[#eef3fa] font-semibold; }
+    .hoja tbody tr:not(.total):not(.sub):hover td { @apply bg-[#fff8d6]; }
+    .hoja-fecha { @apply inline-flex border border-[#8a96a3] text-[13px] font-bold; }
+    .hoja-fecha > span:first-child { @apply bg-[#d6e4f5] px-2.5 py-1; }
+    .hoja-fecha > span:last-child { @apply bg-[#ffff00] px-3 py-1 text-[#1d2d3e]; }
+
     .ledger { @apply grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7; }
     .ledger > .ledger-cell { @apply rounded-xl border border-[#e5e8ec] bg-white; box-shadow: 0 0 .125rem rgb(34 53 72 / .12), 0 .125rem .5rem rgb(34 53 72 / .08); }
     .ledger-cell { @apply border-r border-b border-slate-100 px-4 py-3 xl:border-b-0; }
