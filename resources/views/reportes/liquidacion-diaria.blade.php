@@ -1,9 +1,3 @@
-@php
-    $importes = \App\Support\HojaLiquidacionDiaria::IMPORTES;
-    $gruposProducto = \App\Support\HojaLiquidacionDiaria::grupos($productos);
-    $codigos = array_merge(...array_values($gruposProducto));
-    $n = fn ($v, $d = 2) => (float) $v == 0 ? '-' : num($v, $d);
-@endphp
 <x-layouts.app title="Hoja de liquidación diaria" breadcrumb="Reportes">
     <x-slot:actions>
         <x-export :url="route('reportes.liquidacion-diaria', ['fecha' => $fecha->toDateString()])"/>
@@ -18,117 +12,109 @@
         </form>
     </x-slot:filters>
 
-    <div class="hoja">
-        <div class="grid items-center gap-3 md:grid-cols-[1fr_2fr_1fr]">
-            <div class="flex items-center gap-2">
-                <img src="{{ asset('img/durasol.jpg') }}" alt="Durasol" class="h-8">
-                <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="h-5">
-            </div>
-            <p class="hoja-titulo">HOJA DE LIQUIDACIÓN DIARIA</p>
-            <div class="md:text-right"><span class="hoja-fecha"><span>FECHA</span><span>{{ $fecha->format('d/m/Y') }}</span></span></div>
-        </div>
+    <p class="help mb-3">
+        <b>{{ ucfirst($fecha->translatedFormat('l d \\d\\e F \\d\\e Y')) }}</b> · Por depositar = venta + cobranza − crédito − varios − FISE − vouchers − depósitos.
+        Reparto local por fecha de venta; ruta por fecha de liquidación.
+    </p>
 
-        <div class="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_19rem]">
-            <div class="min-w-0">
-                @foreach ($grupos as $i => $g)
-                    @php($esRuta = $i === 1)
-                    <p class="hoja-seccion">{{ $g['titulo'] }}</p>
-                    <div class="overflow-x-auto">
-                        <table>
-                            <thead>
-                            <tr>
-                                <th rowspan="2">{{ $esRuta ? 'FECHA SALIDA' : 'PLACA' }}</th><th rowspan="2">RESPONSABLE</th>
-                                @foreach ($gruposProducto as $nombre => $lista)<th colspan="{{ count($lista) }}">{{ $nombre }}</th>@endforeach
-                                @foreach ($importes as $k => $t)<th rowspan="2">{{ mb_strtoupper($esRuta && $k === 'por_depositar' ? 'Saldo' : $t) }}</th>@endforeach
-                                <th rowspan="2">ESTADO</th>
-                            </tr>
-                            <tr>@foreach ($codigos as $c)<th>{{ $c }}</th>@endforeach</tr>
-                            </thead>
-                            <tbody>
-                            @forelse ($g['filas'] as $f)
-                                <tr class="cursor-pointer" data-modal-url="{{ route('liquidaciones.show', $f['liquidacion']) }}" data-modal-size="xl" title="Ver liquidación {{ $f['liquidacion']->codigo }}">
-                                    <td class="font-mono text-[11px]">{{ $esRuta ? fecha($f['fecha_venta']) : $f['placa'] }}</td>
-                                    <td class="font-semibold">{{ $f['responsable'] }}</td>
-                                    @foreach ($codigos as $c)<td class="n">{{ $n($f['cantidades'][$c] ?? 0, 0) }}</td>@endforeach
-                                    @foreach ($importes as $k => $t)<td class="n {{ in_array($k, ['venta', 'por_depositar']) ? 'rojo' : '' }}">{{ $n($f[$k]) }}</td>@endforeach
-                                    <td><x-status :value="$f['liquidacion']->estado"/></td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="{{ 3 + count($codigos) + count($importes) }}" class="py-4 text-center text-slate-400">Sin liquidaciones para esta fecha.</td></tr>
-                            @endforelse
-                            <tr class="total">
-                                <td colspan="2">TOTALES</td>
-                                @foreach ($codigos as $c)<td class="n">{{ $n($g['total']['cantidades'][$c] ?? 0, 0) }}</td>@endforeach
-                                @foreach ($importes as $k => $t)<td class="n {{ in_array($k, ['venta', 'por_depositar']) ? 'rojo' : '' }}">{{ $n($g['total'][$k]) }}</td>@endforeach
-                                <td></td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                @endforeach
-
-                <div class="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
-                    <div>
-                        <p class="hoja-seccion">Por depositar</p>
-                        <table>
-                            <tbody>
-                            @forelse ($porDepositar as $responsable => $monto)
-                                <tr><td>{{ $responsable }}</td><td class="n">{{ $n($monto) }}</td></tr>
-                            @empty
-                                <tr><td colspan="2" class="text-center text-slate-400">—</td></tr>
-                            @endforelse
-                            <tr class="total"><td>TOTAL POR DEPOSITAR</td><td class="n">{{ $n($resumenDeposito['por_depositar']) }}</td></tr>
-                            <tr><td>(−) Asignación de caja chica</td><td class="n">{{ $n($resumenDeposito['caja_chica']) }}</td></tr>
-                            <tr><td>(−) Planilla</td><td class="n">{{ $n($resumenDeposito['planilla']) }}</td></tr>
-                            <tr class="total"><td class="text-[13px]">TOTAL A DEPOSITAR</td><td class="n rojo text-[13px]">{{ $n($resumenDeposito['total']) }}</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="hoja-seccion">Depósitos realizados</p>
-                        <div class="overflow-x-auto">
-                            <table>
-                                <thead><tr><th>N°</th><th>RESPONSABLE</th><th>FECHA</th><th>BANCO</th><th>EMPRESA</th><th>QUIÉN / OPERACIÓN</th><th>IMPORTE</th></tr></thead>
-                                <tbody>
-                                @forelse ($depositos as $i => $x)
-                                    <tr>
-                                        <td class="n">{{ $i + 1 }}</td><td class="font-semibold">{{ $x['responsable'] ?? '—' }}</td><td>{{ $x['fecha'] ? fecha($x['fecha']) : '' }}</td>
-                                        <td>{{ $x['banco'] }}</td><td>{{ $x['empresa'] }}</td><td class="text-slate-600">{{ $x['quien'] ?: $x['operacion'] }}</td><td class="n">{{ $n($x['monto']) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="7" class="py-4 text-center text-slate-400">Sin depósitos este día.</td></tr>
-                                @endforelse
-                                <tr class="total"><td colspan="6">TOTAL DEPÓSITOS</td><td class="n">{{ $n($depositos->sum('monto')) }}</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="mt-2 text-[12px] text-slate-500">Otros egresos de caja del día: <b class="text-slate-800">{{ soles($gastosCaja) }}</b></p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="min-w-0">
-                <p class="hoja-seccion">Detalle ventas</p>
-                <table>
-                    <thead><tr><th>PRODUCTO</th><th>CANT.</th><th>P.U.</th><th>TOTAL</th></tr></thead>
+    @foreach ($grupos as $g)
+        <div class="card mb-4">
+            <div class="card-header"><p class="card-title">{{ $g['titulo'] }}</p><span class="text-xs text-slate-500">{{ count($g['filas']) }} liquidación(es)</span></div>
+            <div class="table-wrap">
+                <table class="table table-compact table-grid">
+                    <thead>
+                    <tr>
+                        <th>Placa</th><th>Responsable</th>
+                        @foreach ($productos as $p)<th class="text-right">{{ $p->codigo }}</th>@endforeach
+                        <th class="text-right">Venta total</th><th class="text-right">Cobranza</th><th class="text-right">Crédito</th><th class="text-right">Varios</th>
+                        <th class="text-right">FISE</th><th class="text-right">Vouchers</th><th class="text-right">Depósitos</th><th class="text-right">Por depositar</th><th>Estado</th>
+                    </tr>
+                    </thead>
                     <tbody>
-                    @forelse ($porProductoPrecio as $codigo => $p)
-                        @foreach ($p['filas'] as $x)
-                            <tr><td class="font-semibold">{{ $loop->first ? $codigo : '' }}</td><td class="n">{{ $n($x->cantidad, 0) }}</td><td class="n">{{ $n($x->precio) }}</td><td class="n">{{ $n($x->total) }}</td></tr>
-                        @endforeach
-                        <tr class="sub"><td>TOTAL {{ $codigo }}</td><td class="n">{{ $n($p['cantidad'], 0) }}</td><td></td><td class="n">{{ $n($p['total']) }}</td></tr>
+                    @forelse ($g['filas'] as $f)
+                        <tr class="cursor-pointer" data-modal-url="{{ route('liquidaciones.show', $f['liquidacion']) }}" data-modal-size="xl" title="Ver liquidación">
+                            <td class="font-mono text-xs">{{ $f['placa'] }}</td>
+                            <td class="font-semibold">{{ $f['responsable'] }}@if ($f['liquidacion']->tipo === \App\Enums\TipoChofer::Ruta)<span class="ml-1 text-xs font-normal text-slate-500">(venta {{ fecha($f['fecha_venta']) }})</span>@endif</td>
+                            @foreach ($f['cantidades'] as $c)<td class="text-right">{{ $c ?: '' }}</td>@endforeach
+                            <td class="text-right font-semibold">{{ num($f['venta'], 2) }}</td>
+                            <td class="text-right">{{ num($f['cobranza'], 2) }}</td>
+                            <td class="text-right">{{ num($f['credito'], 2) }}</td>
+                            <td class="text-right">{{ num($f['varios'], 2) }}</td>
+                            <td class="text-right">{{ num($f['fise'], 2) }}</td>
+                            <td class="text-right">{{ num($f['vouchers'], 2) }}</td>
+                            <td class="text-right">{{ num($f['depositos'], 2) }}</td>
+                            <td class="text-right font-semibold">{{ num($f['por_depositar'], 2) }}</td>
+                            <td><x-status :value="$f['liquidacion']->estado"/></td>
+                        </tr>
                     @empty
-                        <tr><td colspan="4" class="py-4 text-center text-slate-400">Sin ventas.</td></tr>
+                        <tr><td colspan="{{ 11 + $productos->count() }}" class="py-5 text-center text-slate-400">Sin liquidaciones para esta fecha.</td></tr>
                     @endforelse
-                    <tr class="total"><td>TOTAL</td><td class="n">{{ $n($detallePrecios->sum('cantidad'), 0) }}</td><td></td><td class="n rojo">{{ $n($detallePrecios->sum('total')) }}</td></tr>
                     </tbody>
+                    @if ($g['filas'])
+                        @php($t = $g['total'])
+                        <tfoot>
+                        <tr>
+                            <td colspan="2">TOTALES</td>
+                            @foreach ($t['cantidades'] as $c)<td class="text-right">{{ $c ?: '' }}</td>@endforeach
+                            <td class="text-right">{{ num($t['venta'], 2) }}</td><td class="text-right">{{ num($t['cobranza'], 2) }}</td><td class="text-right">{{ num($t['credito'], 2) }}</td>
+                            <td class="text-right">{{ num($t['varios'], 2) }}</td><td class="text-right">{{ num($t['fise'], 2) }}</td><td class="text-right">{{ num($t['vouchers'], 2) }}</td><td class="text-right">{{ num($t['depositos'], 2) }}</td>
+                            <td class="text-right">{{ num($t['por_depositar'], 2) }}</td><td></td>
+                        </tr>
+                        </tfoot>
+                    @endif
                 </table>
             </div>
         </div>
+    @endforeach
 
-        <p class="mt-4 border-t border-[#e5e8ec] pt-2 text-[11.5px] text-slate-500">
-            Por depositar = venta + cobranza − crédito − varios − FISE − vouchers − depósitos. Reparto local por fecha de venta; ruta por fecha de liquidación (las pendientes muestran su saldo).
-            El PDF y el Excel se descargan con esta misma hoja.
-        </p>
+    <div class="grid gap-4 xl:grid-cols-3">
+        <div class="card">
+            <div class="card-header"><p class="card-title">Por depositar</p></div>
+            <table class="table table-compact">
+                <tbody>
+                @forelse ($porDepositar as $responsable => $monto)
+                    <tr><td>{{ $responsable }}</td><td class="text-right">{{ num($monto, 2) }}</td></tr>
+                @empty
+                    <tr><td class="py-5 text-center text-slate-400">—</td></tr>
+                @endforelse
+                </tbody>
+                <tfoot><tr><td>TOTAL</td><td class="text-right">{{ num(array_sum($porDepositar), 2) }}</td></tr></tfoot>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><p class="card-title">Depósitos (−)</p></div>
+            <table class="table table-compact">
+                <thead><tr><th>Responsable</th><th>Cuenta / destino</th><th>Detalle</th><th class="text-right">Importe</th></tr></thead>
+                <tbody>
+                @forelse ($depositos as $d)
+                    <tr><td>{{ $d['responsable'] }}</td><td class="font-medium">{{ $d['destino'] }}</td><td class="text-xs text-slate-500">{{ $d['detalle'] }}</td><td class="text-right">{{ num($d['monto'], 2) }}</td></tr>
+                @empty
+                    <tr><td colspan="4" class="py-5 text-center text-slate-400">Sin depósitos este día.</td></tr>
+                @endforelse
+                </tbody>
+                <tfoot><tr><td colspan="3">TOTAL</td><td class="text-right">{{ num($depositos->sum('monto'), 2) }}</td></tr></tfoot>
+            </table>
+            <p class="border-t border-line px-3 py-2 text-xs text-slate-500">Otros egresos de caja del día: <b class="text-slate-800">{{ soles($gastosCaja) }}</b></p>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><p class="card-title">Detalle de ventas por precio</p></div>
+            <div class="max-h-[28rem] overflow-y-auto">
+                <table class="table table-compact">
+                    <thead class="sticky top-0"><tr><th>Producto</th><th class="text-right">Cant.</th><th class="text-right">P.U.</th><th class="text-right">Total</th></tr></thead>
+                    <tbody>
+                    @forelse ($detallePrecios as $d)
+                        <tr><td>{{ $d->producto?->codigo }}</td><td class="text-right">{{ num($d->cantidad) }}</td><td class="text-right">{{ num($d->precio, 2) }}</td><td class="text-right">{{ num($d->total, 2) }}</td></tr>
+                    @empty
+                        <tr><td colspan="4" class="py-5 text-center text-slate-400">Sin ventas.</td></tr>
+                    @endforelse
+                    </tbody>
+                    @if ($detallePrecios->isNotEmpty())
+                        <tfoot><tr><td>TOTAL</td><td class="text-right">{{ num($detallePrecios->sum('cantidad')) }}</td><td></td><td class="text-right">{{ num($detallePrecios->sum('total'), 2) }}</td></tr></tfoot>
+                    @endif
+                </table>
+            </div>
+        </div>
     </div>
 </x-layouts.app>

@@ -103,19 +103,24 @@ class LiquidacionTest extends TestCase
         $this->assertSame(249.5, (float) CajaMovimiento::where('tipo', 'ingreso')->sum('monto'));
 
         $this->como('liquidaciones')->get(route('liquidaciones.show', $liquidacion))->assertOk()->assertSee('BCP - DURASOL');
-        $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24']))->assertOk()->assertSee('YAPE')
-            ->assertSee('HOJA DE LIQUIDACIÓN DIARIA')->assertSee('TOTAL A DEPOSITAR');
+        $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24']))->assertOk()->assertSee('YAPE');
 
-        // Excel y PDF de la hoja diaria en una sola hoja.
-        $xlsx = $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24', 'formato' => 'xlsx']))->assertOk()->streamedContent();
-        $archivo = tempnam(sys_get_temp_dir(), 'hoja');
-        file_put_contents($archivo, $xlsx);
-        $libro = IOFactory::load($archivo);
-        unlink($archivo);
-        $this->assertSame(1, $libro->getSheetCount());
-        $this->assertSame('HOJA DE LIQUIDACIÓN DIARIA', $libro->getSheet(0)->getCell('A2')->getValue());
-        $pdf = $this->como('liquidaciones')->get(route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24', 'formato' => 'pdf']))->assertOk();
-        $this->assertStringStartsWith('%PDF', $pdf->getContent());
+        // Descargas con el formato de la hoja Excel: una sola hoja en Excel y en PDF.
+        $descargas = [
+            [route('reportes.liquidacion-diaria', ['fecha' => '2026-09-24']), 'HOJA DE LIQUIDACIÓN DIARIA'],
+            [route('liquidaciones.show', $liquidacion), 'HOJA DE LIQUIDACIÓN'],
+        ];
+        foreach ($descargas as [$url, $titulo]) {
+            $xlsx = $this->como('liquidaciones')->get($url.(str_contains($url, '?') ? '&' : '?').'formato=xlsx')->assertOk()->streamedContent();
+            $archivo = tempnam(sys_get_temp_dir(), 'hoja');
+            file_put_contents($archivo, $xlsx);
+            $libro = IOFactory::load($archivo);
+            unlink($archivo);
+            $this->assertSame(1, $libro->getSheetCount());
+            $this->assertSame($titulo, $libro->getSheet(0)->getCell('A2')->getValue());
+            $pdf = $this->como('liquidaciones')->get($url.(str_contains($url, '?') ? '&' : '?').'formato=pdf')->assertOk();
+            $this->assertStringStartsWith('%PDF', $pdf->getContent());
+        }
     }
 
     public function test_precio_vigente_fechas_y_borrador(): void

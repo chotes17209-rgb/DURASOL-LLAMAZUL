@@ -20,7 +20,7 @@ use App\Services\AlmacenService;
 use App\Services\CuentaService;
 use App\Services\LiquidacionService;
 use App\Services\PrecioService;
-use App\Support\Reporte;
+use App\Support\HojaLiquidacion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -75,7 +75,7 @@ class LiquidacionController extends Controller
         $liquidacion->load(['chofer', 'vehiculo', 'user', 'cerradaPor', 'items.cliente', 'items.producto', 'items.empresa',
             'fises.cliente', 'gastos', 'depositos', 'cobranzas.cliente', 'cuentasPorCobrar']);
         if (in_array($request->formato, ['pdf', 'xlsx'], true)) {
-            return $this->reporte($liquidacion)->descargar($request->formato, 'liquidacion-'.$liquidacion->codigo);
+            return (new HojaLiquidacion($liquidacion))->descargar($request->formato, 'liquidacion-'.$liquidacion->codigo);
         }
         $porProducto = $liquidacion->items->groupBy('producto_id')->map(fn ($g) => [
             'codigo' => $g->first()->producto?->codigo, 'cantidad' => $g->sum('cantidad'), 'total' => $g->sum('total'), 'vacios' => $g->sum('vacios_devueltos'),
@@ -192,48 +192,6 @@ class LiquidacionController extends Controller
         $vendidos = collect($fila['productos'] ?? [])->filter(fn ($p) => $p['salio'] > 0)->map(fn ($p) => $p['vendido']);
 
         return response()->json((object) $vendidos->all());
-    }
-
-    /** Liquidación individual en el formato de la hoja REGISTRO. */
-    private function reporte(Liquidacion $l): Reporte
-    {
-        $l->loadMissing(['items.cliente', 'items.producto', 'items.empresa', 'fises.cliente', 'gastos', 'depositos', 'cobranzas.cliente', 'chofer', 'vehiculo']);
-        $periodo = $l->tipo === TipoChofer::Ruta
-            ? 'Ruta: atención (salida) el '.$l->fecha_venta->format('d/m/Y').' · venta y liquidación el '.$l->fecha_liquidacion->format('d/m/Y')
-            : 'Venta del '.$l->fecha_venta->format('d/m/Y').' · liquidada el '.$l->fecha_liquidacion->format('d/m/Y');
-        $reporte = (new Reporte('Liquidación '.$l->codigo, $periodo, true))
-            ->datos(['Responsable' => $l->chofer?->alias, 'Placa' => $l->vehiculo?->placa ?? 'LOCAL', 'Estado' => $l->estado->label()]);
-
-        $reporte->tabla('Registro de ventas', [
-            'Código' => 'texto', 'Cliente' => 'texto', 'Empresa' => 'texto', 'Pres.' => 'texto', 'Cant.' => 'entero', 'Precio' => 'decimal',
-            'Total' => 'decimal', 'Bal. dev.' => 'entero', 'Crédito' => 'decimal', 'Contado' => 'decimal', 'Pago' => 'texto', 'N° op.' => 'texto',
-        ], $l->items->map(fn ($i) => [
-            $i->cliente?->codigo, $i->cliente?->nombreMostrar(), $i->empresa?->nombre, $i->producto?->codigo, $i->cantidad, $i->precio,
-            $i->total, $i->vacios_devueltos, $i->monto_credito, (float) $i->total - (float) $i->monto_credito, $i->metodo_pago->label(), $i->numero_operacion,
-        ]), ['TOTAL', '', '', '', $l->items->sum('cantidad'), '', $l->total_venta, $l->items->sum('vacios_devueltos'), $l->total_credito, (float) $l->total_venta - (float) $l->total_credito, '', '']);
-
-        if ($l->cobranzas->isNotEmpty()) {
-            $reporte->tabla('Cobranzas', ['Código' => 'texto', 'Cliente' => 'texto', 'Pago' => 'texto', 'Monto' => 'decimal'],
-                $l->cobranzas->map(fn ($c) => [$c->cliente?->codigo, $c->cliente?->nombreMostrar(), $c->metodo_pago->label(), $c->monto]), ['TOTAL', '', '', $l->total_cobranzas]);
-        }
-        if ($l->fises->isNotEmpty()) {
-            $reporte->tabla('Vales FISE', ['Cliente' => 'texto', 'Valor' => 'decimal', 'Cantidad' => 'entero', 'Importe' => 'decimal'],
-                $l->fises->map(fn ($f) => [$f->cliente?->nombreMostrar() ?? 'General', $f->valor, $f->cantidad, $f->subtotal]), ['TOTAL', '', $l->fises->sum('cantidad'), $l->total_fises]);
-        }
-        if ($l->gastos->isNotEmpty()) {
-            $reporte->tabla('Varios', ['Concepto' => 'texto', 'Comprobante' => 'texto', 'Monto' => 'decimal'],
-                $l->gastos->map(fn ($g) => [$g->concepto, $g->comprobante, $g->monto]), ['TOTAL', '', $l->total_gastos]);
-        }
-
-        if ($l->depositos->isNotEmpty()) {
-            $reporte->tabla('Depósitos (−)', ['Cuenta / destino' => 'texto', 'N° operación' => 'texto', 'Monto' => 'decimal'],
-                $l->depositos->map(fn ($d) => [$d->destino, $d->numero_operacion, $d->monto]), ['TOTAL', '', $l->total_depositos]);
-        }
-
-        return $reporte->tabla('Resumen', ['Venta total' => 'decimal', 'Cobranza' => 'decimal', 'Crédito' => 'decimal', 'Varios' => 'decimal', 'FISE' => 'decimal',
-            'Vouchers' => 'decimal', 'Por depositar' => 'decimal', 'Depósitos' => 'decimal', 'Efectivo a entregar' => 'decimal', 'Entregado' => 'decimal', 'Diferencia' => 'decimal'],
-            [[$l->total_venta, $l->total_cobranzas, $l->total_credito, $l->total_gastos, $l->total_fises, $l->total_vouchers, $l->efectivo_esperado, $l->total_depositos,
-                round((float) $l->efectivo_esperado - (float) $l->total_depositos, 2), $l->efectivo_entregado, $l->diferencia]]);
     }
 
     /** Stock real del almacén hoy (igual a la pantalla de stock): llenos, cambios, total y vacíos. */

@@ -34,7 +34,7 @@ class ReporteController extends Controller
         $d = $this->datosLiquidacionDiaria($fecha);
 
         if ($formato = $this->formato($request)) {
-            return (new HojaLiquidacionDiaria($fecha, $d))->descargar($formato);
+            return (new HojaLiquidacionDiaria($fecha, $d))->descargar($formato, 'hoja-liquidacion-'.$fecha->toDateString());
         }
 
         return view('reportes.liquidacion-diaria', ['fecha' => $fecha] + $d);
