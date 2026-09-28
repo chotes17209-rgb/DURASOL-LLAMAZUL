@@ -40,9 +40,9 @@ class ChoferController extends Controller
     {
         $chofer->load(['vehiculo', 'clientes' => fn ($q) => $q->orderBy('nombre')]);
         $liquidaciones = $chofer->liquidaciones()->latest('fecha_venta')->limit(10)->get();
-        $despachos = $chofer->despachos()->with('detalles')->latest('fecha')->limit(10)->get();
+        $movimientos = $chofer->filasParte()->with('parte')->latest('id')->limit(15)->get();
 
-        return view('flota.choferes.show', compact('chofer', 'liquidaciones', 'despachos'));
+        return view('flota.choferes.show', compact('chofer', 'liquidaciones', 'movimientos'));
     }
 
     public function edit(Chofer $chofer): View
@@ -59,8 +59,8 @@ class ChoferController extends Controller
 
     public function destroy(Chofer $chofer): JsonResponse
     {
-        abort_if($chofer->liquidaciones()->exists() || $chofer->despachos()->exists(), 422,
-            'El chofer tiene liquidaciones o despachos. Desactívalo en lugar de eliminarlo.');
+        abort_if($chofer->liquidaciones()->exists() || $chofer->filasParte()->exists(), 422,
+            'El chofer tiene liquidaciones o movimientos de almacén. Desactívalo en lugar de eliminarlo.');
         $chofer->delete();
 
         return $this->ok('Chofer eliminado.');

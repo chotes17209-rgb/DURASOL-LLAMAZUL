@@ -4,8 +4,7 @@ import Swal from 'sweetalert2';
 import TomSelect from 'tom-select';
 import Chart from 'chart.js/auto';
 import liquidacionEditor from './liquidacion-editor';
-import guiaEditor from './guia-editor';
-import despachoEditor from './despacho-editor';
+import parteEditor from './parte-editor';
 
 window.Alpine = Alpine;
 window.Swal = Swal;
@@ -29,8 +28,8 @@ export const toast = Swal.mixin({
 });
 
 const alertColors = {
-    confirmButtonColor: '#2545ea',
-    cancelButtonColor: '#94a3b8',
+    confirmButtonColor: '#1a3a80',
+    cancelButtonColor: '#64748b',
 };
 
 export function notify(type, message) {
@@ -63,7 +62,7 @@ export async function confirmAction({ title, text, confirmText = 'Sí, continuar
         reverseButtons: true,
         focusCancel: danger,
         ...alertColors,
-        confirmButtonColor: danger ? '#e11d48' : alertColors.confirmButtonColor,
+        confirmButtonColor: danger ? '#b91c1c' : alertColors.confirmButtonColor,
     });
     return result.isConfirmed ? (input ? result.value : true) : false;
 }
@@ -253,8 +252,7 @@ document.addEventListener('alpine:init', () => {
     });
 
     Alpine.data('liquidacionEditor', liquidacionEditor);
-    Alpine.data('guiaEditor', guiaEditor);
-    Alpine.data('despachoEditor', despachoEditor);
+    Alpine.data('parteEditor', parteEditor);
 });
 
 window.openModal = (url, size) => Alpine.store('modal').open(url, size);
@@ -354,6 +352,19 @@ document.addEventListener('click', async (e) => {
         } catch (error) {
             handleRequestError(error);
         }
+        return;
+    }
+
+    // Descargas PDF / Excel: agrega los filtros de la página y el formato.
+    const exportTrigger = e.target.closest('[data-export]');
+    if (exportTrigger) {
+        const url = new URL(exportTrigger.getAttribute('href'), window.location.origin);
+        const filtros = document.querySelector('[data-table-filters]');
+        if (filtros) {
+            new FormData(filtros).forEach((valor, clave) => { if (valor !== '') url.searchParams.set(clave, valor); });
+        }
+        url.searchParams.set('formato', exportTrigger.dataset.export);
+        exportTrigger.href = url.toString();
         return;
     }
 

@@ -30,9 +30,9 @@ class ModulosTest extends TestCase
     {
         $this->como('logistica')->get(route('caja.index'))->assertForbidden();
         $this->como('logistica')->get(route('liquidaciones.index'))->assertForbidden();
-        $this->como('logistica')->get(route('logistica.guias.index'))->assertOk();
+        $this->como('logistica')->get(route('logistica.partes.index'))->assertOk();
 
-        $this->como('caja')->get(route('logistica.guias.index'))->assertForbidden();
+        $this->como('caja')->get(route('logistica.partes.index'))->assertForbidden();
         $this->como('caja')->get(route('caja.index'))->assertOk();
         $this->como('caja')->get(route('usuarios.index'))->assertForbidden();
 
@@ -116,8 +116,8 @@ class ModulosTest extends TestCase
 
     public function test_pantallas_principales_cargan(): void
     {
-        $rutas = ['dashboard', 'logistica.stock', 'logistica.stock.kardex', 'logistica.guias.index', 'logistica.despachos.index', 'logistica.canjes.index',
-            'logistica.movimientos.index', 'liquidaciones.index', 'liquidaciones.create', 'clientes.index', 'creditos.index', 'precios.compra.index',
+        $rutas = ['dashboard', 'logistica.stock', 'logistica.stock.kardex', 'logistica.partes.index',
+            'liquidaciones.index', 'liquidaciones.create', 'clientes.index', 'creditos.index', 'precios.compra.index',
             'precios.venta.index', 'caja.index', 'caja.depositos.index', 'reportes.liquidacion-diaria', 'reportes.ventas', 'reportes.caja-diaria',
             'vehiculos.index', 'documentos.index', 'choferes.index', 'instalaciones.index', 'empresas.index', 'productos.index', 'usuarios.index', 'historial.index'];
         foreach ($rutas as $ruta) {

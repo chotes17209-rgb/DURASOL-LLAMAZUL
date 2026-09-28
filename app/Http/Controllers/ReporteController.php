@@ -12,41 +12,119 @@ use App\Models\Empresa;
 use App\Models\Liquidacion;
 use App\Models\LiquidacionItem;
 use App\Models\Producto;
-use App\Support\AuditLogger;
+use App\Support\Reporte;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteController extends Controller
 {
     /**
-     * Hoja de liquidación diaria (equivale a la hoja "RESUMEN GNRAL" del Excel).
+     * Hoja de liquidación diaria (hoja "RESUMEN GNRAL" del Excel):
+     *  - Ventas liquidadas del día (reparto local y almacén, por fecha de venta).
+     *  - Liquidaciones de ruta que se liquidan ese día (por fecha de liquidación).
+     *  Por depositar = venta total + cobranza − crédito − varios − FISE − vouchers − depósitos.
      */
-    public function liquidacionDiaria(Request $request): View
+    public function liquidacionDiaria(Request $request)
     {
         $fecha = $request->date('fecha') ?? today()->subDay();
-        $productos = Producto::activos()->get();
+        $d = $this->datosLiquidacionDiaria($fecha);
 
-        $liquidaciones = Liquidacion::with(['chofer', 'vehiculo', 'items'])
-            ->where('fecha_venta', $fecha->toDateString())
-            ->where('estado', '!=', EstadoLiquidacion::Anulada)
-            ->get();
+        if ($formato = $this->formato($request)) {
+            $cols = ['Placa' => 'texto', 'Responsable' => 'texto'];
+            foreach ($d['productos'] as $p) {
+                $cols[$p->codigo] = 'entero';
+            }
+            $cols += ['Venta total' => 'decimal', 'Cobranza' => 'decimal', 'Crédito' => 'decimal', 'Varios' => 'decimal', 'FISE' => 'decimal', 'Vouchers' => 'decimal', 'Depósitos' => 'decimal', 'Por depositar' => 'decimal'];
+            $claves = ['venta', 'cobranza', 'credito', 'varios', 'fise', 'vouchers', 'depositos', 'por_depositar'];
+            $fila = fn (array $f) => array_merge([$f['placa'], $f['responsable']], array_values($f['cantidades']), array_map(fn ($k) => $f[$k], $claves));
+            $total = fn (array $t) => array_merge(['TOTALES', ''], array_values($t['cantidades']), array_map(fn ($k) => $t[$k], $claves));
 
-        [$locales, $ruta] = $liquidaciones->partition(fn ($l) => $l->tipo !== TipoChofer::Ruta);
+            $reporte = (new Reporte('Hoja de liquidación diaria', ucfirst($fecha->translatedFormat('l d \d\e F \d\e Y')), true));
+            foreach ($d['grupos'] as $grupo) {
+                $reporte->tabla($grupo['titulo'], $cols, array_map($fila, $grupo['filas']), $total($grupo['total']));
+            }
+            $reporte->tabla('Por depositar por responsable', ['Responsable' => 'texto', 'Importe' => 'decimal'], collect($d['porDepositar'])->map(fn ($v, $k) => [$k, $v])->values(), ['TOTAL', array_sum($d['porDepositar'])])
+                ->tabla('Depósitos realizados', ['Fecha' => 'texto', 'Responsable' => 'texto', 'Banco / cuenta' => 'texto', 'Empresa' => 'texto', 'Quién depositó' => 'texto', 'Importe' => 'decimal'],
+                    $d['depositos']->map(fn ($x) => [fecha($x->fecha), $x->chofer?->alias, $x->cuentaBancaria?->nombreMostrar(), $x->empresa?->nombre, $x->depositante, $x->monto]), ['TOTAL', '', '', '', '', $d['depositos']->sum('monto')])
+                ->tabla('Detalle de ventas por precio', ['Producto' => 'texto', 'Cantidad' => 'entero', 'P.U.' => 'decimal', 'Total' => 'decimal'],
+                    $d['detallePrecios']->map(fn ($x) => [$x->producto?->codigo, $x->cantidad, $x->precio, $x->total]), ['TOTAL', $d['detallePrecios']->sum('cantidad'), '', $d['detallePrecios']->sum('total')]);
 
-        // Detalle de ventas por precio unitario (columna derecha del Excel).
-        $detallePrecios = LiquidacionItem::with('producto')
-            ->whereIn('liquidacion_id', $liquidaciones->pluck('id'))
+            return $reporte->descargar($formato, 'liquidacion-diaria-'.$fecha->toDateString());
+        }
+
+        return view('reportes.liquidacion-diaria', ['fecha' => $fecha] + $d);
+    }
+
+    /** Arma la hoja de liquidación diaria (se usa en pantalla, PDF y Excel). */
+    private function datosLiquidacionDiaria(Carbon $fecha): array
+    {
+        $productos = Producto::activos()->whereIn('tipo', ['gas', 'envase'])->get();
+        $base = fn () => Liquidacion::with(['chofer', 'vehiculo', 'items'])->where('estado', '!=', EstadoLiquidacion::Anulada)->orderBy('id');
+
+        $locales = $base()->where('fecha_venta', $fecha->toDateString())->where('tipo', '!=', TipoChofer::Ruta->value)->get();
+        $ruta = $base()->where('fecha_liquidacion', $fecha->toDateString())->where('tipo', TipoChofer::Ruta->value)->get();
+
+        // Depósitos bancarios del día por responsable (se descuentan una sola vez por chofer).
+        $depositos = Deposito::with(['cuentaBancaria', 'chofer', 'empresa'])->where('fecha', $fecha->toDateString())->orderBy('id')->get();
+        $pendienteDeposito = $depositos->whereNotNull('chofer_id')->groupBy('chofer_id')->map->sum('monto')->all();
+
+        $armar = function ($liquidaciones) use ($productos, &$pendienteDeposito) {
+            $filas = $liquidaciones->map(function (Liquidacion $l) use ($productos, &$pendienteDeposito) {
+                $depositado = (float) ($pendienteDeposito[$l->chofer_id] ?? 0);
+                unset($pendienteDeposito[$l->chofer_id]);
+                $cantidades = $productos->mapWithKeys(fn ($p) => [$p->codigo => (int) $l->items->where('producto_id', $p->id)->sum('cantidad')])->all();
+
+                return [
+                    'liquidacion' => $l,
+                    'placa' => $l->vehiculo?->placa ?? 'LOCAL',
+                    'responsable' => $l->chofer?->alias,
+                    'fecha_venta' => $l->fecha_venta,
+                    'cantidades' => $cantidades,
+                    'venta' => (float) $l->total_venta,
+                    'cobranza' => (float) $l->total_cobranzas,
+                    'credito' => (float) $l->total_credito,
+                    'varios' => (float) $l->total_gastos,
+                    'fise' => (float) $l->total_fises,
+                    'vouchers' => (float) $l->total_vouchers,
+                    'depositos' => $depositado,
+                    'por_depositar' => round((float) $l->efectivo_esperado - $depositado, 2),
+                ];
+            })->all();
+            $total = ['cantidades' => $productos->mapWithKeys(fn ($p) => [$p->codigo => array_sum(array_map(fn ($f) => $f['cantidades'][$p->codigo], $filas))])->all()];
+            foreach (['venta', 'cobranza', 'credito', 'varios', 'fise', 'vouchers', 'depositos', 'por_depositar'] as $k) {
+                $total[$k] = round(array_sum(array_column($filas, $k)), 2);
+            }
+
+            return ['filas' => $filas, 'total' => $total];
+        };
+
+        $grupos = [
+            ['titulo' => 'Detalle de ventas liquidadas (reparto local y almacén)'] + $armar($locales),
+            ['titulo' => 'Liquidaciones de ruta liquidadas este día'] + $armar($ruta),
+        ];
+
+        $porDepositar = [];
+        foreach ($grupos as $g) {
+            foreach ($g['filas'] as $f) {
+                $porDepositar[$f['responsable']] = round(($porDepositar[$f['responsable']] ?? 0) + $f['por_depositar'], 2);
+            }
+        }
+
+        $ids = $locales->pluck('id')->merge($ruta->pluck('id'));
+        $detallePrecios = LiquidacionItem::with('producto')->whereIn('liquidacion_id', $ids)
             ->selectRaw('producto_id, precio, SUM(cantidad) as cantidad, SUM(total) as total')
-            ->groupBy('producto_id', 'precio')->orderBy('producto_id')->orderBy('precio')->get();
+            ->groupBy('producto_id', 'precio')->orderBy('producto_id')->orderByDesc('precio')->get();
 
-        $depositos = Deposito::with(['cuentaBancaria', 'chofer'])->where('fecha', $fecha->toDateString())->get();
-        $gastosCaja = CajaMovimiento::where('fecha', $fecha->toDateString())->where('tipo', CajaMovimiento::EGRESO)
-            ->whereNotIn('categoria', [CategoriaCaja::Deposito])->sum('monto');
-
-        return view('reportes.liquidacion-diaria', compact('fecha', 'productos', 'locales', 'ruta', 'detallePrecios', 'depositos', 'gastosCaja'));
+        return [
+            'productos' => $productos,
+            'grupos' => $grupos,
+            'porDepositar' => $porDepositar,
+            'depositos' => $depositos,
+            'detallePrecios' => $detallePrecios,
+            'gastosCaja' => (float) CajaMovimiento::where('fecha', $fecha->toDateString())->where('tipo', CajaMovimiento::EGRESO)
+                ->whereNotIn('categoria', [CategoriaCaja::Deposito])->sum('monto'),
+        ];
     }
 
     /** Detalle de ventas (equivale a la hoja "VENTAS" del Excel) con filtros. */
@@ -68,33 +146,45 @@ class ReporteController extends Controller
         return $this->tableOrPage($request, 'reportes.ventas', 'reportes._ventas', compact('items', 'totales', 'porProducto') + $filtros);
     }
 
-    public function exportarVentas(Request $request): StreamedResponse
+    /** Detalle de ventas en Excel (todas las filas) o PDF (resumen + hasta 1 500 filas). */
+    public function exportarVentas(Request $request)
     {
+        $formato = $this->formato($request) ?? 'xlsx';
         $query = $this->ventasQuery($request)->with(['liquidacion.chofer', 'liquidacion.vehiculo', 'cliente', 'producto', 'empresa']);
-        AuditLogger::event('exportacion', 'Exportó el detalle de ventas a CSV', null, $request->only(['desde', 'hasta', 'chofer_id', 'empresa_id', 'producto_id']));
+        $total = (clone $query)->count();
+        $limite = $formato === 'pdf' ? 1500 : 60000;
+        $items = $query->limit($limite)->get();
 
-        return response()->streamDownload(function () use ($query) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF"); // BOM para que Excel lea los acentos
-            fputcsv($out, ['FECHA', 'FECHA LIQUIDACION', 'LIQUIDACION', 'EMPRESA', 'CODIGO', 'PLACA', 'RESPONSABLE', 'CLIENTE', 'PRESENTACION', 'CANTIDAD', 'PRECIO', 'TOTAL', 'BALONES', 'CREDITO', 'METODO PAGO', 'CONTADO'], ';');
-            $query->chunk(1000, function ($items) use ($out) {
-                foreach ($items as $i) {
-                    fputcsv($out, [
-                        $i->liquidacion->fecha_venta->format('d/m/Y'), $i->liquidacion->fecha_liquidacion->format('d/m/Y'), $i->liquidacion->codigo,
-                        $i->empresa?->nombre, $i->cliente?->codigo, $i->liquidacion->vehiculo?->placa, $i->liquidacion->chofer?->alias, $i->cliente?->nombre,
-                        $i->producto?->codigo, $i->cantidad, $i->precio, $i->total, $i->vacios_devueltos, $i->monto_credito, $i->metodo_pago->label(), $i->montoPagado(),
-                    ], ';');
-                }
-            });
-            fclose($out);
-        }, 'ventas-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        $periodo = 'Del '.($request->desde ? fecha($request->desde) : 'inicio').' al '.($request->hasta ? fecha($request->hasta) : fecha(today()));
+        $reporte = new Reporte('Detalle de ventas', $periodo, true);
+        $reporte->datos(array_filter([
+            'Chofer' => $request->chofer_id ? Chofer::find($request->chofer_id)?->alias : null,
+            'Empresa' => $request->empresa_id ? Empresa::find($request->empresa_id)?->nombre : null,
+            'Producto' => $request->producto_id ? Producto::find($request->producto_id)?->codigo : null,
+            'Registros' => num($total),
+        ]));
+
+        $porProducto = $items->groupBy(fn ($i) => $i->producto?->codigo)->map(fn ($g, $k) => [$k, $g->sum('cantidad'), $g->sum('total'), $g->sum('monto_credito')])->sortKeys()->values();
+        $reporte->tabla('Resumen por producto', ['Producto' => 'texto', 'Cantidad' => 'entero', 'Importe' => 'decimal', 'Crédito' => 'decimal'], $porProducto,
+            ['TOTAL', $items->sum('cantidad'), $items->sum('total'), $items->sum('monto_credito')]);
+
+        $reporte->tabla('Detalle', [
+            'Fecha' => 'texto', 'F. liquid.' => 'texto', 'Empresa' => 'texto', 'Código' => 'texto', 'Placa' => 'texto', 'Responsable' => 'texto', 'Cliente' => 'texto',
+            'Pres.' => 'texto', 'Cant.' => 'entero', 'Precio' => 'decimal', 'Total' => 'decimal', 'Balones dev.' => 'entero', 'Crédito' => 'decimal', 'Pago' => 'texto', 'Contado' => 'decimal',
+        ], $items->map(fn ($i) => [
+            $i->liquidacion->fecha_venta->format('d/m/Y'), $i->liquidacion->fecha_liquidacion?->format('d/m/Y'), $i->empresa?->nombre, $i->cliente?->codigo,
+            $i->liquidacion->vehiculo?->placa, $i->liquidacion->chofer?->alias, $i->cliente?->nombre, $i->producto?->codigo, $i->cantidad, $i->precio, $i->total,
+            $i->vacios_devueltos, $i->monto_credito, $i->metodo_pago->label(), $i->montoPagado(),
+        ]), null, $total > $limite ? 'Se muestran las primeras '.num($limite).' de '.num($total).' filas. Descarga en Excel o filtra por fechas para ver todo.' : null);
+
+        return $reporte->descargar($formato, 'ventas-'.now()->format('Ymd-His'));
     }
 
     /**
      * Caja por día (equivale a la hoja "CAJA GNRAL"):
      * General = Venta + Cobranza − Crédito − Gastos − FISE; Saldo = General − Depósitos.
      */
-    public function cajaDiaria(Request $request): View
+    public function cajaDiaria(Request $request)
     {
         $desde = $request->date('desde') ?? today()->startOfMonth();
         $hasta = $request->date('hasta') ?? today();
@@ -138,7 +228,25 @@ class ReporteController extends Controller
             ];
         }
 
+        if ($formato = $this->formato($request)) {
+            $t = fn ($k) => array_sum(array_column($dias, $k));
+            $cols = ['Fecha' => 'texto', 'Balones' => 'entero', 'Importe total' => 'decimal', 'Cobranza' => 'decimal', 'Crédito' => 'decimal', 'Gastos' => 'decimal',
+                'FISE' => 'decimal', 'Vouchers' => 'decimal', 'General' => 'decimal', 'Depósitos' => 'decimal', 'Saldo' => 'decimal'];
+            $claves = ['balones', 'venta', 'cobranza', 'credito', 'gastos', 'fise', 'vouchers', 'general', 'depositos', 'saldo'];
+
+            return (new Reporte('Caja general por día', 'Del '.$desde->format('d/m/Y').' al '.$hasta->format('d/m/Y'), true))
+                ->tabla(null, $cols, array_map(fn ($d) => array_merge([$d['fecha']->translatedFormat('D d/m/Y')], array_map(fn ($k) => $d[$k], $claves)), $dias),
+                    array_merge(['TOTAL'], array_map($t, $claves)), 'General = venta + cobranza − crédito − gastos − FISE. Saldo = general − depósitos.')
+                ->descargar($formato, 'caja-'.$desde->toDateString().'-al-'.$hasta->toDateString());
+        }
+
         return view('reportes.caja-diaria', compact('dias', 'desde', 'hasta'));
+    }
+
+    /** Formato de descarga pedido (?formato=pdf|xlsx) o null para ver en pantalla. */
+    private function formato(Request $request): ?string
+    {
+        return in_array($request->formato, ['pdf', 'xlsx'], true) ? $request->formato : null;
     }
 
     /** Copia de la consulta sin columnas ni orden, para calcular agregados. */

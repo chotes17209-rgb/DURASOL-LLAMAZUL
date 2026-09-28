@@ -13,11 +13,11 @@ class PrecioCompra extends Model
 
     protected $table = 'precios_compra';
 
-    protected $fillable = ['empresa_id', 'instalacion_id', 'producto_id', 'precio', 'vigente_desde', 'motivo', 'user_id'];
+    protected $fillable = ['empresa_id', 'instalacion_id', 'producto_id', 'precio', 'vigente_desde', 'motivo', 'validado', 'validado_por', 'validado_at', 'user_id'];
 
     protected function casts(): array
     {
-        return ['precio' => 'decimal:2', 'vigente_desde' => 'date'];
+        return ['precio' => 'decimal:2', 'vigente_desde' => 'date', 'validado' => 'boolean', 'validado_at' => 'datetime'];
     }
 
     public function empresa(): BelongsTo
@@ -38,6 +38,11 @@ class PrecioCompra extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function validadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validado_por');
     }
 
     public function auditLabel(): string

@@ -15,7 +15,7 @@
         <x-field.textarea name="observaciones" label="Observaciones" :value="$cliente->observaciones" rows="2" class="sm:col-span-3"/>
     </div>
 
-    <div class="mt-6 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+    <div class="mt-6 rounded bg-slate-50 p-4 border border-line">
         <div class="mb-3 flex items-center justify-between">
             <p class="text-sm font-semibold text-slate-900">Precios de venta asignados</p>
             <p class="text-xs text-slate-500">{{ $cliente->exists ? 'Si cambias un precio se guarda como nuevo en el historial (vigente desde hoy).' : 'Deja vacío lo que no le vendes.' }}</p>

@@ -2,7 +2,7 @@
     <x-slot:actions>
         <a href="{{ route('precios.compra.historial') }}" class="btn btn-secondary"><x-heroicon-o-clock class="h-4 w-4"/> Historial</a>
     </x-slot:actions>
-    <div class="mb-5 rounded-2xl bg-brand-50 p-4 text-sm text-brand-900 ring-1 ring-brand-100">
+    <div class="mb-5 rounded bg-brand-50 p-4 text-sm text-brand-900 border border-brand-100">
         Precio al que cada empresa compra en la planta de Solgas, <b>por instalación</b>. Al registrar una guía, el sistema toma automáticamente el precio vigente de su instalación.
     </div>
     <div class="space-y-6">

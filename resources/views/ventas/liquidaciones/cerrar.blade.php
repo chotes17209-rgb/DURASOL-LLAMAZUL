@@ -1,7 +1,7 @@
 <x-form-modal :title="'Cerrar liquidación '.$liquidacion->codigo" :subtitle="$liquidacion->chofer->alias.' · venta del '.fecha($liquidacion->fecha_venta)" icon="lock-closed"
               :action="route('liquidaciones.cerrar.store', $liquidacion)" submit="Cerrar y registrar en caja" confirm="¿Cerrar la liquidación? Se generarán los créditos y el ingreso a caja.">
     <div x-data="{ entregado: '{{ $liquidacion->efectivo_entregado ?? $liquidacion->efectivo_esperado }}', esperado: {{ (float) $liquidacion->efectivo_esperado }} }">
-        <dl class="space-y-2 rounded-2xl bg-slate-50 p-5 text-sm ring-1 ring-slate-200">
+        <dl class="space-y-2 rounded bg-slate-50 p-5 text-sm border border-line">
             <div class="flex justify-between"><dt>Venta total ({{ $liquidacion->totalBalones() }} balones)</dt><dd class="font-semibold">{{ soles($liquidacion->total_venta) }}</dd></div>
             <div class="flex justify-between"><dt>+ Cobranzas</dt><dd class="text-emerald-600">{{ soles($liquidacion->total_cobranzas) }}</dd></div>
             <div class="flex justify-between"><dt>− Créditos</dt><dd class="text-rose-600">{{ soles($liquidacion->total_credito) }}</dd></div>

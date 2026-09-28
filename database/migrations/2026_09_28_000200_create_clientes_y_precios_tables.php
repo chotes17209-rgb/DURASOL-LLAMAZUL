@@ -40,6 +40,10 @@ return new class extends Migration
             $table->decimal('precio', 10, 2);
             $table->date('vigente_desde');
             $table->string('motivo', 200)->nullable();
+            // Validado = la variación de precio ya se refleja en las facturas de Solgas.
+            $table->boolean('validado')->default(false);
+            $table->foreignId('validado_por')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('validado_at')->nullable();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->index(['instalacion_id', 'producto_id', 'vigente_desde'], 'precios_compra_vigencia_idx');

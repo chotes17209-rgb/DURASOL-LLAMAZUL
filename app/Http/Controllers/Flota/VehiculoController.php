@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Flota;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VehiculoRequest;
-use App\Models\Despacho;
 use App\Models\Empresa;
-use App\Models\Guia;
+use App\Models\ParteFila;
 use App\Models\Vehiculo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,10 +38,9 @@ class VehiculoController extends Controller
     public function show(Vehiculo $vehiculo): View
     {
         $vehiculo->load(['empresa', 'choferes', 'documentos', 'mantenimientos']);
-        $ultimosDespachos = Despacho::with('chofer')->where('vehiculo_id', $vehiculo->id)->latest('fecha')->limit(10)->get();
-        $ultimasGuias = Guia::with('empresa')->where('vehiculo_id', $vehiculo->id)->latest('fecha_salida')->limit(10)->get();
+        $movimientos = ParteFila::with('parte')->where('vehiculo_id', $vehiculo->id)->latest('id')->limit(15)->get();
 
-        return view('flota.vehiculos.show', compact('vehiculo', 'ultimosDespachos', 'ultimasGuias'));
+        return view('flota.vehiculos.show', compact('vehiculo', 'movimientos'));
     }
 
     public function edit(Vehiculo $vehiculo): View

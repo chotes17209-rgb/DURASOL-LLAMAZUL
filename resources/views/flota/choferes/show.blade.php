@@ -15,7 +15,7 @@
             </dl>
         </div>
         <div x-show="tab === 'clientes'" x-cloak>
-            <div class="max-h-[28rem] overflow-y-auto rounded-xl ring-1 ring-slate-200">
+            <div class="max-h-[28rem] overflow-y-auto rounded border border-line">
                 <table class="table table-compact">
                     <thead class="sticky top-0"><tr><th>Cód.</th><th>Cliente</th><th>Conocido como</th><th>Dirección</th><th>Teléfono</th></tr></thead>
                     <tbody>
@@ -43,17 +43,8 @@
                 </table>
             </div>
             <div>
-                <p class="mb-2 text-sm font-semibold">Últimos despachos</p>
-                <table class="table table-compact">
-                    <thead><tr><th>Fecha</th><th>Vuelta</th><th class="text-right">Salida</th><th class="text-right">Vendidos</th><th>Estado</th></tr></thead>
-                    <tbody>
-                    @forelse ($despachos as $d)
-                        <tr><td>{{ fecha($d->fecha) }}</td><td>{{ $d->vuelta }}</td><td class="text-right">{{ $d->totalSalida() }}</td><td class="text-right">{{ $d->totalVendidos() }}</td><td><x-status :value="$d->estado"/></td></tr>
-                    @empty
-                        <tr><td colspan="5" class="text-center text-slate-400">Sin despachos.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
+                <p class="mb-2 text-sm font-semibold">Últimos movimientos en almacén</p>
+                @include('logistica.partes._movimientos')
             </div>
         </div>
         <div x-show="tab === 'historial'" x-cloak><x-history :model="$chofer"/></div>

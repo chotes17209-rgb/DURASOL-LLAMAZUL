@@ -1,100 +1,109 @@
 @php($u = auth()->user())
-<x-layouts.app title="Panel de control" :breadcrumb="'Hola, '.$u->name">
+<x-layouts.app title="Panel de control" :breadcrumb="'Resumen al '.$fecha->translatedFormat('l d \\d\\e F \\d\\e Y')">
     <x-slot:actions>
-        <form method="GET"><input type="date" name="fecha" value="{{ $fecha->format('Y-m-d') }}" class="form-input w-40" onchange="this.form.submit()"></form>
+        <form method="GET" class="flex items-center gap-2">
+            <label class="text-xs text-slate-500">Día de venta</label>
+            <input type="date" name="fecha" value="{{ $fecha->format('Y-m-d') }}" class="form-input w-36" onchange="this.form.submit()">
+        </form>
     </x-slot:actions>
 
-    {{-- Bienvenida con logos --}}
-    <div class="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-r from-brand-900 via-brand-800 to-brand-950 p-6 text-white shadow-xl sm:p-8">
-        <div class="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"></div>
-        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-                <p class="text-sm font-semibold text-brand-200">Resumen del {{ $fecha->translatedFormat('l d \\d\\e F') }}</p>
-                <p class="mt-1 text-3xl font-extrabold tracking-tight">{{ soles($ventaDia) }} <span class="text-lg font-semibold text-brand-200">en {{ num($balonesDia) }} balones</span></p>
-                <p class="mt-1 text-sm text-brand-100">Acumulado del mes: <b>{{ soles($ventaMes) }}</b> · {{ num($balonesMes) }} balones</p>
-            </div>
-            <div class="flex gap-3">
-                <div class="rounded-2xl bg-white p-2.5"><img src="{{ asset('img/durasol.jpg') }}" alt="Durasol" class="h-10 w-32 object-contain"></div>
-                <div class="rounded-2xl bg-white p-2.5"><img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="h-10 w-32 object-contain"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <x-kpi label="Venta del día" :value="soles($ventaDia)" :hint="num($balonesDia).' balones'"/>
+        <x-kpi label="Venta acumulada del mes" :value="soles($ventaMes)" :hint="num($balonesMes).' balones'"/>
         @if ($u->hasRole('liquidaciones', 'caja'))
-            <x-kpi label="Por cobrar (créditos)" :value="soles($porCobrar)" icon="credit-card" color="red"/>
+            <x-kpi label="Por cobrar (créditos)" :value="soles($porCobrar)" color="red"/>
         @endif
         @if ($u->hasRole('caja'))
-            <x-kpi label="Saldo en caja" :value="soles($saldoCaja)" icon="banknotes" color="green"/>
+            <x-kpi label="Saldo en caja hoy" :value="soles($saldoCaja)" color="green"/>
         @endif
-        <x-kpi label="Liquidaciones por cerrar" :value="$borradores" icon="clipboard-document-check" color="amber"/>
-        @if ($u->hasRole('logistica'))
-            <x-kpi label="Llenos en almacén" :value="num(collect($stock['llenos'])->sum('total'))" icon="fire" color="orange" :hint="$enRuta.' chofer(es) en ruta · '.$guiasTransito.' guía(s) en planta'"/>
+        @if ($u->hasRole('logistica') && ! $u->hasRole('caja'))
+            <x-kpi label="Llenos en almacén (S-10)" :value="num($stock['lleno_s10']['final'])" :hint="'S-45: '.num($stock['lleno_s45']['final']).' · M-10: '.num($stock['lleno_m10']['final'])" color="amber"/>
         @endif
     </div>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-3">
+    @if ($borradores)
+        <div class="help mt-3 flex items-center justify-between">
+            <span>Hay <b>{{ $borradores }}</b> liquidación(es) en borrador pendientes de cerrar.</span>
+            <a href="{{ route('liquidaciones.index', ['estado' => 'borrador']) }}" class="font-semibold text-brand-700 hover:underline">Revisar</a>
+        </div>
+    @endif
+
+    <div class="mt-4 grid gap-4 xl:grid-cols-3">
         <div class="card xl:col-span-2">
-            <div class="card-header"><p class="card-title">Ventas de los últimos 30 días</p></div>
-            <div class="h-72 p-5"><canvas data-chart="{{ json_encode($graficoVentas) }}"></canvas></div>
+            <div class="card-header"><p class="card-title">Venta diaria — últimos 30 días (S/)</p></div>
+            <div class="h-64 p-4"><canvas data-chart="{{ json_encode($graficoVentas) }}"></canvas></div>
         </div>
         <div class="card">
             <div class="card-header"><p class="card-title">Balones vendidos en el mes</p></div>
-            <div class="h-72 p-5">
-                @if ($porProducto->isEmpty())<x-empty text="Sin ventas este mes."/>@else<canvas data-chart="{{ json_encode($graficoProductos) }}"></canvas>@endif
-            </div>
+            <table class="table table-compact">
+                <thead><tr><th>Producto</th><th class="text-right">Cantidad</th><th class="text-right">Importe</th></tr></thead>
+                <tbody>
+                @forelse ($porProducto as $p)
+                    <tr><td class="font-medium">{{ $p->codigo }}</td><td class="text-right">{{ num($p->cantidad) }}</td><td class="text-right">{{ soles($p->total) }}</td></tr>
+                @empty
+                    <tr><td colspan="3" class="py-6 text-center text-slate-400">Sin ventas este mes.</td></tr>
+                @endforelse
+                </tbody>
+                @if ($porProducto->isNotEmpty())
+                    <tfoot><tr><td>Total</td><td class="text-right">{{ num($porProducto->sum('cantidad')) }}</td><td class="text-right">{{ soles($porProducto->sum('total')) }}</td></tr></tfoot>
+                @endif
+            </table>
         </div>
     </div>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-3">
+    <div class="mt-4 grid gap-4 xl:grid-cols-3">
         <div class="card">
-            <div class="card-header"><p class="card-title">Choferes del mes</p></div>
-            <div class="divide-y divide-slate-100">
-                @php($max = max(1, (float) $topChoferes->max('total')))
-                @forelse ($topChoferes as $c)
-                    <div class="px-5 py-3">
-                        <div class="flex items-center justify-between text-sm"><span class="font-semibold">{{ $c->alias }}</span><span class="tabular-nums">{{ soles($c->total) }}</span></div>
-                        <div class="mt-1.5 flex items-center gap-2">
-                            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-brand-500" style="width: {{ round($c->total / $max * 100) }}%"></div></div>
-                            <span class="text-[11px] text-slate-400">{{ num($c->cantidad) }} bal.</span>
-                        </div>
-                    </div>
-                @empty
-                    <p class="px-5 py-6 text-center text-sm text-slate-400">Sin datos.</p>
-                @endforelse
-            </div>
-        </div>
-
-        @if ($u->hasRole('logistica'))
-        <div class="card">
-            <div class="card-header"><p class="card-title">Stock actual</p><a href="{{ route('logistica.stock') }}" class="text-xs font-semibold text-brand-600">Ver →</a></div>
+            <div class="card-header"><p class="card-title">Venta por chofer en el mes</p></div>
             <table class="table table-compact">
-                <thead><tr><th>Producto</th>@foreach ($stock['empresas'] as $e)<th class="text-right">{{ $e->nombre }}</th>@endforeach</tr></thead>
+                <thead><tr><th>Chofer</th><th class="text-right">Balones</th><th class="text-right">Importe</th></tr></thead>
                 <tbody>
-                @foreach ($stock['llenos'] as $fila)
-                    <tr><td class="font-mono font-bold">{{ $fila['producto']->codigo }}</td>@foreach ($stock['empresas'] as $e)<td class="text-right tabular-nums">{{ num($fila['empresas'][$e->id]) }}</td>@endforeach</tr>
-                @endforeach
-                @foreach ($stock['vacios'] as $fila)
-                    <tr class="text-slate-500"><td>Vacíos {{ $fila['producto']->capacidad_kg }} kg</td><td colspan="{{ $stock['empresas']->count() }}" class="text-right tabular-nums">{{ num($fila['plomo']) }} plomo · {{ num($fila['color']) }} color</td></tr>
-                @endforeach
+                @forelse ($topChoferes as $c)
+                    <tr><td class="font-medium">{{ $c->alias }}</td><td class="text-right">{{ num($c->cantidad) }}</td><td class="text-right">{{ soles($c->total) }}</td></tr>
+                @empty
+                    <tr><td colspan="3" class="py-6 text-center text-slate-400">Sin datos.</td></tr>
+                @endforelse
                 </tbody>
             </table>
         </div>
 
-        <div class="card">
-            <div class="card-header"><p class="card-title">Documentos vehiculares</p>@if($docsCriticos)<x-badge color="red">{{ $docsCriticos }} por atender</x-badge>@endif</div>
-            <div class="divide-y divide-slate-100">
-                @forelse ($alertasDocs as $a)
-                    <button type="button" class="flex w-full items-center justify-between px-5 py-3 text-left text-sm hover:bg-slate-50" data-modal-url="{{ route('vehiculos.show', $a['vehiculo']) }}" data-modal-size="xl">
-                        <span><span class="font-mono font-bold">{{ $a['vehiculo']->placa }}</span> · {{ $a['label'] }}
-                            @if ($a['documento']?->fecha_vencimiento)<span class="block text-xs text-slate-400">{{ fecha($a['documento']->fecha_vencimiento) }}</span>@endif</span>
-                        <x-status :value="$a['estado']"/>
-                    </button>
-                @empty
-                    <p class="px-5 py-6 text-center text-sm text-emerald-600">Toda la documentación está al día.</p>
-                @endforelse
+        @if ($u->hasRole('logistica'))
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Almacén hoy</p>
+                    <a href="{{ route('logistica.partes.show', today()->toDateString()) }}" class="text-xs font-semibold text-brand-700 hover:underline">{{ $parteHoy ? 'Ver parte de hoy' : 'Abrir parte de hoy' }}</a>
+                </div>
+                <table class="table table-compact">
+                    <thead><tr><th></th><th class="text-right">Inicial</th><th class="text-right">Ingreso</th><th class="text-right">Salida</th><th class="text-right">Final</th></tr></thead>
+                    <tbody>
+                    @foreach (['lleno_s10', 'lleno_s45', 'lleno_m10', 'plomo_s10', 'color_s10', 'plomo_s45', 'color_s45'] as $llave)
+                        @php($f = $stock[$llave])
+                        <tr>
+                            <td>{{ $f['tipo'] === 'lleno' ? 'Lleno' : 'Vacío' }} {{ $f['titulo'] }}</td>
+                            <td class="text-right">{{ num($f['inicial']) }}</td><td class="text-right">{{ num($f['ingreso']) }}</td><td class="text-right">{{ num($f['salida']) }}</td>
+                            <td class="text-right font-semibold">{{ num($f['final']) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
             </div>
-        </div>
+
+            <div class="card">
+                <div class="card-header"><p class="card-title">Documentos vehiculares</p>@if($docsCriticos)<x-badge color="red">{{ $docsCriticos }} por atender</x-badge>@endif</div>
+                <table class="table table-compact">
+                    <tbody>
+                    @forelse ($alertasDocs as $a)
+                        <tr class="cursor-pointer" data-modal-url="{{ route('vehiculos.show', $a['vehiculo']) }}" data-modal-size="xl">
+                            <td class="font-mono font-semibold">{{ $a['vehiculo']->placa }}</td>
+                            <td>{{ $a['label'] }}</td>
+                            <td class="text-xs text-slate-500">{{ $a['documento']?->fecha_vencimiento ? fecha($a['documento']->fecha_vencimiento) : '' }}</td>
+                            <td class="text-right"><x-status :value="$a['estado']"/></td>
+                        </tr>
+                    @empty
+                        <tr><td class="py-6 text-center text-emerald-700">Toda la documentación está al día.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 </x-layouts.app>

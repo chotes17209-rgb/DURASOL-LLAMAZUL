@@ -22,7 +22,7 @@
     @endif
     @php($changes = $audit->event === 'updated' ? array_keys($audit->new_values ?? []) : [])
     @if ($changes)
-        <div class="mt-2 overflow-hidden rounded-xl ring-1 ring-slate-200">
+        <div class="mt-2 overflow-hidden rounded border border-line">
             <table class="w-full text-xs">
                 <thead class="bg-slate-50 text-slate-500"><tr><th class="px-3 py-1.5 text-left font-semibold">Campo</th><th class="px-3 py-1.5 text-left font-semibold">Antes</th><th class="px-3 py-1.5 text-left font-semibold">Después</th></tr></thead>
                 <tbody>
@@ -39,7 +39,7 @@
     @elseif (in_array($audit->event, ['created', 'deleted']) && ($audit->new_values || $audit->old_values))
         <details class="mt-1 text-xs text-slate-500">
             <summary class="cursor-pointer select-none font-medium text-brand-600">Ver datos</summary>
-            <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
+            <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 rounded bg-slate-50 p-3 sm:grid-cols-3">
                 @foreach (($audit->new_values ?: $audit->old_values) as $field => $value)
                     <div><dt class="text-slate-400">{{ str_replace('_', ' ', $field) }}</dt><dd class="font-medium text-slate-700">{{ is_array($value) ? json_encode($value) : ($value ?? '—') }}</dd></div>
                 @endforeach

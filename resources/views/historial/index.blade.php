@@ -1,5 +1,5 @@
 <x-layouts.app title="Historial del sistema" breadcrumb="Administración">
-    <div class="mb-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700 ring-1 ring-slate-200">
+    <div class="mb-4 rounded bg-slate-50 p-4 text-sm text-slate-700 border border-line">
         Registro de <b>todo</b> lo que se hace: quién creó, modificó o eliminó cada registro, con los valores antes y después, inicios de sesión y cierres de liquidación.
     </div>
     <x-remote-table :url="route('historial.index')">

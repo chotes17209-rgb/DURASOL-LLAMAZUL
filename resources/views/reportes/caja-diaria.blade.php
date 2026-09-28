@@ -6,9 +6,9 @@
             <input type="date" name="hasta" value="{{ $hasta->format('Y-m-d') }}" class="form-input w-40">
             <button class="btn btn-primary">Ver</button>
         </form>
-        <button class="btn btn-secondary" onclick="window.print()"><x-heroicon-o-printer class="h-4 w-4"/></button>
+        <x-export :url="route('reportes.caja-diaria', ['desde' => $desde->toDateString(), 'hasta' => $hasta->toDateString()])"/>
     </x-slot:actions>
-    <p class="mb-4 text-sm text-slate-500">General = venta + cobranza − crédito − gastos − FISE. Saldo = general − depósitos (igual que la hoja «CAJA GNRAL» del Excel).</p>
+    <p class="help mb-3">General = venta + cobranza − crédito − gastos − FISE. Saldo = general − depósitos (igual que la hoja «CAJA GNRAL» del Excel).</p>
     <div class="card">
         <div class="table-wrap">
             <table class="table table-compact">

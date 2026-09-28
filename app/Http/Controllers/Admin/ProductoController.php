@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductoRequest;
 use App\Models\LiquidacionItem;
 use App\Models\Producto;
-use App\Models\StockMovimiento;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -53,8 +52,7 @@ class ProductoController extends Controller
 
     public function destroy(Producto $producto): JsonResponse
     {
-        $usado = StockMovimiento::where('producto_id', $producto->id)->exists()
-            || LiquidacionItem::where('producto_id', $producto->id)->exists();
+        $usado = LiquidacionItem::where('producto_id', $producto->id)->exists();
         abort_if($usado, 422, 'El producto ya tiene movimientos o ventas. Desactívalo en lugar de eliminarlo.');
         $producto->delete();
 

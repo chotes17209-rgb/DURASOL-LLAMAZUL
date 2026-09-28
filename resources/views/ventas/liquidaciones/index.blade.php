@@ -4,7 +4,7 @@
         <a href="{{ route('liquidaciones.create') }}" class="btn btn-primary"><x-heroicon-o-plus class="h-4 w-4"/> Nueva liquidación</a>
     </x-slot:actions>
     @if ($borradores)
-        <div class="mb-4 flex items-center gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-200">
+        <div class="mb-4 flex items-center gap-3 rounded bg-amber-50 p-4 text-sm text-amber-800 border border-amber-200">
             <x-heroicon-o-exclamation-circle class="h-5 w-5"/> Hay <b>{{ $borradores }}</b> liquidación(es) en borrador pendientes de cerrar en caja.
         </div>
     @endif

@@ -20,7 +20,7 @@ class Instalacion extends Model
     protected $table = 'instalaciones';
 
     protected $fillable = [
-        'codigo', 'nombre', 'empresa_id', 'direccion', 'chofer_id', 'vehiculo_id', 'activo', 'observaciones',
+        'codigo', 'nombre', 'empresa_id', 'planta', 'responsable', 'placas', 'direccion', 'chofer_id', 'vehiculo_id', 'activo', 'observaciones',
     ];
 
     protected function casts(): array
@@ -56,5 +56,11 @@ class Instalacion extends Model
     public function nombreMostrar(): string
     {
         return "{$this->codigo} · {$this->nombre}";
+    }
+
+    /** @return array<int, string> placas en mayúsculas (el campo admite varias separadas por coma). */
+    public function listaPlacas(): array
+    {
+        return array_values(array_filter(array_map(fn ($p) => mb_strtoupper(trim($p)), preg_split('/[,;\/]+/', (string) $this->placas))));
     }
 }

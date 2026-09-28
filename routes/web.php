@@ -14,10 +14,7 @@ use App\Http\Controllers\Flota\VehiculoController;
 use App\Http\Controllers\Flota\VehiculoDocumentoController;
 use App\Http\Controllers\Flota\VehiculoMantenimientoController;
 use App\Http\Controllers\HistorialController;
-use App\Http\Controllers\Logistica\CanjeController;
-use App\Http\Controllers\Logistica\DespachoController;
-use App\Http\Controllers\Logistica\GuiaController;
-use App\Http\Controllers\Logistica\MovimientoManualController;
+use App\Http\Controllers\Logistica\ParteController;
 use App\Http\Controllers\Logistica\StockController;
 use App\Http\Controllers\Precios\PrecioCompraController;
 use App\Http\Controllers\Precios\PrecioVentaController;
@@ -48,6 +45,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('usuarios', UsuarioController::class)->parameters(['usuarios' => 'usuario']);
         Route::get('historial', [HistorialController::class, 'index'])->name('historial.index');
         Route::post('liquidaciones/{liquidacion}/reabrir', [LiquidacionController::class, 'reabrir'])->name('liquidaciones.reabrir');
+        Route::post('logistica/partes/{fecha}/reabrir', [ParteController::class, 'reabrir'])->name('logistica.partes.reabrir');
         Route::get('precios/compra/crear', [PrecioCompraController::class, 'create'])->name('precios.compra.create');
         Route::post('precios/compra', [PrecioCompraController::class, 'store'])->name('precios.compra.store');
         Route::delete('precios/compra/{precio}', [PrecioCompraController::class, 'destroy'])->name('precios.compra.destroy');
@@ -71,21 +69,18 @@ Route::middleware('auth')->group(function () {
         Route::resource('instalaciones', InstalacionController::class)->parameters(['instalaciones' => 'instalacion']);
 
         Route::prefix('logistica')->name('logistica.')->group(function () {
+            // Parte diario de almacén (una hoja por fecha, como en Excel).
+            Route::get('partes', [ParteController::class, 'index'])->name('partes.index');
+            Route::get('partes/abrir', [ParteController::class, 'abrir'])->name('partes.abrir');
+            Route::get('partes/{fecha}', [ParteController::class, 'show'])->name('partes.show')->where('fecha', '\\d{4}-\\d{2}-\\d{2}');
+            Route::put('partes/{fecha}', [ParteController::class, 'update'])->name('partes.update');
+            Route::post('partes/{fecha}/cerrar', [ParteController::class, 'cerrar'])->name('partes.cerrar');
+            Route::get('partes/{fecha}/ajuste', [ParteController::class, 'ajusteForm'])->name('partes.ajuste');
+            Route::get('partes/{fecha}/reporte', [ParteController::class, 'reporte'])->name('partes.reporte');
+            Route::post('partes/{fecha}/ajuste', [ParteController::class, 'ajuste'])->name('partes.ajuste.store');
+
             Route::get('stock', [StockController::class, 'index'])->name('stock');
             Route::get('stock/kardex', [StockController::class, 'kardex'])->name('stock.kardex');
-
-            Route::resource('guias', GuiaController::class);
-            Route::get('guias/{guia}/recibir', [GuiaController::class, 'recibirForm'])->name('guias.recibir');
-            Route::post('guias/{guia}/recibir', [GuiaController::class, 'recibir'])->name('guias.recibir.store');
-            Route::post('guias/{guia}/anular', [GuiaController::class, 'anular'])->name('guias.anular');
-
-            Route::resource('despachos', DespachoController::class);
-            Route::get('despachos/{despacho}/retorno', [DespachoController::class, 'retornoForm'])->name('despachos.retorno');
-            Route::post('despachos/{despacho}/retorno', [DespachoController::class, 'retorno'])->name('despachos.retorno.store');
-            Route::post('despachos/{despacho}/anular', [DespachoController::class, 'anular'])->name('despachos.anular');
-
-            Route::resource('canjes', CanjeController::class);
-            Route::resource('movimientos', MovimientoManualController::class)->parameters(['movimientos' => 'movimiento']);
         });
 
         Route::get('precios/compra', [PrecioCompraController::class, 'index'])->name('precios.compra.index');

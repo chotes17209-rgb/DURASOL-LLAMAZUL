@@ -8,7 +8,7 @@
 
 <div x-data="liquidacionEditor(@js($config))" x-cloak>
     @unless ($liquidacion->esEditable())
-        <div class="mb-5 flex items-center gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-200">
+        <div class="mb-5 flex items-center gap-3 rounded bg-amber-50 p-4 text-sm text-amber-800 border border-amber-200">
             <x-heroicon-o-lock-closed class="h-5 w-5"/>
             <p>Esta liquidación está <b>{{ $liquidacion->estado->label() }}</b> y no se puede modificar.
                 @if (auth()->user()->isAdmin() && $liquidacion->estado === \App\Enums\EstadoLiquidacion::Cerrada) Un administrador puede reabrirla desde «Ver». @endif</p>
@@ -200,7 +200,7 @@
 
         {{-- Resumen --}}
         <aside class="space-y-4 2xl:sticky 2xl:top-24 2xl:self-start">
-            <div class="overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-950 to-slate-950 text-white shadow-xl">
+            <div class="overflow-hidden rounded bg-gradient-to-br from-brand-900 via-brand-950 to-slate-950 text-white">
                 <div class="p-6">
                     <p class="text-xs font-bold uppercase tracking-widest text-brand-200">Resumen de liquidación</p>
                     <dl class="mt-4 space-y-2.5 text-sm">
@@ -218,7 +218,7 @@
                 </div>
                 <div class="bg-white/5 p-6">
                     <label class="text-xs font-semibold text-brand-200">Efectivo entregado (contado en caja)</label>
-                    <input type="number" min="0" step="0.01" class="mt-1 w-full rounded-xl border-0 bg-white/10 px-3 py-2 text-lg font-bold text-white ring-1 ring-white/20 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-400 focus:outline-none"
+                    <input type="number" min="0" step="0.01" class="mt-1 w-full rounded border-0 bg-white/10 px-3 py-2 text-lg font-bold text-white border-white/20 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-400 focus:outline-none"
                            x-model="cab.efectivo_entregado" placeholder="0.00">
                     <template x-if="diferencia !== null">
                         <p class="mt-2 text-sm font-semibold" :class="diferencia === 0 ? 'text-emerald-300' : (diferencia > 0 ? 'text-sky-300' : 'text-rose-300')"

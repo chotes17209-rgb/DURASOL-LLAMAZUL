@@ -6,7 +6,7 @@
             <tr>
                 <td>
                     <div class="flex items-center gap-3">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-xs font-bold text-brand-700">{{ $u->initials() }}</div>
+                        <div class="flex h-9 w-9 items-center justify-center rounded bg-brand-100 text-xs font-bold text-brand-700">{{ $u->initials() }}</div>
                         <div><p class="font-semibold text-slate-900">{{ $u->name }}</p><p class="font-mono text-xs text-slate-500">{{ $u->username }}</p></div>
                     </div>
                 </td>

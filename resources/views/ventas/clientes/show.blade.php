@@ -5,12 +5,12 @@
         <div x-show="tab === 'detalle'" class="space-y-6">
             <div class="grid gap-3 sm:grid-cols-4">
                 @foreach ($vigentes as $productoId => $precio)
-                    <div class="rounded-2xl bg-brand-50 p-4 ring-1 ring-brand-100">
+                    <div class="rounded bg-brand-50 p-4 border border-brand-100">
                         <p class="text-xs font-bold text-brand-700">{{ $productos[$productoId]->codigo ?? '' }}</p>
                         <p class="text-xl font-bold text-slate-900">{{ soles($precio) }}</p>
                     </div>
                 @endforeach
-                <div class="rounded-2xl p-4 ring-1 {{ $cliente->deudaPendiente() > 0 ? 'bg-rose-50 ring-rose-200' : 'bg-emerald-50 ring-emerald-200' }}">
+                <div class="rounded p-4 {{ $cliente->deudaPendiente() > 0 ? 'bg-rose-50 ring-rose-200' : 'bg-emerald-50 ring-emerald-200' }}">
                     <p class="text-xs font-bold text-slate-600">Deuda pendiente</p>
                     <p class="text-xl font-bold text-slate-900">{{ soles($cliente->deudaPendiente()) }}</p>
                 </div>

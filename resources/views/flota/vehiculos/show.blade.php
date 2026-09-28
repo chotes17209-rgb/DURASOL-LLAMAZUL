@@ -5,7 +5,7 @@
         <div x-show="tab === 'detalle'" class="space-y-6">
             <div class="grid gap-3 sm:grid-cols-3">
                 @foreach ($vehiculo->estadoDocumentos() as $tipo => $info)
-                    <div @class(['rounded-2xl p-4 ring-1',
+                    <div @class(['rounded p-4',
                         'bg-emerald-50 ring-emerald-200' => $info['estado'] === 'vigente',
                         'bg-amber-50 ring-amber-200' => $info['estado'] === 'por_vencer',
                         'bg-rose-50 ring-rose-200' => $info['estado'] === 'vencido',
@@ -90,33 +90,9 @@
             </table>
         </div>
 
-        <div x-show="tab === 'actividad'" x-cloak class="grid gap-6 lg:grid-cols-2">
-            <div>
-                <p class="mb-2 text-sm font-semibold text-slate-900">Últimos despachos</p>
-                <table class="table table-compact">
-                    <thead><tr><th>Fecha</th><th>Chofer</th><th>Vuelta</th><th>Estado</th></tr></thead>
-                    <tbody>
-                    @forelse ($ultimosDespachos as $d)
-                        <tr><td>{{ fecha($d->fecha) }}</td><td>{{ $d->chofer?->alias }}</td><td>{{ $d->vuelta }}</td><td><x-status :value="$d->estado"/></td></tr>
-                    @empty
-                        <tr><td colspan="4" class="text-center text-slate-400">Sin despachos.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div>
-                <p class="mb-2 text-sm font-semibold text-slate-900">Últimas guías de planta</p>
-                <table class="table table-compact">
-                    <thead><tr><th>Fecha</th><th>Guía</th><th>Empresa</th><th>Estado</th></tr></thead>
-                    <tbody>
-                    @forelse ($ultimasGuias as $g)
-                        <tr><td>{{ fecha($g->fecha_salida) }}</td><td class="font-mono text-xs">{{ $g->numero_guia }}</td><td>{{ $g->empresa?->nombre }}</td><td><x-status :value="$g->estado"/></td></tr>
-                    @empty
-                        <tr><td colspan="4" class="text-center text-slate-400">Sin guías.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
+        <div x-show="tab === 'actividad'" x-cloak>
+            <p class="mb-2 text-sm font-semibold text-slate-900">Últimos movimientos en el parte diario</p>
+            @include('logistica.partes._movimientos')
         </div>
 
         <div x-show="tab === 'historial'" x-cloak><x-history :model="$vehiculo"/></div>

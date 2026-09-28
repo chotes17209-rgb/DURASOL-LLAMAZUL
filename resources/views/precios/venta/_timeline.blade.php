@@ -4,7 +4,7 @@
 @else
     <div class="grid gap-4 md:grid-cols-2">
         @foreach ($historial as $productoId => $registros)
-            <div class="rounded-2xl ring-1 ring-slate-200">
+            <div class="rounded border border-line">
                 <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                     <p class="font-semibold text-slate-900">{{ $productos[$productoId]->codigo ?? '?' }} <span class="text-xs font-normal text-slate-500">{{ $productos[$productoId]->nombre ?? '' }}</span></p>
                     <x-badge color="blue">Actual {{ soles($registros->first()->precio) }}</x-badge>

@@ -28,8 +28,8 @@ class AppServiceProvider extends ServiceProvider
         Paginator::defaultView('components.pagination');
         Route::resourceVerbs(['create' => 'crear', 'edit' => 'editar']);
         // Los IDs de las rutas son numéricos: una URL como /liquidaciones/abc responde 404 y no un error de base de datos.
-        foreach (['empresa', 'producto', 'usuario', 'vehiculo', 'documento', 'mantenimiento', 'chofer', 'instalacion', 'guia', 'despacho',
-            'canje', 'movimiento', 'cliente', 'liquidacion', 'cuenta', 'cobranza', 'deposito', 'precio'] as $parametro) {
+        foreach (['empresa', 'producto', 'usuario', 'vehiculo', 'documento', 'mantenimiento', 'chofer', 'instalacion',
+            'cliente', 'liquidacion', 'cuenta', 'cobranza', 'deposito', 'precio'] as $parametro) {
             Route::pattern($parametro, '[0-9]+');
         }
 
@@ -51,10 +51,7 @@ class AppServiceProvider extends ServiceProvider
             'cliente' => Models\Cliente::class,
             'precio_compra' => Models\PrecioCompra::class,
             'precio_venta' => Models\PrecioVenta::class,
-            'guia' => Models\Guia::class,
-            'despacho' => Models\Despacho::class,
-            'canje' => Models\Canje::class,
-            'movimiento_stock_manual' => Models\MovimientoStockManual::class,
+            'parte' => Models\Parte::class,
             'liquidacion' => Models\Liquidacion::class,
             'cuenta_por_cobrar' => Models\CuentaPorCobrar::class,
             'cobranza' => Models\Cobranza::class,

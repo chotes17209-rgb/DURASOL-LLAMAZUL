@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Ventas;
 
-use App\Enums\EstadoDespacho;
 use App\Enums\EstadoLiquidacion;
 use App\Enums\MetodoPago;
 use App\Enums\TipoChofer;
@@ -10,12 +9,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LiquidacionRequest;
 use App\Models\Chofer;
 use App\Models\Cliente;
-use App\Models\Despacho;
 use App\Models\Empresa;
 use App\Models\Liquidacion;
 use App\Models\LiquidacionFise;
 use App\Models\Producto;
 use App\Models\Vehiculo;
+use App\Services\AlmacenService;
 use App\Services\CuentaService;
 use App\Services\LiquidacionService;
 use App\Services\PrecioService;
@@ -150,23 +149,17 @@ class LiquidacionController extends Controller
         ]);
     }
 
-    /** Balones vendidos según logística (despachos retornados) para cuadrar. */
-    public function cuadre(Request $request): JsonResponse
+    /** Balones vendidos según el parte de almacén (salida − retorno de llenos) para cuadrar. */
+    public function cuadre(Request $request, AlmacenService $almacen): JsonResponse
     {
-        $despachos = Despacho::with('detalles.producto')
-            ->where('chofer_id', $request->integer('chofer_id'))
-            ->where('fecha', $request->date('fecha')?->toDateString())
-            ->where('estado', EstadoDespacho::Retornado)->get();
-
-        $vendidos = [];
-        foreach ($despachos as $d) {
-            foreach ($d->detalles as $det) {
-                $codigo = $det->producto->codigo;
-                $vendidos[$codigo] = ($vendidos[$codigo] ?? 0) + $det->vendidos();
-            }
+        $fecha = $request->date('fecha');
+        if (! $fecha) {
+            return response()->json((object) []);
         }
+        $fila = $almacen->cuadreChoferes($fecha)->first(fn ($c) => $c['chofer']->id === $request->integer('chofer_id'));
+        $vendidos = collect($fila['productos'] ?? [])->filter(fn ($p) => $p['salio'] > 0)->map(fn ($p) => $p['vendido']);
 
-        return response()->json((object) $vendidos);
+        return response()->json((object) $vendidos->all());
     }
 
     private function respuestaGuardado(Liquidacion $liquidacion, string $mensaje): JsonResponse

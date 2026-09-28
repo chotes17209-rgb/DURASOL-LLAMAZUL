@@ -1,6 +1,6 @@
 <x-layouts.app title="Detalle de ventas" breadcrumb="Reportes">
     <x-slot:actions>
-        <a href="{{ route('reportes.ventas.exportar', request()->query()) }}" class="btn btn-secondary" id="exportar-ventas"><x-heroicon-o-arrow-down-tray class="h-4 w-4"/> Exportar a Excel (CSV)</a>
+        <x-export :url="route('reportes.ventas.exportar')"/>
     </x-slot:actions>
     <x-remote-table :url="route('reportes.ventas')">
         <x-slot:filters>
@@ -14,13 +14,4 @@
         </x-slot:filters>
         @include('reportes._ventas')
     </x-remote-table>
-    @push('scripts')
-    <script>
-        document.getElementById('exportar-ventas').addEventListener('click', (e) => {
-            const form = document.querySelector('[data-table-filters]');
-            const params = new URLSearchParams(new FormData(form));
-            e.currentTarget.href = '{{ route('reportes.ventas.exportar') }}?' + params.toString();
-        });
-    </script>
-    @endpush
 </x-layouts.app>

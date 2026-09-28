@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\InstalacionRequest;
 use App\Models\Chofer;
 use App\Models\Empresa;
-use App\Models\Guia;
 use App\Models\Instalacion;
+use App\Models\ParteFila;
 use App\Models\Producto;
 use App\Models\Vehiculo;
 use App\Services\PrecioService;
@@ -47,10 +47,10 @@ class InstalacionController extends Controller
     {
         $instalacion->load(['empresa', 'chofer', 'vehiculo']);
         $historialPrecios = $instalacion->preciosCompra()->with(['producto', 'user'])->orderByDesc('vigente_desde')->orderByDesc('id')->get();
-        $guias = Guia::with('detalles')->where('instalacion_id', $instalacion->id)->latest('fecha_salida')->limit(15)->get();
+        $movimientos = ParteFila::with('parte')->where('instalacion_id', $instalacion->id)->latest('id')->limit(15)->get();
         $vigentes = $precios->preciosCompraVigentes()[$instalacion->id] ?? [];
 
-        return view('flota.instalaciones.show', compact('instalacion', 'historialPrecios', 'guias', 'vigentes'));
+        return view('flota.instalaciones.show', compact('instalacion', 'historialPrecios', 'movimientos', 'vigentes'));
     }
 
     public function edit(Instalacion $instalacion): View
@@ -67,7 +67,7 @@ class InstalacionController extends Controller
 
     public function destroy(Instalacion $instalacion): JsonResponse
     {
-        abort_if(Guia::where('instalacion_id', $instalacion->id)->exists(), 422, 'La instalación tiene guías registradas. Desactívala en lugar de eliminarla.');
+        abort_if(ParteFila::where('instalacion_id', $instalacion->id)->exists(), 422, 'La instalación tiene cargas registradas en los partes. Desactívala en lugar de eliminarla.');
         $instalacion->delete();
 
         return $this->ok('Instalación eliminada.');

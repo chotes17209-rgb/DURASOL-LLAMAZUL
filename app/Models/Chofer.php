@@ -41,9 +41,9 @@ class Chofer extends Model
         return $this->hasMany(Liquidacion::class);
     }
 
-    public function despachos(): HasMany
+    public function filasParte(): HasMany
     {
-        return $this->hasMany(Despacho::class);
+        return $this->hasMany(ParteFila::class);
     }
 
     public function scopeActivos(Builder $query): Builder

@@ -18,11 +18,8 @@ class Menu
                 ['label' => 'Panel de control', 'route' => 'dashboard', 'match' => 'dashboard', 'icon' => 'squares-2x2', 'roles' => []],
             ]],
             ['titulo' => 'Logística', 'items' => [
-                ['label' => 'Stock y kardex', 'route' => 'logistica.stock', 'match' => 'logistica.stock*', 'icon' => 'cube', 'roles' => [Rol::Logistica]],
-                ['label' => 'Guías de planta', 'route' => 'logistica.guias.index', 'match' => 'logistica.guias.*', 'icon' => 'building-office-2', 'roles' => [Rol::Logistica]],
-                ['label' => 'Despachos a choferes', 'route' => 'logistica.despachos.index', 'match' => 'logistica.despachos.*', 'icon' => 'truck', 'roles' => [Rol::Logistica]],
-                ['label' => 'Canjes de colores', 'route' => 'logistica.canjes.index', 'match' => 'logistica.canjes.*', 'icon' => 'arrows-right-left', 'roles' => [Rol::Logistica]],
-                ['label' => 'Movimientos manuales', 'route' => 'logistica.movimientos.index', 'match' => 'logistica.movimientos.*', 'icon' => 'adjustments-horizontal', 'roles' => [Rol::Logistica]],
+                ['label' => 'Parte diario', 'route' => 'logistica.partes.index', 'match' => 'logistica.partes.*', 'icon' => 'clipboard-document-list', 'roles' => [Rol::Logistica]],
+                ['label' => 'Stock y kardex', 'route' => 'logistica.stock', 'match' => 'logistica.stock*', 'icon' => 'cube', 'roles' => [Rol::Logistica, Rol::Liquidaciones]],
             ]],
             ['titulo' => 'Ventas', 'items' => [
                 ['label' => 'Liquidaciones', 'route' => 'liquidaciones.index', 'match' => 'liquidaciones.*', 'icon' => 'clipboard-document-check', 'roles' => [Rol::Liquidaciones, Rol::Caja]],

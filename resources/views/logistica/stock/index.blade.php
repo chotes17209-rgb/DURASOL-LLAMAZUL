@@ -1,88 +1,46 @@
-@php
-    $totalLlenos = collect($resumen['llenos'])->sum('total');
-    $totalVacios = collect($resumen['vacios'])->sum('plomo');
-    $totalColores = collect($resumen['vacios'])->sum('color');
-    $totalCambios = collect($resumen['llenos'])->sum('total_cambios');
-    $enCamino = $choferesEnRuta->sum(fn ($d) => $d->totalSalida());
-@endphp
-<x-layouts.app title="Stock y kardex" breadcrumb="Logística · Movimiento de masa">
+<x-layouts.app title="Stock de almacén" breadcrumb="Logística">
     <x-slot:actions>
         <form method="GET" class="flex items-center gap-2">
-            <input type="date" name="fecha" value="{{ $fecha->format('Y-m-d') }}" class="form-input w-40" onchange="this.form.submit()">
+            <label class="text-xs text-slate-500">Al</label>
+            <input type="date" name="fecha" value="{{ $fecha->toDateString() }}" class="form-input w-36" onchange="this.form.submit()">
         </form>
-        <a href="{{ route('logistica.stock.kardex') }}" class="btn btn-primary"><x-heroicon-o-queue-list class="h-4 w-4"/> Kardex</a>
+        <x-export :url="route('logistica.stock', ['fecha' => $fecha->toDateString()])"/>
+        <a href="{{ route('logistica.stock.kardex') }}" class="btn btn-secondary">Kardex</a>
+        <a href="{{ route('logistica.partes.show', $fecha->toDateString()) }}" class="btn btn-primary">Parte del día</a>
     </x-slot:actions>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <x-kpi label="Llenos en almacén" :value="num($totalLlenos)" icon="fire" color="orange"/>
-        <x-kpi label="Vacíos plomo" :value="num($totalVacios)" icon="cube-transparent" color="slate"/>
-        <x-kpi label="Vacíos de color" :value="num($totalColores)" icon="swatch" color="violet" hint="Para canje"/>
-        <x-kpi label="Cambios (fallados)" :value="num($totalCambios)" icon="exclamation-triangle" color="amber" hint="Por devolver a planta"/>
-        <x-kpi label="Con choferes en ruta" :value="num($enCamino)" icon="truck" color="sky" :hint="$choferesEnRuta->count().' despacho(s) sin retornar'"/>
-    </div>
-
-    <div class="mt-6 grid gap-6 xl:grid-cols-3">
-        <div class="card xl:col-span-2">
-            <div class="card-header"><p class="card-title">Balones llenos por empresa <span class="font-normal text-slate-400">al {{ fecha($fecha) }}</span></p></div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead><tr><th>Producto</th>@foreach ($resumen['empresas'] as $e)<th class="text-right">{{ $e->nombre }}</th>@endforeach<th class="text-right">Total llenos</th><th class="text-right">Cambios</th></tr></thead>
+    @php($grupos = ['Llenos' => ['lleno_s10', 'lleno_s45', 'lleno_m10'], 'Cambios (fallados)' => ['cambio_s10', 'cambio_s45', 'cambio_m10'], 'Vacíos' => ['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45']])
+    <div class="grid gap-4 xl:grid-cols-3">
+        @foreach ($grupos as $titulo => $llaves)
+            <div class="card">
+                <div class="card-header"><p class="card-title">{{ $titulo }}</p></div>
+                <table class="table table-compact table-grid">
+                    <thead><tr><th></th><th class="text-right">Inicial</th><th class="text-right">Ingreso</th><th class="text-right">Salida</th><th class="text-right">Final</th></tr></thead>
                     <tbody>
-                    @foreach ($resumen['llenos'] as $fila)
+                    @foreach ($llaves as $llave)
+                        @php($f = $control[$llave])
                         <tr>
-                            <td><span class="font-mono font-bold">{{ $fila['producto']->codigo }}</span> <span class="text-xs text-slate-500">{{ $fila['producto']->nombre }}</span></td>
-                            @foreach ($resumen['empresas'] as $e)
-                                <td class="text-right tabular-nums {{ $fila['empresas'][$e->id] < 0 ? 'font-bold text-rose-600' : '' }}">{{ num($fila['empresas'][$e->id]) }}</td>
-                            @endforeach
-                            <td class="text-right text-base font-bold tabular-nums">{{ num($fila['total']) }}</td>
-                            <td class="text-right tabular-nums text-amber-600">{{ num($fila['total_cambios']) }}</td>
+                            <td><a class="text-brand-700 hover:underline" href="{{ route('logistica.stock.kardex', ['llave' => $llave]) }}">{{ $f['titulo'] }}</a></td>
+                            <td class="text-right">{{ num($f['inicial']) }}</td><td class="text-right">{{ num($f['ingreso']) }}</td><td class="text-right">{{ num($f['salida']) }}</td>
+                            <td class="text-right font-semibold {{ $f['final'] < 0 ? 'text-red-700' : '' }}">{{ num($f['final']) }}</td>
                         </tr>
                     @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>
-        <div class="card">
-            <div class="card-header"><p class="card-title">Vacíos</p></div>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead><tr><th>Envase</th><th class="text-right">Plomo</th><th class="text-right">Color</th><th class="text-right">Total</th></tr></thead>
-                    <tbody>
-                    @foreach ($resumen['vacios'] as $fila)
-                        <tr><td class="font-semibold">{{ $fila['producto']->capacidad_kg }} kg</td><td class="text-right tabular-nums">{{ num($fila['plomo']) }}</td>
-                            <td class="text-right tabular-nums text-violet-600">{{ num($fila['color']) }}</td><td class="text-right font-bold tabular-nums">{{ num($fila['total']) }}</td></tr>
-                    @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="grid grid-cols-2 gap-3 border-t border-slate-100 p-5 text-sm">
-                @foreach (['lleno' => 'Llenos', 'vacio' => 'Vacíos', 'color' => 'Colores', 'cambio' => 'Cambios'] as $estado => $label)
-                    <div class="rounded-xl bg-slate-50 p-3">
-                        <p class="text-xs font-semibold text-slate-500">{{ $label }} hoy</p>
-                        <p class="mt-1 tabular-nums"><span class="text-emerald-600">+{{ num($movDia[$estado]->entradas ?? 0) }}</span> · <span class="text-rose-600">−{{ num($movDia[$estado]->salidas ?? 0) }}</span></p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
+        @endforeach
     </div>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-2">
-        <div class="card">
-            <div class="card-header"><p class="card-title">Guías en tránsito (camiones en planta)</p><a href="{{ route('logistica.guias.index') }}" class="text-xs font-semibold text-brand-600">Ver guías →</a></div>
-            <div class="divide-y divide-slate-100">
-                @forelse ($guiasTransito as $g)
-                    <div class="flex items-center justify-between px-5 py-3 text-sm">
-                        <div><p class="font-semibold">{{ $g->numero_guia }} · {{ $g->empresa->nombre }}</p><p class="text-xs text-slate-500">Salió {{ fecha($g->fecha_salida) }} con {{ $g->totalEnviado() }} balones</p></div>
-                        <button class="btn btn-success btn-sm" data-modal-url="{{ route('logistica.guias.recibir', $g) }}" data-modal-size="xl">Recibir</button>
-                    </div>
-                @empty
-                    <p class="px-5 py-6 text-center text-sm text-slate-400">No hay camiones en planta.</p>
-                @endforelse
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header"><p class="card-title">Últimos movimientos</p><a href="{{ route('logistica.stock.kardex') }}" class="text-xs font-semibold text-brand-600">Kardex completo →</a></div>
-            <div class="max-h-96 overflow-y-auto">@include('logistica.stock._movimientos', ['movimientos' => $ultimos])</div>
-        </div>
+    <div class="card mt-4 max-w-2xl">
+        <div class="card-header"><p class="card-title">Stock disponible por empresa (compras en planta − ventas liquidadas)</p></div>
+        <table class="table table-compact table-grid">
+            <thead><tr><th>Empresa</th><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th></tr></thead>
+            <tbody>
+            @foreach ($porEmpresa as $empresa => $s)
+                <tr><td class="font-semibold">{{ $empresa }}</td>@foreach (['S10', 'S45', 'M10'] as $c)<td class="text-right {{ $s[$c] < 0 ? 'text-red-700' : '' }}">{{ num($s[$c]) }}</td>@endforeach</tr>
+            @endforeach
+            </tbody>
+        </table>
+        <p class="px-4 py-2 text-xs text-slate-500">Considera las compras registradas en los partes (filas de planta con empresa) y las ventas de liquidaciones registradas en el sistema.</p>
     </div>
 </x-layouts.app>

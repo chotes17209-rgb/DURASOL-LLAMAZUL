@@ -3,29 +3,23 @@
 namespace Database\Seeders;
 
 use App\Enums\EstadoCuenta;
-use App\Enums\EstadoDespacho;
-use App\Enums\EstadoGuia;
 use App\Enums\EstadoLiquidacion;
-use App\Enums\EstadoStock;
 use App\Enums\MetodoPago;
 use App\Enums\TipoChofer;
-use App\Enums\TipoMovimientoManual;
-use App\Models\Canje;
 use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\CuentaBancaria;
 use App\Models\Deposito;
-use App\Models\Despacho;
 use App\Models\Empresa;
-use App\Models\Guia;
 use App\Models\Instalacion;
 use App\Models\Liquidacion;
-use App\Models\MovimientoStockManual;
+use App\Models\Parte;
+use App\Models\ParteFila;
 use App\Models\PrecioCompra;
 use App\Models\Producto;
 use App\Models\Vehiculo;
+use App\Services\AlmacenService;
 use App\Services\LiquidacionService;
-use App\Services\LogisticaService;
 use App\Support\AuditLogger;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -37,8 +31,8 @@ use Illuminate\Support\Str;
  *  - DATA: clientes, chofer responsable, precios de venta y de compra, placas.
  *  - VENTAS: 11 200 filas agrupadas en liquidaciones por fecha y chofer (ventas, créditos y cobranzas).
  *  - FISES: vales FISE por chofer y día.
- *  - STOCK: compras de agosto (guías históricas, no mueven stock).
- *  - B.LLENO / B.VACIO: foto del almacén al 25/09 (stock inicial + movimientos de ese día).
+ *  - Cuadro de instalaciones Solgas con sus precios de compra (aún no validados en factura).
+ *  - Parte de logística del 14/09 (hojas LLENOS y VACÍOS) y B.LLENO / B.VACIO del 25/09.
  *  - RESUMEN GNRAL / CAJA GNRAL: depósitos.
  */
 class ExcelSeeder extends Seeder
@@ -84,10 +78,10 @@ class ExcelSeeder extends Seeder
             $this->command?->info('Ventas importadas: '.Liquidacion::count().' liquidaciones');
 
             $this->fises();
-            $this->comprasAgosto($instalaciones);
-            $this->fotoAlmacen25Setiembre($instalaciones);
+            $this->parte14Setiembre($instalaciones);
+            $this->parte25Setiembre($instalaciones);
             $this->depositos();
-            $this->command?->info('Stock, guías, despachos y depósitos importados.');
+            $this->command?->info('Partes de almacén y depósitos importados.');
         });
     }
 
@@ -136,35 +130,78 @@ class ExcelSeeder extends Seeder
 
         return match ($alias) {
             'RONAL' => 'RONALD',
+            'JORGUE' => 'JORGE',
+            'MIZAEL' => 'MISAEL',
+            'ABULO' => 'ABUELO',
             'ZADIT' => 'ZADITH',
             '' => 'OTROS',
             default => $alias,
         };
     }
 
-    /** Una instalación por empresa (el Excel no trae los códigos de 8 dígitos: completarlos). */
-    private function instalacionesYPreciosCompra(array $precios): array
+    /**
+     * Cuadro de instalaciones de logística: código Solgas de 8 dígitos, responsable, placas, planta
+     * y precio de compra. "No validado" = la última variación de precio aún no se ve en las facturas.
+     *
+     * @return array<string, Instalacion> código => instalación
+     */
+    private function instalacionesYPreciosCompra(array $preciosExcel): array
     {
-        $instalaciones = [];
-        $datos = [
-            'DURASOL' => ['codigo' => '10000001', 'chofer' => 'ABUELO', 'placa' => 'W2S-907'],
-            'LLAMAZUL' => ['codigo' => '20000001', 'chofer' => 'ABEL', 'placa' => 'W6F-740'],
+        $cuadro = [
+            // empresa, responsable, código, placas, planta, S10, S45, M10
+            ['DURASOL', 'AGUILAR', '62170831', 'W6D-892', 'P.HUA', 41.30, 194.50, 37.80],
+            ['DURASOL', 'ABUELO', '62170833', 'W2S-907', 'P.HUA', 41.30, 194.50, 37.80],
+            ['DURASOL', 'FREDY', '62173099', 'BRU-782', 'P.HUA', 41.30, 194.50, 37.80],
+            ['DURASOL', 'MILTON', '62174640', 'VIQUES', 'P.HUA', 41.30, 194.50, 37.80],
+            ['DURASOL', 'VIQUES', '62174651', 'VIQUES', 'P.HUA', 42.50, null, null],
+            ['DURASOL', 'ESPEJO', '62177529', 'W6D-892', 'P.HUA', 36.80, null, null],
+            ['DURASOL', 'ESPEJO', '62177530', null, 'P.HUA', 36.80, null, null],
+            ['DURASOL', 'ESPEJO', '62177531', null, 'P.HUA', 36.80, null, null],
+            ['LLAMAZUL', 'ABEL', '62170835', 'W6F-740', 'P.HUA', 40.50, 207.90, null],
+            ['LLAMAZUL', 'RUFINO', '62170838', 'BCL-884', 'P.HUA', 40.50, null, null],
+            ['LLAMAZUL', 'HUANCAVELICA', '62174003', 'CET-858, W6N-923', 'P.HUA', 40.50, null, null],
+            ['LLAMAZUL', 'MILTON', '62174064', 'MALVINAS', 'P.HUA', 39.50, 207.90, null],
+            ['LLAMAZUL', 'LIMA', '62172419', 'MALVINAS', 'P.LIMA', 33.80, 169.20, null],
+            ['LLAMAZUL', 'LIMA', '62125291', 'MALVINAS', 'P.LIMA', 33.80, 169.20, null],
+            ['LLAMAZUL', 'AYACUCHO', '62172211', 'BCL-884', 'P.AYACUCHO', 36.50, null, null],
         ];
-        foreach ($datos as $empresa => $d) {
-            $instalacion = Instalacion::firstOrCreate(['codigo' => $d['codigo']], [
-                'nombre' => "Instalación principal {$empresa}",
+
+        $instalaciones = [];
+        foreach ($cuadro as [$empresa, $responsable, $codigo, $placas, $planta, $s10, $s45, $m10]) {
+            $placa = $placas ? trim(explode(',', $placas)[0]) : null;
+            if ($placa && preg_match('/^[A-Z0-9]{3}-\d{3}$/', $placa) && ! isset($this->vehiculos[$placa])) {
+                $this->vehiculos[$placa] = Vehiculo::firstOrCreate(['placa' => $placa], ['tipo' => 'camion', 'estado' => 'operativo', 'observaciones' => 'Registrado desde el cuadro de instalaciones.'])->id;
+            }
+            $instalacion = Instalacion::create([
+                'codigo' => $codigo,
+                'nombre' => "{$responsable} · {$planta}",
                 'empresa_id' => $this->empresas[$empresa],
-                'chofer_id' => $this->chofer($d['chofer'])?->id,
-                'vehiculo_id' => $this->vehiculos[$d['placa']] ?? null,
+                'planta' => $planta,
+                'responsable' => $responsable,
+                'placas' => $placas,
+                'chofer_id' => $this->chofer($responsable)?->id,
+                'vehiculo_id' => $placa ? ($this->vehiculos[$placa] ?? null) : null,
                 'activo' => true,
-                'observaciones' => 'Creada al importar el Excel: reemplazar por el código real de 8 dígitos de la instalación Solgas.',
             ]);
-            $instalaciones[$empresa] = $instalacion;
-            foreach ($precios[$empresa] ?? [] as $codigo => $precio) {
-                PrecioCompra::firstOrCreate(
-                    ['instalacion_id' => $instalacion->id, 'producto_id' => $this->productos[$codigo], 'vigente_desde' => self::FECHA_PRECIOS],
-                    ['empresa_id' => $instalacion->empresa_id, 'precio' => $precio, 'motivo' => 'Importado del Excel (DATA · precios de compra)'],
-                );
+            $instalaciones[$codigo] = $instalacion;
+
+            foreach (['S10' => $s10, 'S45' => $s45, 'M10' => $m10] as $producto => $precio) {
+                if ($precio === null) {
+                    continue;
+                }
+                // Precio anterior (hoja DATA del Excel de rentabilidad), ya reflejado en facturas.
+                if ($anterior = $preciosExcel[$empresa][$producto] ?? null) {
+                    PrecioCompra::create([
+                        'empresa_id' => $instalacion->empresa_id, 'instalacion_id' => $instalacion->id, 'producto_id' => $this->productos[$producto],
+                        'precio' => $anterior, 'vigente_desde' => self::FECHA_PRECIOS, 'motivo' => 'Importado del Excel de rentabilidad (DATA)',
+                        'validado' => true, 'validado_at' => self::FECHA_PRECIOS,
+                    ]);
+                }
+                PrecioCompra::create([
+                    'empresa_id' => $instalacion->empresa_id, 'instalacion_id' => $instalacion->id, 'producto_id' => $this->productos[$producto],
+                    'precio' => $precio, 'vigente_desde' => '2026-09-01', 'motivo' => 'Cuadro de instalaciones de logística',
+                    'validado' => false,
+                ]);
             }
         }
 
@@ -405,135 +442,154 @@ class ExcelSeeder extends Seeder
         }
     }
 
-    /** Compras de agosto (hoja STOCK): guías históricas que no mueven el stock actual. */
-    private function comprasAgosto(array $instalaciones): void
+    /**
+     * Parte de logística del 14/09/2026 (archivo "14 de Setiembre del 2026": hojas LLENOS y VACÍOS).
+     * El stock inicial se registra como ajuste de inventario del día anterior.
+     */
+    private function parte14Setiembre(array $inst): void
     {
-        foreach ($this->leer('compras_agosto.json') as [$fecha, $porEmpresa]) {
-            foreach ($porEmpresa as $empresa => $productos) {
-                if (! $productos) {
-                    continue;
-                }
-                $instalacion = $instalaciones[$empresa];
-                $guia = Guia::create([
-                    'numero_guia' => 'HIST-'.str_replace('-', '', $fecha).'-'.substr($empresa, 0, 3),
-                    'empresa_id' => $instalacion->empresa_id, 'instalacion_id' => $instalacion->id,
-                    'fecha_salida' => $fecha, 'fecha_recepcion' => $fecha, 'estado' => EstadoGuia::Recibida, 'historico' => true,
-                    'observaciones' => 'Compra de agosto importada del Excel (hoja STOCK). No afecta el stock actual.',
-                ]);
-                foreach ($productos as $codigo => $cantidad) {
-                    $precio = PrecioCompra::where('instalacion_id', $instalacion->id)->where('producto_id', $this->productos[$codigo])->value('precio') ?? 0;
-                    $guia->detalles()->create([
-                        'producto_id' => $this->productos[$codigo], 'cantidad_guia' => $cantidad, 'precio_compra' => $precio,
-                        'vacios_enviados' => $cantidad, 'llenos_recibidos' => $cantidad,
-                    ]);
-                }
-            }
-        }
+        $almacen = app(AlmacenService::class);
+        $inicial = Parte::create(['fecha' => '2026-09-13', 'estado' => Parte::CERRADO, 'observaciones' => 'Stock inicial importado del Excel de logística.', 'cerrado_at' => now()]);
+        $almacen->ajustarAConteo($inicial, [
+            'lleno_s10' => 685, 'lleno_s45' => 64, 'lleno_m10' => 33, 'cambio_s10' => 42, 'cambio_s45' => 0, 'cambio_m10' => 3,
+            'plomo_s10' => 1547, 'plomo_s45' => 17, 'color_s10' => 749, 'color_s45' => 85,
+        ]);
+
+        $d = $inst['62170833'];  // ABUELO · Durasol
+        $fredy = $inst['62173099'];
+        $abel = $inst['62170835'];
+        $hvca = $inst['62174003']; // placas CET-858 y W6N-923 · Llamazul
+        $fila = fn (string $bloque, ?string $placa, string $resp, ?string $lugar, array $cant, ?Instalacion $i = null) => $cant + [
+            'bloque' => $bloque, 'placa' => $placa, 'responsable' => $this->normalizarChofer($resp), 'lugar' => $lugar,
+            'instalacion_id' => $i?->id, 'empresa_id' => $i?->empresa_id,
+        ];
+        $LI = ParteFila::LLENO_INGRESO;
+        $LS = ParteFila::LLENO_SALIDA;
+        $VI = ParteFila::VACIO_INGRESO;
+        $VS = ParteFila::VACIO_SALIDA;
+
+        $filas = [
+            // LLENOS · INGRESO: retornos de choferes, cambios y camiones de planta.
+            $fila($LI, null, 'JORGUE', 'LOCAL', ['s10' => 23]),
+            $fila($LI, null, 'RONALD', 'LOCAL', ['s10' => 2]),
+            $fila($LI, null, 'MIZAEL', 'LOCAL', ['s10' => 32]),
+            $fila($LI, null, 'URBANO', 'LOCAL', ['s10' => 7]),
+            $fila($LI, null, 'CAMBIOS', 'LOCAL', ['cambio_s10' => 2]),
+            $fila($LI, null, 'FREDY', 'LOCAL', ['s10' => 4, 'cambio_s10' => 1]),
+            $fila($LI, 'W6D-892', 'ABULO', 'PLANTA', ['s10' => 420], $d),
+            $fila($LI, 'W6D-892', 'ABUELO', 'PLANTA', ['m10' => 420], $d),
+            $fila($LI, 'BRU-782', 'FREDY', 'PLANTA', ['s10' => 465], $fredy),
+            $fila($LI, 'W6N-923', 'MILTON', 'PLANTA', ['s10' => 500, 's45' => 15], $hvca),
+            $fila($LI, 'W6F-740', 'ABEL', 'PLANTA', ['s10' => 450], $abel),
+            $fila($LI, 'CET-858', 'RUFINO', 'PLANTA', ['s10' => 720], $hvca),
+            $fila($LI, 'W6N-923', 'MILTON', 'PLANTA', ['s45' => 120], $hvca),
+            // LLENOS · SALIDA
+            $fila($LS, null, 'MIZAEL', 'LOCAL', ['s10' => 76]),
+            $fila($LS, null, 'RONALD', 'LOCAL', ['s10' => 160]),
+            $fila($LS, null, 'URBANO', 'LOCAL', ['s10' => 71]),
+            $fila($LS, null, 'URBANO', 'LOCAL', ['s10' => 46]),
+            $fila($LS, null, 'JORGUE', 'LOCAL', ['s10' => 86]),
+            $fila($LS, null, 'LOCAL', 'LOCAL', ['s10' => 2]),
+            $fila($LS, null, 'AGUILAR', 'MINA', ['s45' => 50]),
+            $fila($LS, null, 'COTRINA', 'RUTA', ['s10' => 60, 'm10' => 360]),
+            $fila($LS, null, 'JENY GASPAR', 'RUTA', ['s10' => 103]),
+            $fila($LS, null, 'CHIWUA', 'RUTA', ['s10' => 229]),
+            $fila($LS, null, 'YELSIN', 'RUTA', ['s10' => 130, 's45' => 30]),
+            $fila($LS, null, 'PNP-PENAL', 'RUTA', ['s45' => 1]),
+            $fila($LS, null, 'PNP-HYO', 'RUTA', ['s45' => 1]),
+            $fila($LS, null, 'EJERCITO', 'CHILCA', ['s45' => 2]),
+            $fila($LS, null, 'MILTON', 'RUTA', ['s10' => 500, 's45' => 15]),
+            $fila($LS, null, 'JHON-H', 'RUTA', ['s10' => 70]),
+            // VACÍOS · INGRESO (plomo = s10/s45, color = color_s10/color_s45)
+            $fila($VI, null, 'URBANO', 'LOCAL', ['s10' => 58, 'color_s10' => 4]),
+            $fila($VI, null, 'URBANO', 'LOCAL', ['s10' => 81, 'color_s10' => 4]),
+            $fila($VI, null, 'RONALD', 'LOCAL', ['s10' => 201, 'color_s10' => 17]),
+            $fila($VI, null, 'MIZAEL', 'LOCAL', ['s10' => 40, 'color_s10' => 4]),
+            $fila($VI, null, 'JORGUE', 'LOCAL', ['s10' => 52, 'color_s10' => 11]),
+            $fila($VI, null, 'AGUILAR', 'LOCAL', ['s10' => 428, 'color_s10' => 22]),
+            $fila($VI, null, 'AGUILAR', 'MINA', ['s45' => 57]),
+            $fila($VI, null, 'FREDY', 'LOCAL', ['s10' => 365, 'color_s10' => 34]),
+            $fila($VI, null, 'ABEL', 'LOCAL', ['s10' => 267, 'color_s10' => 47]),
+            $fila($VI, null, 'JENY GASPAR', 'RUTA', ['s10' => 97, 'color_s10' => 1]),
+            $fila($VI, null, 'CHIWUA', 'RUTA', ['s10' => 214, 'color_s10' => 15]),
+            $fila($VI, null, 'PNP-PENAL', 'RUTA', ['color_s45' => 1]),
+            $fila($VI, null, 'PNP-HYO', 'RUTA', ['color_s45' => 1]),
+            $fila($VI, null, 'EJERCITO', 'CHILCA', ['color_s45' => 2]),
+            $fila($VI, null, 'JHON-H', 'RUTA', ['s10' => 67, 'color_s10' => 8]),
+            $fila($VI, null, 'EXACTO', 'CANJE', ['s10' => 250, 's45' => 2]),
+            // VACÍOS · SALIDA a planta y canje
+            $fila($VS, 'W6D-892', 'ABUELO', 'PLANTA', ['s10' => 380, 'color_s10' => 40], $d),
+            $fila($VS, 'W6D-892', 'ABUELO', 'PLANTA', ['s10' => 395, 'color_s10' => 25], $d),
+            $fila($VS, 'BRU-782', 'FREDY', 'PLANTA', ['s10' => 440, 'color_s10' => 25], $fredy),
+            $fila($VS, 'W6F-740', 'ABEL', 'PLANTA', ['s10' => 408, 'color_s10' => 42], $abel),
+            $fila($VS, 'CET-858', 'RUFINO', 'PLANTA', ['s10' => 650, 'color_s10' => 70], $hvca),
+            $fila($VS, 'W6N-923', 'MILTON', 'PLANTA', ['s10' => 460, 's45' => 15, 'color_s10' => 40], $hvca),
+            $fila($VS, null, 'EXACTO', 'CANJE', ['color_s10' => 250, 'color_s45' => 2]),
+        ];
+
+        $almacen->guardar(Carbon::parse('2026-09-14'), $filas, 'Importado del Excel de logística del 14/09/2026.');
+        Parte::where('fecha', '2026-09-14')->update(['estado' => Parte::CERRADO, 'cerrado_at' => now()]);
     }
 
     /**
-     * Hojas B.LLENO y B.VACIO del 25/09: stock inicial (24/09) y todo el movimiento de ese día.
-     * El resultado reproduce el "STOCK FINAL" del Excel (S10 llenos 2187, vacíos plomo 815, etc.).
+     * Hojas B.LLENO y B.VACÍO del 25/09 (Excel de rentabilidad): stock inicial por conteo del 24/09
+     * y los movimientos del día. Reproduce el "STOCK FINAL" del Excel.
      */
-    private function fotoAlmacen25Setiembre(array $instalaciones): void
+    private function parte25Setiembre(array $inst): void
     {
-        /** @var LogisticaService $logistica */
-        $logistica = app(LogisticaService::class);
-        $durasol = $this->empresas['DURASOL'];
-        $llamazul = $this->empresas['LLAMAZUL'];
-        $p = $this->productos;
-        $inicial = '2026-09-24';
-        $dia = '2026-09-25';
+        $almacen = app(AlmacenService::class);
+        $conteo = Parte::create(['fecha' => '2026-09-24', 'estado' => Parte::ABIERTO, 'observaciones' => 'Conteo de almacén según el Excel de rentabilidad (B.LLENO / B.VACIO).']);
+        $almacen->ajustarAConteo($conteo, [
+            'lleno_s10' => 1498, 'lleno_s45' => 101, 'lleno_m10' => 26, 'cambio_s10' => 29, 'cambio_s45' => 0, 'cambio_m10' => 3,
+            'plomo_s10' => 920, 'plomo_s45' => 14, 'color_s10' => 544, 'color_s45' => 4,
+        ]);
 
-        $manual = function (string $fecha, TipoMovimientoManual $tipo, string $sentido, ?int $empresa, string $producto, EstadoStock $estado, int $cantidad, string $referencia) use ($logistica, $p) {
-            $mov = MovimientoStockManual::create([
-                'fecha' => $fecha, 'tipo' => $tipo, 'sentido' => $sentido, 'empresa_id' => $empresa, 'producto_id' => $p[$producto],
-                'estado' => $estado, 'cantidad' => $cantidad, 'referencia' => $referencia, 'observaciones' => 'Importado del Excel (B.LLENO / B.VACIO).',
-            ]);
-            $logistica->aplicarManual($mov);
-        };
-
-        // Stock inicial. El Excel no separa por empresa: se asigna a Durasol, salvo lo que Llamazul necesita para sus salidas del día.
-        $ini = TipoMovimientoManual::StockInicial;
-        $manual($inicial, $ini, 'entrada', $durasol, 'S10', EstadoStock::Lleno, 1498, 'Stock inicial llenos');
-        $manual($inicial, $ini, 'entrada', $durasol, 'S45', EstadoStock::Lleno, 77, 'Stock inicial llenos');
-        $manual($inicial, $ini, 'entrada', $llamazul, 'S45', EstadoStock::Lleno, 24, 'Stock inicial llenos');
-        $manual($inicial, $ini, 'entrada', $durasol, 'M10', EstadoStock::Lleno, 26, 'Stock inicial llenos');
-        $manual($inicial, $ini, 'entrada', $durasol, 'C10', EstadoStock::Lleno, 308, 'Stock inicial Contigas');
-        $manual($inicial, $ini, 'entrada', $durasol, 'C45', EstadoStock::Lleno, 120, 'Stock inicial Contigas');
-        $manual($inicial, $ini, 'entrada', $durasol, 'S10', EstadoStock::Cambio, 29, 'Stock inicial cambios');
-        $manual($inicial, $ini, 'entrada', $durasol, 'M10', EstadoStock::Cambio, 3, 'Stock inicial cambios');
-        $manual($inicial, $ini, 'entrada', null, 'S10', EstadoStock::Vacio, 920, 'Stock inicial vacíos plomo');
-        $manual($inicial, $ini, 'entrada', null, 'S45', EstadoStock::Vacio, 14, 'Stock inicial vacíos plomo');
-        $manual($inicial, $ini, 'entrada', null, 'S10', EstadoStock::Color, 544, 'Stock inicial vacíos de color');
-        $manual($inicial, $ini, 'entrada', null, 'S45', EstadoStock::Color, 4, 'Stock inicial vacíos de color');
-
-        // Vacíos que dejaron clientes y choferes de ruta en el local (B.VACIO · ingreso).
-        foreach ([['COTRINA', 242, 32, 0, 0], ['JENY GASPAR', 57, 1, 0, 0], ['BRAYAN GAS', 0, 0, 0, 1], ['JUAN ARPA', 41, 9, 0, 0], ['EJERCITO', 0, 0, 2, 0],
-            ['PNP-CHILCA', 0, 0, 1, 0], ['ABEL (ruta)', 420, 30, 0, 0], ['AGUILAR (ruta)', 400, 50, 0, 0]] as [$ref, $plomo10, $color10, $plomo45, $color45]) {
-            foreach ([['S10', EstadoStock::Vacio, $plomo10], ['S10', EstadoStock::Color, $color10], ['S45', EstadoStock::Vacio, $plomo45], ['S45', EstadoStock::Color, $color45]] as [$prod, $estado, $cant]) {
-                if ($cant > 0) {
-                    $manual($dia, TipoMovimientoManual::IngresoVacios, 'entrada', null, $prod, $estado, $cant, $ref);
-                }
-            }
-        }
-
-        // Canjes de colores por plomos.
-        foreach ([['MOVIL CHINO', 19], ['PLANTA MOVIL', 200]] as [$contraparte, $cantidad]) {
-            $canje = Canje::create(['fecha' => $dia, 'contraparte' => $contraparte, 'producto_id' => $p['S10'], 'colores_entregados' => $cantidad, 'plomos_recibidos' => $cantidad, 'observaciones' => 'Importado del Excel (B.VACIO).']);
-            $logistica->aplicarCanje($canje);
-        }
-
-        // Guías del día: salieron vacíos y regresaron llenos (B.VACIO salida / B.LLENO ingreso).
-        foreach ([['DURASOL', 'ABUELO', 'W2S-907', 379, 38], ['DURASOL', 'RUFINO', 'BWF-817', 380, 40], ['LLAMAZUL', 'ABEL', 'W6F-740', 420, 30], ['LLAMAZUL', 'ABUELO', 'W6N-923', 684, 36]] as $i => [$empresa, $alias, $placa, $plomo, $color]) {
-            $instalacion = $instalaciones[$empresa];
-            $guia = Guia::create([
-                'numero_guia' => 'EXCEL-20260925-'.($i + 1), 'empresa_id' => $instalacion->empresa_id, 'instalacion_id' => $instalacion->id,
-                'vehiculo_id' => $this->vehiculos[$placa] ?? null, 'chofer_id' => $this->chofer($alias)?->id,
-                'fecha_salida' => $dia, 'fecha_recepcion' => $dia, 'estado' => EstadoGuia::Recibida,
-                'observaciones' => 'Importada del Excel: el número de guía real no figura en la hoja.',
-            ]);
-            $precio = PrecioCompra::where('instalacion_id', $instalacion->id)->where('producto_id', $p['S10'])->value('precio') ?? 0;
-            $guia->detalles()->create([
-                'producto_id' => $p['S10'], 'cantidad_guia' => $plomo + $color, 'precio_compra' => $precio,
-                'vacios_enviados' => $plomo, 'colores_enviados' => $color, 'llenos_recibidos' => $plomo + $color,
-            ]);
-            $logistica->aplicarGuia($guia);
-        }
-
-        // Despachos del día. Durasol (reparto local, ya retornaron) y Llamazul (ruta, por liquidar).
-        $despachos = [
-            ['MISAEL', $durasol, ['S10' => 28], [26, 2, 0, 0], true],
-            ['URBANO', $durasol, ['S10' => 112, 'S45' => 2], [106, 6, 2, 0], true],
-            ['JORGE', $durasol, ['S10' => 168], [139, 9, 0, 0], true],
-            ['RONALD', $durasol, ['S10' => 124], [108, 16, 0, 0], true],
-            ['ZADITH', $durasol, ['S10' => 111, 'C45' => 4], [0, 0, 0, 0], true],
-            ['ABEL', $llamazul, ['S10' => 450], null, false],
-            ['RUFINO', $llamazul, ['S10' => 320, 'S45' => 24], null, false],
+        $fila = fn (string $bloque, ?string $placa, string $resp, ?string $lugar, array $cant, ?Instalacion $i = null) => $cant + [
+            'bloque' => $bloque, 'placa' => $placa, 'responsable' => $resp, 'lugar' => $lugar,
+            'instalacion_id' => $i?->id, 'empresa_id' => $i?->empresa_id,
         ];
-        foreach ($despachos as [$alias, $empresaId, $salidas, $vacios, $retornado]) {
-            $chofer = $this->chofer($alias);
-            $despacho = Despacho::create([
-                'fecha' => $dia, 'chofer_id' => $chofer->id, 'vehiculo_id' => $chofer->vehiculo_id, 'vuelta' => 1,
-                'tipo' => $chofer->tipo === TipoChofer::Almacen ? TipoChofer::Almacen : $chofer->tipo,
-                'estado' => $retornado ? EstadoDespacho::Retornado : EstadoDespacho::EnRuta,
-                'hora_salida' => '07:30', 'hora_retorno' => $retornado ? '18:00' : null,
-                'observaciones' => 'Importado del Excel (B.LLENO: '.($retornado ? 'salida de mercadería liquidada' : 'salida por liquidar').').',
-            ]);
-            foreach ($salidas as $codigo => $cantidad) {
-                $esS10 = $codigo === 'S10';
-                $despacho->detalles()->create([
-                    'empresa_id' => $empresaId, 'producto_id' => $p[$codigo], 'llenos_salida' => $cantidad,
-                    'vacios_retorno' => $vacios ? ($esS10 ? $vacios[0] : ($codigo === 'S45' ? $vacios[2] : 0)) : 0,
-                    'colores_retorno' => $vacios ? ($esS10 ? $vacios[1] : ($codigo === 'S45' ? $vacios[3] : 0)) : 0,
-                ]);
-            }
-            $logistica->aplicarDespacho($despacho);
-        }
+        $LI = ParteFila::LLENO_INGRESO;
+        $LS = ParteFila::LLENO_SALIDA;
+        $VI = ParteFila::VACIO_INGRESO;
+        $VS = ParteFila::VACIO_SALIDA;
 
-        // Cambio recibido en el local (Llamazul): entra un fallado y sale un lleno a cambio.
-        $manual($dia, TipoMovimientoManual::Ajuste, 'entrada', $llamazul, 'S10', EstadoStock::Cambio, 5, 'Cambios recibidos en LOCAL');
-        $manual($dia, TipoMovimientoManual::Ajuste, 'salida', $llamazul, 'S10', EstadoStock::Lleno, 5, 'Llenos entregados por cambios en LOCAL');
+        $filas = [
+            $fila($LI, 'W2S-907', 'ABUELO', 'PLANTA', ['s10' => 417], $inst['62170833']),
+            $fila($LI, 'BWF-817', 'RUFINO', 'PLANTA', ['s10' => 420], $inst['62170831']),
+            $fila($LI, 'W6F-740', 'ABEL', 'PLANTA', ['s10' => 450], $inst['62170835']),
+            $fila($LI, 'W6N-923', 'ABUELO', 'PLANTA', ['s10' => 720], $inst['62174003']),
+            $fila($LI, null, 'CAMBIOS', 'LOCAL', ['cambio_s10' => 5]),
+            $fila($LS, null, 'MISAEL', 'LOCAL', ['s10' => 28]),
+            $fila($LS, null, 'URBANO', 'LOCAL', ['s10' => 112, 's45' => 2]),
+            $fila($LS, null, 'JORGE', 'LOCAL', ['s10' => 168]),
+            $fila($LS, null, 'RONALD', 'LOCAL', ['s10' => 124]),
+            $fila($LS, null, 'ZADITH', 'LOCAL', ['s10' => 111]),
+            $fila($LS, null, 'ABEL', 'RUTA', ['s10' => 450]),
+            $fila($LS, null, 'RUFINO', 'RUTA', ['s10' => 320, 's45' => 24]),
+            $fila($LS, null, 'CAMBIOS', 'LOCAL', ['s10' => 5]),
+            $fila($VI, null, 'MISAEL', 'LOCAL', ['s10' => 26, 'color_s10' => 2]),
+            $fila($VI, null, 'URBANO', 'LOCAL', ['s10' => 106, 'color_s10' => 6, 's45' => 2]),
+            $fila($VI, null, 'JORGE', 'LOCAL', ['s10' => 139, 'color_s10' => 9]),
+            $fila($VI, null, 'RONALD', 'LOCAL', ['s10' => 108, 'color_s10' => 16]),
+            $fila($VI, null, 'COTRINA', 'RUTA', ['s10' => 242, 'color_s10' => 32]),
+            $fila($VI, null, 'JENY GASPAR', 'RUTA', ['s10' => 57, 'color_s10' => 1]),
+            $fila($VI, null, 'BRAYAN GAS', 'RUTA', ['color_s45' => 1]),
+            $fila($VI, null, 'JUAN ARPA', 'RUTA', ['s10' => 41, 'color_s10' => 9]),
+            $fila($VI, null, 'EJERCITO', 'CHILCA', ['s45' => 2]),
+            $fila($VI, null, 'PNP-CHILCA', 'CHILCA', ['s45' => 1]),
+            $fila($VI, null, 'ABEL', 'RUTA', ['s10' => 420, 'color_s10' => 30]),
+            $fila($VI, null, 'AGUILAR', 'RUTA', ['s10' => 400, 'color_s10' => 50]),
+            $fila($VI, null, 'MOVIL CHINO', 'CANJE', ['s10' => 19]),
+            $fila($VI, null, 'PLANTA MOVIL', 'CANJE', ['s10' => 200]),
+            $fila($VS, 'W2S-907', 'ABUELO', 'PLANTA', ['s10' => 379, 'color_s10' => 38], $inst['62170833']),
+            $fila($VS, 'BWF-817', 'RUFINO', 'PLANTA', ['s10' => 380, 'color_s10' => 40], $inst['62170831']),
+            $fila($VS, 'W6F-740', 'ABEL', 'PLANTA', ['s10' => 420, 'color_s10' => 30], $inst['62170835']),
+            $fila($VS, 'W6N-923', 'ABUELO', 'PLANTA', ['s10' => 684, 'color_s10' => 36], $inst['62174003']),
+            $fila($VS, null, 'MOVIL CHINO', 'CANJE', ['color_s10' => 19]),
+            $fila($VS, null, 'PLANTA MOVIL', 'CANJE', ['color_s10' => 200]),
+        ];
+
+        $almacen->guardar(Carbon::parse('2026-09-25'), $filas, 'Importado del Excel de rentabilidad (B.LLENO / B.VACIO del 25/09).');
     }
 
     /** Depósitos del 25/09 (RESUMEN GNRAL) y totales diarios de agosto (CAJA GNRAL). No mueven la caja actual. */

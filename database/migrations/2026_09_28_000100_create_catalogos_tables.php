@@ -112,6 +112,11 @@ return new class extends Migration
             $table->char('codigo', 8)->unique();
             $table->string('nombre', 100);
             $table->foreignId('empresa_id')->constrained('empresas');
+            // Planta Solgas donde se carga (P.HUA, P.LIMA, P.AYACUCHO...).
+            $table->string('planta', 40)->nullable();
+            // Como figura en el cuadro de logística: chofer o destino (ESPEJO, LIMA...) y placas.
+            $table->string('responsable', 60)->nullable();
+            $table->string('placas', 80)->nullable();
             $table->string('direccion', 200)->nullable();
             $table->foreignId('chofer_id')->nullable()->constrained('choferes')->nullOnDelete();
             $table->foreignId('vehiculo_id')->nullable()->constrained('vehiculos')->nullOnDelete();

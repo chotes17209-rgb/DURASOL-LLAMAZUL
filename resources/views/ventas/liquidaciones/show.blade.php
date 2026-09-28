@@ -16,10 +16,10 @@
 
         <div class="mt-5" x-show="tab === 'resumen'">
             <div class="grid gap-3 sm:grid-cols-4">
-                <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200"><p class="kpi-label">Venta</p><p class="text-xl font-bold">{{ soles($l->total_venta) }}</p></div>
-                <div class="rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-200"><p class="kpi-label">Crédito</p><p class="text-xl font-bold text-rose-700">{{ soles($l->total_credito) }}</p></div>
-                <div class="rounded-2xl bg-violet-50 p-4 ring-1 ring-violet-200"><p class="kpi-label">Vouchers + FISE</p><p class="text-xl font-bold text-violet-700">{{ soles($l->total_vouchers + $l->total_fises) }}</p></div>
-                <div class="rounded-2xl bg-brand-600 p-4 text-white"><p class="text-xs font-semibold uppercase tracking-wide text-brand-100">Efectivo</p><p class="text-xl font-bold">{{ soles($l->efectivo_esperado) }}</p>
+                <div class="rounded bg-slate-50 p-4 border border-line"><p class="kpi-label">Venta</p><p class="text-xl font-bold">{{ soles($l->total_venta) }}</p></div>
+                <div class="rounded bg-rose-50 p-4 border border-rose-200"><p class="kpi-label">Crédito</p><p class="text-xl font-bold text-rose-700">{{ soles($l->total_credito) }}</p></div>
+                <div class="rounded bg-violet-50 p-4 border border-violet-200"><p class="kpi-label">Vouchers + FISE</p><p class="text-xl font-bold text-violet-700">{{ soles($l->total_vouchers + $l->total_fises) }}</p></div>
+                <div class="rounded bg-brand-600 p-4 text-white"><p class="text-xs font-semibold uppercase tracking-wide text-brand-100">Efectivo</p><p class="text-xl font-bold">{{ soles($l->efectivo_esperado) }}</p>
                     @if ($l->efectivo_entregado !== null)<p class="text-xs text-brand-100">Entregado {{ soles($l->efectivo_entregado) }} ({{ $l->diferencia >= 0 ? '+' : '' }}{{ num($l->diferencia, 2) }})</p>@endif</div>
             </div>
             <div class="mt-5 grid gap-6 lg:grid-cols-2">
@@ -44,7 +44,7 @@
         </div>
 
         <div class="mt-5" x-show="tab === 'ventas'" x-cloak>
-            <div class="max-h-[32rem] overflow-y-auto rounded-xl ring-1 ring-slate-200">
+            <div class="max-h-[32rem] overflow-y-auto rounded border border-line">
                 <table class="table table-compact">
                     <thead class="sticky top-0"><tr><th>Cliente</th><th>Prod.</th><th>Empresa</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th><th class="text-right">Vacíos</th><th>Pago</th><th class="text-right">Crédito</th></tr></thead>
                     <tbody>

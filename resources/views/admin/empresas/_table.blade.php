@@ -9,7 +9,7 @@
             <tr>
                 <td>
                     <div class="flex items-center gap-3">
-                        <span class="h-8 w-8 rounded-xl" style="background: {{ $empresa->color }}"></span>
+                        <span class="h-8 w-8 rounded" style="background: {{ $empresa->color }}"></span>
                         <div><p class="font-semibold text-slate-900">{{ $empresa->nombre }}</p><p class="text-xs text-slate-500">{{ $empresa->razon_social }}</p></div>
                     </div>
                 </td>

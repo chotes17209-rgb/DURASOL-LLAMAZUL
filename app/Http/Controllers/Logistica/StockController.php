@@ -2,59 +2,44 @@
 
 namespace App\Http\Controllers\Logistica;
 
-use App\Enums\EstadoDespacho;
-use App\Enums\EstadoGuia;
-use App\Enums\EstadoStock;
 use App\Http\Controllers\Controller;
-use App\Models\Despacho;
-use App\Models\Empresa;
-use App\Models\Guia;
-use App\Models\Producto;
-use App\Models\StockMovimiento;
-use App\Services\StockService;
+use App\Services\AlmacenService;
+use App\Support\Reporte;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\View\View;
 
 class StockController extends Controller
 {
-    public function __construct(private readonly StockService $stock) {}
+    public function __construct(private readonly AlmacenService $almacen) {}
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
         $fecha = $request->date('fecha') ?? today();
-        $resumen = $this->stock->resumen($fecha);
 
-        // Movimiento del día por estado (entradas y salidas).
-        $movDia = StockMovimiento::where('fecha', $fecha->toDateString())
-            ->selectRaw('estado, SUM(CASE WHEN cantidad > 0 THEN cantidad ELSE 0 END) as entradas, SUM(CASE WHEN cantidad < 0 THEN -cantidad ELSE 0 END) as salidas')
-            ->groupBy('estado')->get()->keyBy(fn ($r) => $r->estado->value);
+        if (in_array($request->formato, ['pdf', 'xlsx'], true)) {
+            $control = $this->almacen->controlDelDia($fecha);
 
-        $guiasTransito = Guia::with(['empresa', 'detalles'])->where('estado', EstadoGuia::EnTransito)->get();
-        $choferesEnRuta = Despacho::with(['chofer', 'detalles'])->where('estado', EstadoDespacho::EnRuta)->get();
-        $ultimos = StockMovimiento::with(['producto', 'empresa', 'user'])->latest('id')->limit(15)->get();
+            return (new Reporte('Stock de almacén', 'Al '.$fecha->format('d/m/Y')))
+                ->tabla(null, ['Concepto' => 'texto', 'Inicial' => 'entero', 'Ingreso' => 'entero', 'Salida' => 'entero', 'Final' => 'entero'],
+                    collect($control)->map(fn ($f) => [($f['tipo'] === 'lleno' ? 'Llenos ' : 'Vacíos ').$f['titulo'], $f['inicial'], $f['ingreso'], $f['salida'], $f['final']])->values())
+                ->tabla('Stock disponible por empresa', ['Empresa' => 'texto', 'S-10' => 'entero', 'S-45' => 'entero', 'M-10' => 'entero'],
+                    collect($this->almacen->disponiblePorEmpresa($fecha))->map(fn ($s, $e) => [$e, $s['S10'], $s['S45'], $s['M10']])->values())
+                ->descargar($request->formato, 'stock-'.$fecha->toDateString());
+        }
 
-        return view('logistica.stock.index', compact('fecha', 'resumen', 'movDia', 'guiasTransito', 'choferesEnRuta', 'ultimos'));
+        return view('logistica.stock.index', [
+            'fecha' => $fecha,
+            'control' => $this->almacen->controlDelDia($fecha),
+            'porEmpresa' => $this->almacen->disponiblePorEmpresa($fecha),
+        ]);
     }
 
     public function kardex(Request $request)
     {
-        $productos = Producto::activos()->where('controla_stock', true)->get();
-        $empresas = Empresa::activas()->get();
-        $productoId = (int) ($request->producto_id ?: $productos->firstWhere('codigo', 'S10')?->id ?: $productos->first()?->id);
-        $estado = EstadoStock::tryFrom((string) $request->estado) ?? EstadoStock::Lleno;
-        $empresaId = $this->stock->usaEmpresa($estado) ? (int) ($request->empresa_id ?: $empresas->first()?->id) : null;
+        $llave = array_key_exists((string) $request->llave, AlmacenService::STOCK) ? $request->llave : 'lleno_s10';
         $desde = $request->date('desde') ?? today()->startOfMonth();
         $hasta = $request->date('hasta') ?? today();
+        $kardex = $this->almacen->kardex($llave, $desde, $hasta);
 
-        $producto = Producto::find($productoId);
-        if (! $this->stock->usaEmpresa($estado) && $producto?->envase_id) {
-            $productoId = $producto->envase_id;
-        }
-
-        $kardex = $this->stock->kardex($productoId, $estado, $empresaId, Carbon::parse($desde), Carbon::parse($hasta));
-        $data = compact('productos', 'empresas', 'productoId', 'estado', 'empresaId', 'desde', 'hasta', 'kardex');
-
-        return $this->tableOrPage($request, 'logistica.stock.kardex', 'logistica.stock._kardex', $data);
+        return $this->tableOrPage($request, 'logistica.stock.kardex', 'logistica.stock._kardex', compact('llave', 'desde', 'hasta', 'kardex'));
     }
 }
