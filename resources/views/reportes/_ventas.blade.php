@@ -1,11 +1,12 @@
-<div class="grid gap-3 border-b border-line p-3 sm:grid-cols-4">
-    <div class="kpi"><p class="kpi-label">Balones</p><p class="kpi-value">{{ num($totales->cantidad) }}</p></div>
-    <div class="kpi"><p class="kpi-label">Venta</p><p class="kpi-value">{{ soles($totales->total) }}</p></div>
-    <div class="kpi"><p class="kpi-label">Crédito</p><p class="kpi-value">{{ soles($totales->credito) }}</p></div>
-    <div class="kpi"><p class="kpi-label">Vacíos devueltos</p><p class="kpi-value">{{ num($totales->vacios) }}</p></div>
-    <div class="flex flex-wrap gap-2 sm:col-span-4">
-        @foreach ($porProducto as $p)<span class="text-xs text-slate-600"><b>{{ $p->codigo }}</b> {{ num($p->cantidad) }} · {{ soles($p->total) }}</span>@endforeach
-    </div>
+<dl class="grid grid-cols-2 border-b border-line lg:grid-cols-4">
+    <x-cifra label="Balones vendidos" :value="num($totales->cantidad)"/>
+    <x-cifra label="Vacíos devueltos" :value="num($totales->vacios)"/>
+    <x-cifra label="Al crédito" :value="soles($totales->credito)" tone="red"/>
+    <x-cifra label="Venta total" :value="soles($totales->total)" total/>
+</dl>
+<div class="flex flex-wrap gap-x-5 gap-y-1 border-b border-line bg-panel px-4 py-2 text-xs text-slate-600">
+    <span class="font-semibold tracking-wide text-brand-800 uppercase">Por presentación</span>
+    @foreach ($porProducto as $p)<span><b class="text-slate-800">{{ $p->codigo }}</b> {{ num($p->cantidad) }} bal. · {{ soles($p->total) }}</span>@endforeach
 </div>
 <div class="table-wrap">
     <table class="table table-compact">

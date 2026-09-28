@@ -2,7 +2,7 @@
     $llenos = \App\Models\ParteFila::COLUMNAS_LLENOS;
     $vacios = \App\Models\ParteFila::COLUMNAS_VACIOS;
 @endphp
-<x-layouts.app title="Parte diario de almacén" :breadcrumb="'Logística · '.ucfirst($dia->translatedFormat('l d \\d\\e F \\d\\e Y'))">
+<x-layouts.app title="Parte diario de almacén"  breadcrumb="Parte diario">
     <x-slot:actions>
         <div class="flex items-center">
             @if ($anterior)
@@ -34,16 +34,35 @@
     <datalist id="lista-lugares">@foreach (\App\Models\ParteFila::LUGARES as $l)<option value="{{ $l }}">@endforeach</datalist>
 
     <div x-data="parteEditor(@js($config))" x-cloak class="pb-16">
-        <div class="mb-3 flex flex-wrap items-center gap-3">
-            @if (! $parte->exists)
-                <span class="badge badge-amber">Nuevo: aún no se ha guardado</span>
-            @elseif ($parte->esEditable())
-                <span class="badge badge-green">Abierto</span>
-            @else
-                <span class="badge badge-slate">Cerrado{{ $parte->cerradoPor ? ' por '.$parte->cerradoPor->name : '' }}{{ $parte->cerrado_at ? ' el '.$parte->cerrado_at->format('d/m/Y H:i') : '' }}</span>
-            @endif
-            <p class="text-xs text-slate-500" x-show="editable">El stock inicial es el final del día anterior. Escribe las cantidades como en la hoja; las filas vacías no se guardan. <b>Enter</b> baja a la siguiente fila.</p>
-        </div>
+        <section class="doc-head mb-4">
+            <div class="doc-band">
+                <div class="flex items-center gap-4">
+                    <div>
+                        <p class="text-[10.5px] font-semibold tracking-[.16em] text-[#b9c7df] uppercase">Parte diario de almacén</p>
+                        <p class="doc-num">{{ $dia->format('d/m/Y') }}</p>
+                    </div>
+                    <span class="doc-tag">{{ ! $parte->exists ? 'Nuevo' : ($parte->esEditable() ? 'Abierto' : 'Cerrado') }}</span>
+                </div>
+                <div class="text-right text-[12px] leading-snug text-[#d4ddec]">
+                    <p class="font-semibold text-white">{{ ucfirst($dia->translatedFormat('l d \\d\\e F \\d\\e Y')) }}</p>
+                    @if ($parte->exists && ! $parte->esEditable())
+                        <p>Cerrado{{ $parte->cerradoPor ? ' por '.$parte->cerradoPor->name : '' }}{{ $parte->cerrado_at ? ' el '.$parte->cerrado_at->format('d/m/Y H:i') : '' }}</p>
+                    @else
+                        <p>Stock inicial = stock final del día anterior</p>
+                    @endif
+                </div>
+            </div>
+            <dl class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7">
+                <template x-for="[llave, titulo] in [['lleno_s10', 'Llenos S-10'], ['lleno_s45', 'Llenos S-45'], ['lleno_m10', 'Llenos M-10'], ['cambio_s10', 'Cambios S-10'], ['plomo_s10', 'Plomo S-10'], ['color_s10', 'Color S-10'], ['plomo_s45', 'Plomo S-45']]" :key="llave">
+                    <div class="ledger-cell">
+                        <dt x-text="titulo"></dt>
+                        <dd :class="control(llave).final < 0 && '!text-red-700'" x-text="n(control(llave).final)"></dd>
+                        <p class="text-[11px] text-slate-500"><span x-text="'Inicial ' + n(control(llave).inicial)"></span> · <span class="text-emerald-700" x-text="'+' + n(control(llave).ingreso)"></span> · <span class="text-red-700" x-text="'−' + n(control(llave).salida)"></span></p>
+                    </div>
+                </template>
+            </dl>
+        </section>
+        <p class="help mb-3" x-show="editable">Escribe las cantidades como en la hoja de logística; las filas vacías no se guardan. <b>Enter</b> baja a la fila siguiente. Al escribir la placa de un camión de planta se propone su instalación.</p>
 
         <div class="tabs mb-4">
             <button type="button" class="tab" :class="tab === 'llenos' && 'active'" @click="tab = 'llenos'">Llenos</button>

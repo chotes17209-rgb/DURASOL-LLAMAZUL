@@ -5,12 +5,12 @@
         <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-modal-size="md"><x-heroicon-o-building-library class="h-4 w-4"/> Depósito</button>
     </x-slot:actions>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-kpi label="Saldo inicial" :value="soles($resumen['saldo_inicial'])" icon="archive-box" color="slate" :hint="'al '.fecha($desde->copy()->subDay())"/>
-        <x-kpi label="Ingresos" :value="soles($resumen['ingresos'])" icon="arrow-down-circle" color="green"/>
-        <x-kpi label="Egresos" :value="soles($resumen['egresos'])" icon="arrow-up-circle" color="red"/>
-        <x-kpi label="Saldo en caja" :value="soles($resumen['saldo_final'])" icon="banknotes" color="brand" :hint="'al '.fecha($hasta)"/>
-    </div>
+    <dl class="ledger !grid-cols-2 lg:!grid-cols-4">
+        <x-cifra label="Saldo inicial" :value="soles($resumen['saldo_inicial'])" :hint="'al '.fecha($desde->copy()->subDay())"/>
+        <x-cifra label="(+) Ingresos" :value="soles($resumen['ingresos'])" tone="green" hint="liquidaciones, cobranzas y otros"/>
+        <x-cifra label="(−) Egresos" :value="soles($resumen['egresos'])" tone="red" hint="depósitos, gastos y pagos"/>
+        <x-cifra label="Saldo en caja" :value="soles($resumen['saldo_final'])" :hint="'al '.fecha($hasta)" total/>
+    </dl>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-3">
         <div class="xl:col-span-2">

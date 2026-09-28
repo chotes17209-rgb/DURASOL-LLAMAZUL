@@ -14,6 +14,11 @@
     <div class="table-wrap">
         <table class="table table-compact table-grid">
             <thead>
+            <tr class="th-group">
+                <th colspan="{{ $conPlanta ? 6 : 4 }}">{{ $conPlanta ? 'Vehículo, responsable y carga en planta' : 'Vehículo y responsable' }}</th>
+                <th colspan="{{ count($columnas) + 1 }}">Cantidades (balones)</th>
+                <th colspan="2"></th>
+            </tr>
             <tr>
                 <th class="w-8 text-center">#</th>
                 <th class="w-28">Placa</th>
@@ -32,7 +37,7 @@
             <tbody>
             <template x-for="(fila, i) in bloques['{{ $bloque }}']" :key="fila.uid">
                 <tr>
-                    <td class="text-center text-xs text-slate-400" x-text="i + 1"></td>
+                    <td class="bg-panel text-center text-[11px] text-slate-400" x-text="i + 1"></td>
                     <td class="!p-0"><input class="cell-input text-left uppercase" list="lista-placas" x-model="fila.placa" @change="completarPorPlaca(fila)" :disabled="!editable"></td>
                     <td class="!p-0"><input class="cell-input text-left uppercase" list="lista-choferes" x-model="fila.responsable" :disabled="!editable"></td>
                     <td class="!p-0"><input class="cell-input text-left uppercase" list="lista-lugares" x-model="fila.lugar" :disabled="!editable"></td>

@@ -9,6 +9,16 @@
         <a href="{{ route('logistica.partes.show', $fecha->toDateString()) }}" class="btn btn-primary">Parte del día</a>
     </x-slot:actions>
 
+    <dl class="ledger mb-4">
+        <x-cifra label="Llenos S-10" :value="num($control['lleno_s10']['final'])"/>
+        <x-cifra label="Llenos S-45" :value="num($control['lleno_s45']['final'])"/>
+        <x-cifra label="Llenos M-10" :value="num($control['lleno_m10']['final'])"/>
+        <x-cifra label="Cambios (fallados)" :value="num($control['cambio_s10']['final'] + $control['cambio_s45']['final'] + $control['cambio_m10']['final'])"/>
+        <x-cifra label="Vacíos plomo" :value="num($control['plomo_s10']['final'] + $control['plomo_s45']['final'])" :hint="'S-10 '.num($control['plomo_s10']['final']).' · S-45 '.num($control['plomo_s45']['final'])"/>
+        <x-cifra label="Vacíos de color" :value="num($control['color_s10']['final'] + $control['color_s45']['final'])" :hint="'S-10 '.num($control['color_s10']['final']).' · S-45 '.num($control['color_s45']['final'])"/>
+        <x-cifra label="Total llenos" :value="num($control['lleno_s10']['final'] + $control['lleno_s45']['final'] + $control['lleno_m10']['final'])" :hint="'al '.$fecha->format('d/m/Y')" total/>
+    </dl>
+
     @php($grupos = ['Llenos' => ['lleno_s10', 'lleno_s45', 'lleno_m10'], 'Cambios (fallados)' => ['cambio_s10', 'cambio_s45', 'cambio_m10'], 'Vacíos' => ['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45']])
     <div class="grid gap-4 xl:grid-cols-3">
         @foreach ($grupos as $titulo => $llaves)
