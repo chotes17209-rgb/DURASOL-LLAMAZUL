@@ -5,6 +5,9 @@ services:
     name: durasol-llamazul-erp
     runtime: docker
     plan: free
+    # Cada commit en main se despliega solo (no hace falta el despliegue manual).
+    autoDeployTrigger: commit
+    branch: main
     region: oregon
     healthCheckPath: /up
     envVars:

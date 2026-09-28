@@ -1,7 +1,5 @@
 <x-layouts.app title="Historial del sistema" breadcrumb="Administración">
-    <div class="mb-4 rounded bg-slate-50 p-4 text-sm text-slate-700 border border-line">
-        Registro de <b>todo</b> lo que se hace: quién creó, modificó o eliminó cada registro, con los valores antes y después, inicios de sesión y cierres de liquidación.
-    </div>
+    <p class="help mb-4">Bitácora de auditoría: quién creó, modificó o eliminó cada registro (con los valores antes y después), inicios de sesión, cierres de liquidación y descargas de reportes.</p>
     <x-remote-table :url="route('historial.index')">
         <x-slot:filters>
             <x-search placeholder="Buscar en los datos..."/>

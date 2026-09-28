@@ -46,7 +46,13 @@ class ParteController extends Controller
             ];
         }
 
-        return $this->tableOrPage($request, 'logistica.partes.index', 'logistica.partes._table', compact('partes', 'resumen'));
+        $hoy = $this->resumen($request, fn () => [
+            'control' => $this->almacen->controlDelDia(today()),
+            'ultimo' => Parte::max('fecha'),
+            'abiertos' => Parte::where('estado', Parte::ABIERTO)->count(),
+        ]);
+
+        return $this->tableOrPage($request, 'logistica.partes.index', 'logistica.partes._table', compact('partes', 'resumen', 'hoy'));
     }
 
     /** Abre el parte de una fecha (si no existe todavía, se crea al guardar). */

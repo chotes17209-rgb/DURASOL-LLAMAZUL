@@ -1,11 +1,11 @@
 <li class="relative">
     <span @class([
         'absolute -left-[31px] top-1 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white',
-        'bg-emerald-500' => $audit->eventColor() === 'emerald',
-        'bg-sky-500' => $audit->eventColor() === 'sky',
-        'bg-rose-500' => $audit->eventColor() === 'rose',
+        'bg-emerald-600' => $audit->eventColor() === 'emerald',
+        'bg-brand-600' => $audit->eventColor() === 'sky',
+        'bg-red-600' => $audit->eventColor() === 'rose',
         'bg-amber-500' => $audit->eventColor() === 'amber',
-        'bg-violet-500' => $audit->eventColor() === 'violet',
+        'bg-brand-900' => $audit->eventColor() === 'violet',
         'bg-slate-400' => $audit->eventColor() === 'slate',
     ])></span>
     <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -29,7 +29,7 @@
                 @foreach ($changes as $field)
                     <tr class="border-t border-slate-100">
                         <td class="px-3 py-1.5 font-medium text-slate-600">{{ str_replace('_', ' ', $field) }}</td>
-                        <td class="px-3 py-1.5 text-rose-600 line-through decoration-rose-300">{{ is_array($audit->old_values[$field] ?? null) ? json_encode($audit->old_values[$field]) : ($audit->old_values[$field] ?? '—') }}</td>
+                        <td class="px-3 py-1.5 text-red-700 line-through decoration-red-300">{{ is_array($audit->old_values[$field] ?? null) ? json_encode($audit->old_values[$field]) : ($audit->old_values[$field] ?? '—') }}</td>
                         <td class="px-3 py-1.5 text-emerald-700">{{ is_array($audit->new_values[$field]) ? json_encode($audit->new_values[$field]) : ($audit->new_values[$field] ?? '—') }}</td>
                     </tr>
                 @endforeach
@@ -38,7 +38,7 @@
         </div>
     @elseif (in_array($audit->event, ['created', 'deleted']) && ($audit->new_values || $audit->old_values))
         <details class="mt-1 text-xs text-slate-500">
-            <summary class="cursor-pointer select-none font-medium text-brand-600">Ver datos</summary>
+            <summary class="cursor-pointer select-none font-medium text-brand-700">Ver datos</summary>
             <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 rounded bg-slate-50 p-3 sm:grid-cols-3">
                 @foreach (($audit->new_values ?: $audit->old_values) as $field => $value)
                     <div><dt class="text-slate-400">{{ str_replace('_', ' ', $field) }}</dt><dd class="font-medium text-slate-700">{{ is_array($value) ? json_encode($value) : ($value ?? '—') }}</dd></div>
