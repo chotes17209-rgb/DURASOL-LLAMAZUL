@@ -23,11 +23,11 @@
                 <div class="grid gap-3 p-4 sm:grid-cols-3 lg:grid-cols-5">
                     <div>
                         <label class="form-label">Fecha de venta *</label>
-                        <input type="date" class="form-input" x-model="cab.fecha_venta" max="{{ today()->format('Y-m-d') }}">
+                        <input type="date" class="form-input" x-model="cab.fecha_venta" max="{{ today()->subDay()->format('Y-m-d') }}">
                     </div>
                     <div>
                         <label class="form-label">Fecha de liquidación *</label>
-                        <input type="date" class="form-input" x-model="cab.fecha_liquidacion">
+                        <input type="date" class="form-input" x-model="cab.fecha_liquidacion" max="{{ today()->format('Y-m-d') }}">
                     </div>
                     <div>
                         <label class="form-label">Responsable *</label>
@@ -74,10 +74,9 @@
             <div class="card-header flex-wrap">
                 <div>
                     <p class="card-title">Registro de ventas</p>
-                    <p class="text-[11px] text-slate-500">Escribe el código del cliente: se completan el nombre y su precio. <b>Enter</b> baja a la siguiente fila.</p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Escribe el <b>código</b> o el <b>nombre</b> del cliente; el precio sale de su lista de precios y no se modifica aquí. <b>Enter</b> baja a la siguiente fila.</p>
                 </div>
                 <div class="flex items-center gap-2 no-print" x-show="editable">
-                    <div class="w-80"><select x-ref="buscadorCliente" placeholder="Buscar cliente por nombre..."></select></div>
                     <button type="button" class="btn btn-secondary btn-sm" @click="agregarFilas(5)"><x-heroicon-o-plus/> Filas</button>
                 </div>
             </div>
@@ -106,9 +105,16 @@
                         <tr :data-fila="item.uid">
                             <td class="text-center text-xs text-slate-400" x-text="i + 1"></td>
                             <td class="!p-0"><input class="cell-input text-left font-mono" data-col="codigo" inputmode="numeric" x-model="item.codigo" @change="buscarCodigo(item)" @keydown.enter.prevent="$event.target.blur(); siguiente($event, items, item, () => agregarFilas(3))"></td>
-                            <td class="text-xs" :class="item.error ? 'text-red-700' : 'font-medium text-slate-800'">
-                                <span x-text="item.error || nombreCliente(item.cliente_id)"></span>
-                                <template x-if="item.cliente_id && clientes[item.cliente_id]?.deuda > 0"><span class="ml-1 text-[10px] text-amber-700" x-text="'debe ' + dec(clientes[item.cliente_id].deuda)"></span></template>
+                            <td class="!p-0">
+                                <div class="flex items-center">
+                                    <input class="cell-input text-left" data-col="cliente" placeholder="" autocomplete="off"
+                                           :class="item.cliente_id ? 'font-medium text-slate-900' : ''"
+                                           x-model="item.texto" @input="escribirNombre(item, $event, (f, c) => asignarCliente(f, c))"
+                                           @keydown="teclaNombre($event)" @blur="cerrarSugerencias()">
+                                    <span class="shrink-0 pr-1.5 text-[10px] whitespace-nowrap" x-show="item.error || (item.cliente_id && clientes[item.cliente_id]?.deuda > 0)"
+                                          :class="item.error ? 'font-semibold text-red-700' : 'text-amber-700'"
+                                          x-text="item.error || ('debe ' + dec(clientes[item.cliente_id]?.deuda))"></span>
+                                </div>
                             </td>
                             <td class="!p-0">
                                 <select class="cell-input text-left" x-model.number="item.empresa_id">
@@ -121,7 +127,7 @@
                                 </select>
                             </td>
                             <td class="!p-0"><input type="number" min="0" class="cell-input" data-col="cantidad" x-model="item.cantidad" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
-                            <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input" data-col="precio" x-model="item.precio" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
+                            <td class="cell-fija text-right" title="Precio vigente del cliente (se cambia en «Precios de venta»)" x-text="item.precio !== '' ? dec(item.precio) : ''"></td>
                             <td class="text-right font-semibold" x-text="totalItem(item) ? dec(totalItem(item)) : ''"></td>
                             <td class="!p-0"><input type="number" min="0" class="cell-input" data-col="vacios" x-model="item.vacios_devueltos" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
                             <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input" data-col="credito" x-model="item.monto_credito" @dblclick="todoCredito(item)" title="Doble clic: todo al crédito" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
@@ -165,9 +171,11 @@
                     <template x-for="c in cobranzas" :key="c.uid">
                         <tr :data-fila="c.uid">
                             <td class="!p-0"><input class="cell-input text-left font-mono" data-col="codigo" x-model="c.codigo" @change="buscarCodigoCobranza(c)" @keydown.enter.prevent="$event.target.blur()"></td>
-                            <td class="text-xs">
-                                <span :class="c.error ? 'text-red-700' : ''" x-text="c.error || nombreCliente(c.cliente_id)"></span>
-                                <template x-if="c.cliente_id && clientes[c.cliente_id]"><span class="block text-[10px] text-slate-500" x-text="'Deuda: ' + dec(clientes[c.cliente_id].deuda)"></span></template>
+                            <td class="!p-0">
+                                <input class="cell-input text-left" autocomplete="off" x-model="c.texto" placeholder="Nombre..."
+                                       @input="escribirNombre(c, $event, (f, cl) => asignarCobranza(f, cl))" @keydown="teclaNombre($event)" @blur="cerrarSugerencias()">
+                                <p class="px-1.5 pb-0.5 text-[10px]" x-show="c.error || c.cliente_id" :class="c.error ? 'font-semibold text-red-700' : 'text-slate-500'"
+                                   x-text="c.error || ('Deuda: ' + dec(clientes[c.cliente_id]?.deuda))"></p>
                             </td>
                             <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input" x-model="c.monto"></td>
                             <td class="!p-0">
@@ -306,7 +314,20 @@
         </div>
     </fieldset>
 
-    <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-5 py-2.5 lg:left-60 no-print">
+    {{-- Sugerencias de clientes al escribir el nombre --}}
+    <template x-if="sugerencias">
+        <div class="sugerencias" data-sugerencias :style="`top:${sugerencias.top}px;left:${sugerencias.left}px;width:${sugerencias.width}px`">
+            <p class="px-3 py-2 text-xs text-slate-500" x-show="sugerencias.cargando">Buscando...</p>
+            <p class="px-3 py-2 text-xs text-slate-500" x-show="!sugerencias.cargando && !sugerencias.lista.length">Sin coincidencias</p>
+            <template x-for="(op, n) in sugerencias.lista" :key="op.id">
+                <button type="button" :class="n === sugerencias.indice && 'activa'" @mousedown.prevent="elegirSugerencia(op)" @mouseenter="sugerencias.indice = n">
+                    <span x-text="op.text"></span>
+                </button>
+            </template>
+        </div>
+    </template>
+
+    <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-6 py-2.5 lg:left-64 no-print" style="box-shadow: 0 -4px 12px -6px rgb(10 26 56 / .15)">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p class="flex flex-wrap gap-x-5 text-xs text-slate-500">
                 <span>Balones <b class="text-slate-800" x-text="totalBalones"></b></span>
