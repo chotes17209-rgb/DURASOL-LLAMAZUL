@@ -3,7 +3,7 @@
         <form method="GET" class="flex items-end gap-2">
             <div>
                 <label class="form-label">Mes</label>
-                <input type="month" name="mes" value="{{ $mes->format('Y-m') }}" class="form-input w-44" onchange="this.form.submit()">
+                <input type="month" name="mes" value="{{ $mes->format('Y-m') }}" class="form-input w-56" onchange="this.form.submit()">
             </div>
         </form>
         <x-export :url="route('reportes.fise', ['mes' => $mes->format('Y-m')])"/>

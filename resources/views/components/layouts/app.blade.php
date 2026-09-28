@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ isset($title) ? $title.' · ' : '' }}{{ config('erp.nombre') }}</title>
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
-    <link rel="icon" href="{{ asset('favicon-32.png') }}" sizes="32x32" type="image/png">
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" href="{{ asset('favicon.svg') }}?v={{ @filemtime(public_path('favicon.svg')) }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('favicon-32.png') }}?v={{ @filemtime(public_path('favicon-32.png')) }}" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v={{ @filemtime(public_path('apple-touch-icon.png')) }}">
     <meta name="theme-color" content="#1f3f95">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
@@ -72,7 +72,7 @@
             @endforeach
         @endforeach
     </nav>
-    <div class="border-t border-line px-4 py-3 text-[11.5px] leading-relaxed text-slate-500">
+    <div class="border-t border-white/10 px-5 py-3 text-[11.5px] leading-relaxed text-[#7f90b5]">
         <p>Versión {{ config('erp.version', '1.0') }} · Uso interno</p>
     </div>
 </aside>
@@ -91,7 +91,7 @@
             <div class="no-print flex flex-wrap items-center gap-2">{{ $actions }}</div>
         @endisset
     </div>
-    <main class="px-6 py-5">
+    <main class="px-6 pt-4 pb-8">
         {{ $slot }}
     </main>
 </div>

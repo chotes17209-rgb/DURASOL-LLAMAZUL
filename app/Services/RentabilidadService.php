@@ -8,7 +8,6 @@ use App\Models\CajaChicaMovimiento;
 use App\Models\CajaMovimiento;
 use App\Models\Empresa;
 use App\Models\Liquidacion;
-use App\Models\ParteFila;
 use App\Models\Producto;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -173,7 +172,7 @@ class RentabilidadService
 
     /**
      * Compras en planta frente a lo vendido (hoja STOCK): por empresa y presentación.
-     * Compras = ingresos de llenos desde planta en el parte diario + compras históricas importadas.
+     * Compras = módulo de compras (registro manual, parte diario sincronizado e importado).
      */
     private function comprasVsVentas(Carbon $desde, Carbon $hasta, ?int $empresaId, Collection $lineas): array
     {
@@ -188,21 +187,6 @@ class RentabilidadService
                 $codigo = $productos->search($c->producto_id);
                 $fecha = substr((string) $c->fecha, 0, 10);
                 $compras[$fecha][$c->empresa_id][$codigo] = ($compras[$fecha][$c->empresa_id][$codigo] ?? 0) + $c->cantidad;
-            });
-
-        ParteFila::with(['parte', 'instalacion'])->where('bloque', ParteFila::LLENO_INGRESO)
-            ->whereHas('parte', fn ($q) => $q->whereBetween('fecha', $rango))
-            ->where(fn ($q) => $q->whereNotNull('instalacion_id')->orWhereLike('lugar', '%PLANTA%'))
-            ->get()
-            ->each(function (ParteFila $f) use (&$compras, $codigos, $empresaId) {
-                $empresa = $f->empresa_id ?? $f->instalacion?->empresa_id;
-                if (! $empresa || ($empresaId && $empresa !== $empresaId)) {
-                    return;
-                }
-                $fecha = $f->parte->fecha->toDateString();
-                foreach ($codigos as $codigo => $columna) {
-                    $compras[$fecha][$empresa][$codigo] = ($compras[$fecha][$empresa][$codigo] ?? 0) + (int) $f->{$columna};
-                }
             });
 
         $empresaIds = $empresas->flip();

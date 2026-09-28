@@ -1,6 +1,8 @@
 <x-modal :title="$instalacion->codigo.' · '.$instalacion->nombre" :subtitle="$instalacion->empresa?->nombre" icon="map-pin">
     <div x-data="{ tab: 'detalle' }">
-        <x-tabs :tabs="['detalle' => 'Detalle', 'precios' => 'Historial de precios', 'guias' => 'Cargas en planta', 'historial' => 'Historial']"/>
+        <x-tabs :tabs="auth()->user()->can('ver-precios-compra')
+            ? ['detalle' => 'Detalle', 'precios' => 'Historial de precios', 'guias' => 'Cargas en planta', 'historial' => 'Historial']
+            : ['detalle' => 'Detalle', 'guias' => 'Cargas en planta', 'historial' => 'Historial']"/>
         <div x-show="tab === 'detalle'" class="space-y-5">
             <dl class="dl-grid">
                 <div><dt>Código</dt><dd class="font-mono">{{ $instalacion->codigo }}</dd></div>
@@ -13,6 +15,7 @@
                 <div><dt>Camión designado</dt><dd>{{ $instalacion->vehiculo?->placa ?? '—' }}</dd></div>
                 <div><dt>Dirección</dt><dd>{{ $instalacion->direccion ?: '—' }}</dd></div>
             </dl>
+            @can('ver-precios-compra')
             <div>
                 <p class="mb-2 text-sm font-semibold">Precios de compra vigentes</p>
                 <div class="grid gap-3 sm:grid-cols-3">
@@ -27,7 +30,9 @@
                     @endforelse
                 </div>
             </div>
+            @endcan
         </div>
+        @can('ver-precios-compra')
         <div x-show="tab === 'precios'" x-cloak>
             <table class="table table-compact">
                 <thead><tr><th>Vigente desde</th><th>Producto</th><th class="text-right">Precio</th><th>Motivo</th><th>Factura</th><th>Registró</th></tr></thead>
@@ -40,6 +45,7 @@
                 </tbody>
             </table>
         </div>
+        @endcan
         <div x-show="tab === 'guias'" x-cloak>
             @include('logistica.partes._movimientos')
         </div>

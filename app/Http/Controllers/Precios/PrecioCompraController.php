@@ -70,6 +70,30 @@ class PrecioCompraController extends Controller
         return $this->ok("Precios de {$instalacion->codigo} validados.", ['reloadPage' => true]);
     }
 
+    public function edit(PrecioCompra $precio): View
+    {
+        return view('precios.compra.editar', ['precio' => $precio->load(['instalacion.empresa', 'producto'])]);
+    }
+
+    /** Corrige un registro de precio (monto, vigencia o motivo); queda en el historial del sistema. */
+    public function update(Request $request, PrecioCompra $precio): JsonResponse
+    {
+        $datos = $request->validate([
+            'precio' => ['required', 'numeric', 'gt:0', 'max:9999'],
+            'vigente_desde' => ['required', 'date'],
+            'motivo' => ['nullable', 'string', 'max:150'],
+            'validado' => ['boolean'],
+        ]);
+        $validado = $request->boolean('validado');
+        $precio->update($datos + [
+            'validado' => $validado,
+            'validado_por' => $validado ? ($precio->validado ? $precio->validado_por : auth()->id()) : null,
+            'validado_at' => $validado ? ($precio->validado_at ?? now()) : null,
+        ]);
+
+        return $this->ok('Precio de compra actualizado.', ['reloadPage' => true]);
+    }
+
     public function destroy(PrecioCompra $precio): JsonResponse
     {
         $precio->delete();

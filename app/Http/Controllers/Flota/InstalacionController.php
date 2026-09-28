@@ -32,7 +32,9 @@ class InstalacionController extends Controller
     {
         $instalacion = DB::transaction(function () use ($request, $precios) {
             $instalacion = Instalacion::create($request->safe()->except(['precios', 'vigente_desde']));
-            $precios->guardarPreciosCompra($instalacion, $request->input('precios', []), $request->date('vigente_desde') ?? today(), 'Precio inicial');
+            if ($request->user()->can('ver-precios-compra')) {
+                $precios->guardarPreciosCompra($instalacion, $request->input('precios', []), $request->date('vigente_desde') ?? today(), 'Precio inicial');
+            }
 
             return $instalacion;
         });
@@ -43,9 +45,10 @@ class InstalacionController extends Controller
     public function show(Instalacion $instalacion, PrecioService $precios): View
     {
         $instalacion->load(['empresa', 'chofer', 'vehiculo']);
-        $historialPrecios = $instalacion->preciosCompra()->with(['producto', 'user'])->orderByDesc('vigente_desde')->orderByDesc('id')->get();
+        $verPrecios = auth()->user()->can('ver-precios-compra');
+        $historialPrecios = ! $verPrecios ? collect() : $instalacion->preciosCompra()->with(['producto', 'user'])->orderByDesc('vigente_desde')->orderByDesc('id')->get();
         $movimientos = ParteFila::with('parte')->where('instalacion_id', $instalacion->id)->latest('id')->limit(15)->get();
-        $vigentes = $precios->preciosCompraVigentes()[$instalacion->id] ?? [];
+        $vigentes = $verPrecios ? ($precios->preciosCompraVigentes()[$instalacion->id] ?? []) : [];
 
         return view('flota.instalaciones.show', compact('instalacion', 'historialPrecios', 'movimientos', 'vigentes'));
     }
@@ -60,7 +63,10 @@ class InstalacionController extends Controller
         $cambios = DB::transaction(function () use ($request, $instalacion, $precios) {
             $instalacion->update($request->safe()->except(['precios', 'vigente_desde']));
 
-            return $precios->guardarPreciosCompra($instalacion, $request->input('precios', []), $request->date('vigente_desde') ?? today(), 'Cambio de precio');
+            // Solo gerencia registra precios de compra; logística administra los datos de la instalación.
+            return $request->user()->can('ver-precios-compra')
+                ? $precios->guardarPreciosCompra($instalacion, $request->input('precios', []), $request->date('vigente_desde') ?? today(), 'Cambio de precio')
+                : 0;
         });
 
         return $this->ok("Instalación {$instalacion->codigo} actualizada".($cambios ? " con {$cambios} precio(s) nuevo(s) por validar." : '.'), ['reloadPage' => true]);

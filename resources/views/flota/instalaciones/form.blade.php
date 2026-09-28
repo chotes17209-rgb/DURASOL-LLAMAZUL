@@ -14,6 +14,7 @@
     </div>
     <datalist id="lista-plantas"><option value="P.HUA"><option value="P.LIMA"><option value="P.AYACUCHO"></datalist>
 
+    @can('ver-precios-compra')
     <p class="section-title mt-5">Precio de compra</p>
     <div class="grid gap-3 sm:grid-cols-4">
         <x-field.input name="vigente_desde" type="date" label="Vigente desde" :value="today()->format('Y-m-d')"/>
@@ -22,6 +23,7 @@
         @endforeach
     </div>
     <p class="form-hint">Un cambio de precio se registra en el historial como <b>no validado</b> hasta su confirmación en factura.</p>
+    @endcan
 
     <div class="mt-4 grid gap-3 sm:grid-cols-3">
         <x-field.textarea name="observaciones" label="Observaciones" :value="$instalacion->observaciones" rows="2" class="sm:col-span-2"/>

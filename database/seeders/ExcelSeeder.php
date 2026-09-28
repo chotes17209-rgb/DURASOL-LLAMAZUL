@@ -22,6 +22,7 @@ use App\Services\AlmacenService;
 use App\Services\CostoService;
 use App\Services\LiquidacionService;
 use App\Support\AuditLogger;
+use App\Support\DatosHistoricos;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +86,8 @@ class ExcelSeeder extends Seeder
             $this->parte14Setiembre($instalaciones);
             $this->parte25Setiembre($instalaciones);
             $this->depositos();
-            $this->comprasHistoricas();
+            DatosHistoricos::cargarCompras();
+            DatosHistoricos::cargarFise25Setiembre();
             $this->command?->info('Partes de almacén y depósitos importados.');
         });
     }
@@ -635,23 +637,6 @@ class ExcelSeeder extends Seeder
                 ]);
             }
         }
-    }
-
-    /** Compras en planta de agosto (hoja STOCK): no hay parte diario de esas fechas. */
-    private function comprasHistoricas(): void
-    {
-        $filas = [];
-        foreach ($this->leer('compras_agosto.json') as [$fecha, $porEmpresa]) {
-            foreach ($porEmpresa as $empresa => $cantidades) {
-                foreach ($cantidades as $codigo => $cantidad) {
-                    if ($cantidad > 0 && isset($this->empresas[$empresa], $this->productos[$codigo])) {
-                        $filas[] = ['fecha' => $fecha, 'empresa_id' => $this->empresas[$empresa], 'producto_id' => $this->productos[$codigo],
-                            'cantidad' => (int) $cantidad, 'origen' => 'excel', 'created_at' => now(), 'updated_at' => now()];
-                    }
-                }
-            }
-        }
-        DB::table('compras_planta')->insert($filas);
     }
 
     private function leer(string $archivo): array

@@ -281,6 +281,7 @@ class AlmacenService
                 ]);
             }
             $parte->touch();
+            app(CompraService::class)->sincronizarParte($parte->fresh());
 
             return $parte;
         });

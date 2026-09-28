@@ -5,6 +5,7 @@
 --}}
 @php
     $puedeEditar = auth()->user()->hasRole('logistica');
+    $verPrecios = auth()->user()->can('ver-precios-compra');
     $pendientes = $instalaciones->filter(fn ($i) => collect($vigentes[$i->id] ?? [])->contains('validado', false));
     $porEmpresa = $instalaciones->groupBy(fn ($i) => $i->empresa?->nombre)->map->count();
 @endphp
@@ -12,7 +13,9 @@
     @foreach ($porEmpresa as $empresa => $cantidad)
         <x-cifra :label="'Instalaciones '.$empresa" :value="num($cantidad)"/>
     @endforeach
-    <x-cifra label="Precios no validados" :value="num($pendientes->count())" :tone="$pendientes->isNotEmpty() ? 'red' : 'green'" hint="instalaciones con precio sin factura"/>
+    @if ($verPrecios)
+        <x-cifra label="Precios no validados" :value="num($pendientes->count())" :tone="$pendientes->isNotEmpty() ? 'red' : 'green'" hint="instalaciones con precio sin factura"/>
+    @endif
     <x-cifra label="Instalaciones activas" :value="num($instalaciones->count())" total/>
 </dl>
 @forelse ($instalaciones->groupBy(fn ($i) => $i->empresa?->nombre) as $empresa => $lista)
@@ -29,8 +32,10 @@
                     <th class="w-28">Instalación</th>
                     <th>Placa</th>
                     <th class="w-28">Planta</th>
-                    @foreach ($productos as $p)<th class="w-24 text-right">{{ $p->codigo }}</th>@endforeach
-                    <th class="w-32">Estado</th>
+                    @if ($verPrecios)
+                        @foreach ($productos as $p)<th class="w-24 text-right">{{ $p->codigo }}</th>@endforeach
+                        <th class="w-32">Estado</th>
+                    @endif
                     <th class="w-48"></th>
                 </tr>
                 </thead>
@@ -43,6 +48,7 @@
                         <td class="font-mono">{{ $i->codigo }}</td>
                         <td class="text-xs">{{ $i->placas ?: $i->vehiculo?->placa ?: '—' }}</td>
                         <td>{{ $i->planta ?: '—' }}</td>
+                        @if ($verPrecios)
                         @foreach ($productos as $p)
                             @php($precio = $precios[$p->id] ?? null)
                             <td class="text-right {{ $precio && ! $precio->validado ? 'bg-amber-50' : '' }}" @if ($precio) title="Vigente desde {{ fecha($precio->vigente_desde) }}{{ $precio->validado ? '' : ' · no validado en factura' }}" @endif>
@@ -59,16 +65,18 @@
                             @endif
                             @unless ($i->activo)<span class="badge badge-red">Inactiva</span>@endunless
                         </td>
+                        @endif
                         <td>
                             <div class="flex items-center justify-end gap-1">
-                                @if ($puedeEditar)
+                                @if ($puedeEditar && $verPrecios)
                                     <button class="btn btn-secondary btn-sm" data-modal-url="{{ route('precios.compra.create', ['instalacion_id' => $i->id]) }}" data-modal-size="md">Precios</button>
                                     @if ($pendientes)
                                         <button class="btn btn-secondary btn-sm" data-action-url="{{ route('precios.compra.validar', $i) }}"
                                                 data-confirm="¿Validar los precios de {{ $i->codigo }}?" data-text="Confirma que el último precio ya se refleja en las facturas de Solgas.">Validar</button>
                                     @endif
                                 @endif
-                                @if ($modo === 'instalaciones')
+                                @if ($verPrecios)<a href="{{ route('precios.compra.historial', ['instalacion_id' => $i->id]) }}" class="btn-icon info" title="Historial de precios (editar o eliminar)"><x-heroicon-o-clock class="h-4 w-4"/></a>@endif
+                                @if ($puedeEditar)
                                     <x-row-actions :show="route('instalaciones.show', $i)" :edit="route('instalaciones.edit', $i)" :delete="route('instalaciones.destroy', $i)"/>
                                 @else
                                     <x-row-actions :show="route('instalaciones.show', $i)"/>

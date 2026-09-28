@@ -25,6 +25,7 @@ return [
         'deposito' => 'Depósito',
         'caja_chica_movimiento' => 'Movimiento de caja chica',
         'arqueo' => 'Arqueo de efectivo',
+        'compra_planta' => 'Compra en planta',
     ],
 
     // Datos de la cabecera del reporte de caja chica.
@@ -35,6 +36,11 @@ return [
             'Mantenimiento de vehículo', 'Combustible', 'Peajes', 'Canje de balones', 'Estibador externo',
             'Viáticos', 'Útiles y oficina', 'Servicios', 'Otros',
         ],
+    ],
+
+    // Compras: hasta esta fecha las compras vienen del registro importado (no del parte diario).
+    'compras' => [
+        'importadas_hasta' => env('COMPRAS_IMPORTADAS_HASTA', '2026-09-26'),
     ],
 
     // Denominaciones de la moneda peruana para el arqueo de efectivo.

@@ -151,7 +151,7 @@
                                            :class="item.cliente_id ? 'font-semibold text-slate-900' : ''"
                                            x-model="item.texto" @input="escribirNombre(item, $event, (f, c) => asignarCliente(f, c))"
                                            @keydown="teclaNombre($event)" @blur="cerrarSugerencias()">
-                                    <span class="mr-1.5 shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-semibold whitespace-nowrap" x-show="item.error || (item.cliente_id && clientes[item.cliente_id]?.deuda > 0)"
+                                    <span class="mr-1.5 shrink-0 rounded-md px-1.5 py-px text-[11.5px] font-semibold whitespace-nowrap" x-show="item.error || (item.cliente_id && clientes[item.cliente_id]?.deuda > 0)"
                                           :class="item.error ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'"
                                           x-text="item.error || ('Debe ' + dec(clientes[item.cliente_id]?.deuda))"></span>
                                 </div>
@@ -400,7 +400,7 @@
                 <span>Crédito <b class="text-slate-800" x-text="dec(totalCredito)"></b></span>
                 <span>Por depositar <b class="text-slate-800" x-text="dec(efectivo)"></b></span>
                 <span>Depósitos <b class="text-slate-800" x-text="dec(totalDepositos)"></b></span>
-                <span class="rounded-sm border border-brand-200 bg-brand-50 px-2 py-1 text-brand-900">Efectivo a entregar <b class="text-[13px]" x-text="'S/ ' + dec(efectivoAEntregar)"></b></span>
+                <span class="rounded-md border border-brand-200 bg-brand-50 px-2 py-1 text-brand-900">Efectivo a entregar <b class="text-[13px]" x-text="'S/ ' + dec(efectivoAEntregar)"></b></span>
                 <span class="text-amber-700" x-show="sucio && editable">● Cambios sin guardar</span>
             </p>
             <div class="flex gap-2" x-show="editable">

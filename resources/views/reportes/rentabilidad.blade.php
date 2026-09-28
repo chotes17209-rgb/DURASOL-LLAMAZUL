@@ -22,7 +22,7 @@
         <form method="GET" class="flex items-end gap-2">
             <div>
                 <label class="form-label">Mes</label>
-                <input type="month" name="mes" value="{{ $mes }}" class="form-input w-40" onchange="this.form.submit()">
+                <input type="month" name="mes" value="{{ $mes }}" class="form-input w-56" onchange="this.form.submit()">
             </div>
             <div>
                 <label class="form-label">Empresa</label>
@@ -60,9 +60,9 @@
     @endif
 
     <div x-data="{ tab: 'resultado' }" class="mt-4">
-        <nav class="tabs mb-4 rounded-sm border border-line bg-white px-2">
+        <nav class="segmented mb-4 max-w-full overflow-x-auto">
             @foreach (['resultado' => 'Estado de resultados', 'productos' => 'Por presentación y empresa', 'diario' => 'Rentabilidad diaria', 'responsables' => 'Por responsable', 'compras' => 'Compras frente a ventas'] as $k => $t)
-                <button type="button" class="tab" :class="tab === '{{ $k }}' && 'active'" @click="tab = '{{ $k }}'">{{ $t }}</button>
+                <button type="button" class="whitespace-nowrap" :class="tab === '{{ $k }}' && 'active'" @click="tab = '{{ $k }}'">{{ $t }}</button>
             @endforeach
         </nav>
 

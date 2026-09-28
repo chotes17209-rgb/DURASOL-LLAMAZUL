@@ -26,8 +26,9 @@ class Menu
                 ['label' => 'Clientes', 'route' => 'clientes.index', 'match' => 'clientes.*', 'icon' => 'users', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
                 ['label' => 'Créditos y cobranzas', 'route' => 'creditos.index', 'match' => 'creditos.*', 'icon' => 'credit-card', 'roles' => [Rol::Liquidaciones, Rol::Caja]],
             ]],
-            ['titulo' => 'Precios', 'items' => [
-                ['label' => 'Precios de compra', 'route' => 'precios.compra.index', 'match' => 'precios.compra.*', 'icon' => 'building-storefront', 'roles' => [Rol::Logistica]],
+            ['titulo' => 'Compras y precios', 'items' => [
+                ['label' => 'Compras en planta', 'route' => 'compras.index', 'match' => 'compras.*', 'icon' => 'shopping-cart', 'roles' => [Rol::Logistica]],
+                ['label' => 'Precios de compra', 'route' => 'precios.compra.index', 'match' => 'precios.compra.*', 'icon' => 'building-storefront', 'roles' => [Rol::Admin]],
                 ['label' => 'Precios de venta', 'route' => 'precios.venta.index', 'match' => 'precios.venta.*', 'icon' => 'tag', 'roles' => [Rol::Liquidaciones]],
             ]],
             ['titulo' => 'Caja', 'items' => [

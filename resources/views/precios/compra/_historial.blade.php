@@ -12,7 +12,7 @@
                 <td class="text-xs">{{ $r->motivo }}</td>
                 <td>@if ($r->validado)<span class="badge badge-green" title="{{ $r->validadoPor?->name }} {{ $r->validado_at?->format('d/m/Y') }}">Validado</span>@else<span class="badge badge-amber">No validado</span>@endif</td>
                 <td>{{ $r->user?->name ?? 'Importado' }}</td>
-                <td>@if (auth()->user()->isAdmin())<x-row-actions :delete="route('precios.compra.destroy', $r)"/>@endif</td>
+                <td><x-row-actions size="md" :edit="route('precios.compra.edit', $r)" :delete="route('precios.compra.destroy', $r)" delete-text="Se elimina este registro del historial de precios."/></td>
             </tr>
         @empty
             <tr><td colspan="9"><x-empty/></td></tr>

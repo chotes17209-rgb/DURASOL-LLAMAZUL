@@ -11,6 +11,7 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -37,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        // Los precios de compra (costo) solo los ve gerencia; logística solo mueve balones.
+        Gate::define('ver-precios-compra', fn (Models\User $user) => $user->isAdmin());
+
         // Alias cortos y estables para las relaciones polimórficas (historial, kardex, caja).
         Relation::enforceMorphMap([
             'user' => Models\User::class,
@@ -59,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
             'deposito' => Models\Deposito::class,
             'caja_chica_movimiento' => Models\CajaChicaMovimiento::class,
             'arqueo' => Models\Arqueo::class,
+            'compra_planta' => Models\CompraPlanta::class,
         ]);
 
         Event::listen(Login::class, function (Login $event) {

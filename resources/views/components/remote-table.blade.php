@@ -5,7 +5,7 @@
         <div class="card-header"><p class="card-title">{{ $title }}</p>{{ $header ?? '' }}</div>
     @endif
     @isset($filters)
-        <form data-table-filters class="flex flex-wrap items-end gap-2 border-b border-line bg-panel px-3 py-2.5" onsubmit="return false">
+        <form data-table-filters class="flex flex-wrap items-end gap-2 border-b border-slate-100 px-4 py-3" onsubmit="return false">
             {{ $filters }}
             <button type="button" class="btn btn-secondary h-8" title="Quitar filtros" data-limpiar-filtros>Limpiar filtros</button>
         </form>

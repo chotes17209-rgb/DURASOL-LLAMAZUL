@@ -9,6 +9,7 @@ use App\Http\Controllers\Caja\CajaChicaController;
 use App\Http\Controllers\Caja\CajaController;
 use App\Http\Controllers\Caja\CuentaBancariaController;
 use App\Http\Controllers\Caja\DepositoController;
+use App\Http\Controllers\CompraController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Flota\ChoferController;
 use App\Http\Controllers\Flota\InstalacionController;
@@ -43,6 +44,14 @@ Route::middleware('auth')->group(function () {
 
     /* ------------------------------ Administración ------------------------------ */
     Route::middleware('role:admin')->group(function () {
+        Route::get('precios/compra', [PrecioCompraController::class, 'index'])->name('precios.compra.index');
+        Route::get('precios/compra/historial', [PrecioCompraController::class, 'historial'])->name('precios.compra.historial');
+        Route::get('precios/compra/crear', [PrecioCompraController::class, 'create'])->name('precios.compra.create');
+        Route::post('precios/compra', [PrecioCompraController::class, 'store'])->name('precios.compra.store');
+        Route::post('precios/compra/{instalacion}/validar', [PrecioCompraController::class, 'validar'])->name('precios.compra.validar');
+        Route::get('precios/compra/{precio}/editar', [PrecioCompraController::class, 'edit'])->name('precios.compra.edit');
+        Route::put('precios/compra/{precio}', [PrecioCompraController::class, 'update'])->name('precios.compra.update');
+        Route::delete('precios/compra/{precio}', [PrecioCompraController::class, 'destroy'])->name('precios.compra.destroy');
         Route::get('reportes/rentabilidad', [RentabilidadController::class, 'index'])->name('reportes.rentabilidad');
         Route::resource('empresas', EmpresaController::class);
         Route::resource('productos', ProductoController::class);
@@ -50,11 +59,19 @@ Route::middleware('auth')->group(function () {
         Route::get('historial', [HistorialController::class, 'index'])->name('historial.index');
         Route::post('liquidaciones/{liquidacion}/reabrir', [LiquidacionController::class, 'reabrir'])->name('liquidaciones.reabrir');
         Route::post('logistica/partes/{fecha}/reabrir', [ParteController::class, 'reabrir'])->name('logistica.partes.reabrir');
-        Route::delete('precios/compra/{precio}', [PrecioCompraController::class, 'destroy'])->name('precios.compra.destroy');
     });
 
     /* ------------------------------ Flota, personal y logística ------------------------------ */
     Route::middleware('role:logistica')->group(function () {
+        Route::get('compras', [CompraController::class, 'index'])->name('compras.index');
+        Route::get('compras/crear', [CompraController::class, 'create'])->name('compras.create');
+        Route::post('compras', [CompraController::class, 'store'])->name('compras.store');
+        Route::get('compras/precio', [CompraController::class, 'precio'])->name('compras.precio');
+        Route::get('compras/cuotas', [CompraController::class, 'cuotas'])->name('compras.cuotas');
+        Route::put('compras/cuotas', [CompraController::class, 'guardarCuotas'])->name('compras.cuotas.update');
+        Route::get('compras/{compra}/editar', [CompraController::class, 'edit'])->name('compras.edit');
+        Route::put('compras/{compra}', [CompraController::class, 'update'])->name('compras.update');
+        Route::delete('compras/{compra}', [CompraController::class, 'destroy'])->name('compras.destroy');
         Route::resource('vehiculos', VehiculoController::class);
         Route::get('documentos-vehiculares', [VehiculoDocumentoController::class, 'index'])->name('documentos.index');
         Route::get('vehiculos/{vehiculo}/documentos/crear', [VehiculoDocumentoController::class, 'create'])->name('documentos.create');
@@ -85,11 +102,6 @@ Route::middleware('auth')->group(function () {
             Route::get('stock/kardex', [StockController::class, 'kardex'])->name('stock.kardex');
         });
 
-        Route::get('precios/compra', [PrecioCompraController::class, 'index'])->name('precios.compra.index');
-        Route::get('precios/compra/historial', [PrecioCompraController::class, 'historial'])->name('precios.compra.historial');
-        Route::get('precios/compra/crear', [PrecioCompraController::class, 'create'])->name('precios.compra.create');
-        Route::post('precios/compra', [PrecioCompraController::class, 'store'])->name('precios.compra.store');
-        Route::post('precios/compra/{instalacion}/validar', [PrecioCompraController::class, 'validar'])->name('precios.compra.validar');
     });
 
     /* ------------------------------ Ventas ------------------------------ */
