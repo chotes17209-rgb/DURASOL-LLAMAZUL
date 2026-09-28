@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LiquidacionRequest;
 use App\Models\Chofer;
 use App\Models\Cliente;
+use App\Models\CuentaPorCobrar;
 use App\Models\Empresa;
 use App\Models\Liquidacion;
 use App\Models\LiquidacionFise;
@@ -158,6 +159,27 @@ class LiquidacionController extends Controller
         ]);
     }
 
+    /**
+     * Cartera del chofer: sus clientes activos con el precio vigente a la fecha de venta y su deuda.
+     * La hoja de liquidación se llena con ellos al elegir al responsable.
+     */
+    public function clientesChofer(Request $request): JsonResponse
+    {
+        $clientes = Cliente::where('activo', true)->where('chofer_id', $request->integer('chofer_id'))->orderBy('codigo')->get();
+        $ids = $clientes->pluck('id')->all();
+        $precios = $ids ? $this->precios->preciosVentaVigentes($ids, $request->fecha ?: today()) : [];
+        $deudas = CuentaPorCobrar::pendientes()->whereIn('cliente_id', $ids)->selectRaw('cliente_id, SUM(saldo) as deuda')
+            ->groupBy('cliente_id')->pluck('deuda', 'cliente_id');
+
+        return response()->json($clientes->map(fn (Cliente $c) => [
+            'id' => $c->id,
+            'codigo' => $c->codigo,
+            'nombre' => $c->nombreMostrar(),
+            'precios' => (object) ($precios[$c->id] ?? []),
+            'deuda' => round((float) ($deudas[$c->id] ?? 0), 2),
+        ])->values());
+    }
+
     /** Balones vendidos según el parte de almacén (salida − retorno de llenos) para cuadrar. */
     public function cuadre(Request $request): JsonResponse
     {
@@ -257,6 +279,7 @@ class LiquidacionController extends Controller
                 'guardar' => $liquidacion->exists ? route('liquidaciones.update', $liquidacion) : route('liquidaciones.store'),
                 'buscarClientes' => route('buscar.clientes'),
                 'datosCliente' => route('liquidaciones.datos-cliente'),
+                'clientesChofer' => route('liquidaciones.clientes-chofer'),
                 'cuadre' => route('liquidaciones.cuadre'),
             ],
             'cabecera' => [

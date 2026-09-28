@@ -44,11 +44,15 @@ export default function liquidacionEditor(config) {
             }
 
             this.$nextTick(() => { this.sucio = false; });
+            // Nueva liquidación con responsable ya elegido: cargar su cartera.
+            if (config.metodo === 'POST' && this.cab.chofer_id && !this.items.some((i) => +i.cantidad > 0)) this.cargarCartera();
+            // Borrador ya guardado: se completan los demás clientes de su cartera debajo de las ventas.
+            if (config.metodo === 'PUT' && this.editable && this.cab.chofer_id) this.cargarCartera(true);
             window.addEventListener('scroll', (e) => {
                 if (!e.target.closest?.('[data-sugerencias]')) this.sugerencias = null;
             }, true);
             this.cargarCuadre();
-            this.$watch('cab.chofer_id', () => { this.cambiarChofer(); this.cargarCuadre(); });
+            this.$watch('cab.chofer_id', () => { this.cambiarChofer(); this.cargarCuadre(); this.cargarCartera(); });
             this.$watch('cab.fecha_venta', (v) => {
                 this.sugerirFechaLiquidacion(v);
                 this.cargarCuadre();
@@ -77,7 +81,7 @@ export default function liquidacionEditor(config) {
             this.sugerencias = { fila, alElegir, lista: [], indice: 0, top: r.bottom, left: r.left, width: Math.max(r.width, 360), cargando: true };
             this.temporizador = setTimeout(async () => {
                 try {
-                    const params = new URLSearchParams({ q: texto, chofer_id: this.cab.chofer_id || '' });
+                    const params = new URLSearchParams({ q: texto, chofer_id: this.cab.chofer_id || '', solo_chofer: this.cab.chofer_id ? 1 : 0 });
                     const data = await window.request(`${this.urls.buscarClientes}?${params}`, { json: true });
                     if (this.sugerencias?.fila === fila) Object.assign(this.sugerencias, { lista: data.results || [], indice: 0, cargando: false });
                 } catch (e) {
@@ -115,6 +119,46 @@ export default function liquidacionEditor(config) {
             const data = await window.request(`${this.urls.datosCliente}?${q}`, { json: true });
             this.clientes[data.id] = data;
             return data;
+        },
+
+        /* ---------------- Cartera del chofer ---------------- */
+        cargandoCartera: false,
+        /** Al elegir al responsable, la hoja se llena con sus clientes (código, nombre y precio). */
+        async cargarCartera(completar = false) {
+            if (!this.editable || !this.cab.chofer_id) return;
+            const conCantidad = this.items.filter((i) => +i.cantidad > 0);
+            if (conCantidad.length && !completar) {
+                const ok = await window.confirmAction({
+                    title: '¿Cargar los clientes del nuevo responsable?',
+                    text: `Se quitarán las ${conCantidad.length} venta(s) ya escritas.`,
+                    confirmText: 'Sí, cargar', icon: 'warning',
+                });
+                if (!ok) return;
+            }
+            this.cargandoCartera = true;
+            try {
+                const params = new URLSearchParams({ chofer_id: this.cab.chofer_id, fecha: this.cab.fecha_venta || '' });
+                const cartera = await window.request(`${this.urls.clientesChofer}?${params}`, { json: true });
+                const presentes = new Set(completar ? this.items.filter((i) => i.cliente_id).map((i) => i.cliente_id) : []);
+                this.items = completar ? this.items.filter((i) => i.cliente_id || +i.cantidad > 0) : [];
+                cartera.filter((c) => !presentes.has(c.id)).forEach((c) => {
+                    this.clientes[c.id] = c;
+                    const fila = this.filaVacia();
+                    fila.cliente_id = c.id;
+                    fila.codigo = c.codigo;
+                    fila.texto = c.nombre;
+                    fila.producto_id = this.productoSugerido(c);
+                    this.aplicarPrecio(fila);
+                    this.items.push(fila);
+                });
+                this.agregarFilas(3);
+                if (completar) this.$nextTick(() => { this.sucio = false; });
+                if (!cartera.length && !completar) window.notify('info', 'El responsable no tiene clientes asignados; escribe los códigos.');
+            } catch (e) {
+                window.handleRequestError(e);
+            } finally {
+                this.cargandoCartera = false;
+            }
         },
 
         /* ---------------- Hoja de ventas ---------------- */
@@ -161,7 +205,14 @@ export default function liquidacionEditor(config) {
         async recargarPrecios() {
             const ids = [...new Set(this.items.filter((i) => i.cliente_id).map((i) => i.cliente_id))];
             ids.forEach((id) => { if (this.clientes[id]) this.clientes[id].precios = null; });
-            for (const id of ids) {
+            // La cartera del chofer se trae en una sola consulta; el resto, cliente por cliente.
+            if (this.cab.chofer_id) {
+                try {
+                    const params = new URLSearchParams({ chofer_id: this.cab.chofer_id, fecha: this.cab.fecha_venta || '' });
+                    (await window.request(`${this.urls.clientesChofer}?${params}`, { json: true })).forEach((c) => { this.clientes[c.id] = c; });
+                } catch (e) { /* se reintenta abajo */ }
+            }
+            for (const id of ids.filter((i) => !this.clientes[i]?.precios)) {
                 try { await this.datosCliente({ cliente_id: id }); } catch (e) { /* se marca en la fila */ }
             }
             this.items.filter((i) => i.cliente_id).forEach((i) => this.aplicarPrecio(i));
@@ -209,7 +260,7 @@ export default function liquidacionEditor(config) {
 
         nombreCliente(id) { return id ? (this.clientes[id]?.nombre ?? `Cliente ${id}`) : ''; },
         codigoProducto(id) { return this.productos.find((p) => p.id === +id)?.codigo ?? ''; },
-        get filasConDatos() { return this.items.filter((i) => i.cliente_id || +i.cantidad > 0); },
+        get filasConDatos() { return this.items.filter((i) => +i.cantidad > 0); },
 
         /* ---------------- FISE ---------------- */
         get clientesDelDia() { return [...new Set(this.items.filter((i) => i.cliente_id).map((i) => i.cliente_id))]; },
@@ -296,7 +347,9 @@ export default function liquidacionEditor(config) {
             if (!fecha) return;
             const d = new Date(`${fecha}T12:00:00`);
             d.setDate(d.getDate() + (config.diasLiquidacion ?? 1));
-            this.cab.fecha_liquidacion = d.toISOString().slice(0, 10);
+            const hoy = new Date().toLocaleDateString('en-CA');
+            const sugerida = d.toISOString().slice(0, 10);
+            this.cab.fecha_liquidacion = sugerida > hoy ? hoy : sugerida;
         },
         async cargarCuadre() {
             if (!this.cab.chofer_id || !this.cab.fecha_venta) { this.cuadre = {}; return; }
@@ -332,8 +385,12 @@ export default function liquidacionEditor(config) {
         async guardar(despues = null) {
             if (this.guardando) return;
             const filas = this.filasConDatos;
-            if (!filas.length && !this.cobranzas.some((c) => c.cliente_id)) {
-                window.alertError('Liquidación vacía', 'Escribe al menos una venta o una cobranza.');
+            if (!this.cab.chofer_id) {
+                window.alertError('Falta el responsable', 'Elige el chofer de la liquidación.');
+                return;
+            }
+            if (despues === 'cerrar' && !filas.length && !this.cobranzas.some((c) => c.cliente_id)) {
+                window.alertError('Liquidación vacía', 'Para cerrar, escribe al menos una venta o una cobranza.');
                 return;
             }
             const sinCliente = filas.filter((i) => !i.cliente_id).length;

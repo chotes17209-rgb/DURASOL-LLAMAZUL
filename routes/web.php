@@ -92,6 +92,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:liquidaciones,caja')->group(function () {
         Route::resource('clientes', ClienteController::class);
 
+        Route::get('liquidaciones/clientes-chofer', [LiquidacionController::class, 'clientesChofer'])->name('liquidaciones.clientes-chofer');
         Route::get('liquidaciones/datos-cliente', [LiquidacionController::class, 'datosCliente'])->name('liquidaciones.datos-cliente');
         Route::get('liquidaciones/cuadre', [LiquidacionController::class, 'cuadre'])->name('liquidaciones.cuadre');
         Route::resource('liquidaciones', LiquidacionController::class)->parameters(['liquidaciones' => 'liquidacion']);

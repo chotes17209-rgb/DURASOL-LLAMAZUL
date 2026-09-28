@@ -35,7 +35,7 @@
                 <div class="grid gap-3 p-4 sm:grid-cols-3 xl:grid-cols-5">
                     <div>
                         <label class="form-label">Fecha de venta</label>
-                        <input type="date" class="form-input" x-model="cab.fecha_venta" max="{{ today()->subDay()->format('Y-m-d') }}">
+                        <input type="date" class="form-input" x-model="cab.fecha_venta" max="{{ today()->format('Y-m-d') }}">
                     </div>
                     <div>
                         <label class="form-label">Fecha de liquidación</label>
@@ -97,10 +97,11 @@
             <div class="card-header flex-wrap">
                 <div>
                     <p class="card-title">Registro de ventas</p>
-                    <p class="mt-0.5 text-[11px] text-slate-500">Escribe el <b>código</b> o el <b>nombre</b> del cliente. El precio sale de su lista de precios vigente y no se modifica aquí. <b>Enter</b> baja a la fila siguiente; doble clic en crédito carga todo el importe.</p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Al elegir el responsable se cargan sus clientes: solo escribe las cantidades. Para otro cliente, escribe su <b>código</b> o <b>nombre</b> en una fila libre. El precio sale de su lista de precios vigente y no se modifica aquí. <b>Enter</b> baja a la fila siguiente; doble clic en crédito carga todo el importe.</p>
                 </div>
                 <div class="flex items-center gap-2 no-print" x-show="editable">
-                    <span class="text-xs text-slate-500" x-text="filasConDatos.length + ' venta(s)'"></span>
+                    <span class="text-xs text-brand-800" x-show="cargandoCartera">Cargando clientes del chofer...</span>
+                    <span class="text-xs text-slate-500" x-text="filasConDatos.length + ' venta(s) de ' + items.filter((i) => i.cliente_id).length + ' clientes'"></span>
                     <button type="button" class="btn btn-secondary btn-sm" @click="agregarFilas(5)"><x-heroicon-o-plus/> Agregar filas</button>
                 </div>
             </div>

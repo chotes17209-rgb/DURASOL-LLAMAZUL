@@ -14,9 +14,9 @@ class LiquidacionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Se liquida al día siguiente de la venta (o después, en las rutas largas).
-            'fecha_venta' => ['required', 'date', 'before:today'],
-            'fecha_liquidacion' => ['required', 'date', 'after:fecha_venta', 'before_or_equal:today'],
+            // Normalmente se liquida al día siguiente; también se permite el mismo día o después (rutas largas).
+            'fecha_venta' => ['required', 'date', 'before_or_equal:today'],
+            'fecha_liquidacion' => ['required', 'date', 'after_or_equal:fecha_venta', 'before_or_equal:today'],
             'chofer_id' => ['required', 'exists:choferes,id'],
             'vehiculo_id' => ['nullable', 'exists:vehiculos,id'],
             'tipo' => ['required', Rule::enum(TipoChofer::class)],
@@ -57,9 +57,6 @@ class LiquidacionRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator) {
-            if (empty($this->items) && empty($this->cobranzas)) {
-                $validator->errors()->add('items', 'La liquidación debe tener al menos una venta o una cobranza.');
-            }
             foreach ($this->input('items', []) as $i => $item) {
                 if (! empty($item['es_credito']) && (float) ($item['monto_credito'] ?? 0) > (int) $item['cantidad'] * (float) $item['precio'] + 0.001) {
                     $validator->errors()->add("items.$i.monto_credito", 'El crédito no puede ser mayor al total de la venta.');
@@ -71,8 +68,8 @@ class LiquidacionRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'fecha_venta.before' => 'La liquidación se hace al día siguiente: la fecha de venta debe ser de ayer o antes.',
-            'fecha_liquidacion.after' => 'La fecha de liquidación debe ser posterior a la fecha de venta.',
+            'fecha_venta.before_or_equal' => 'La fecha de venta no puede ser futura.',
+            'fecha_liquidacion.after_or_equal' => 'La fecha de liquidación no puede ser anterior a la fecha de venta.',
             'fecha_liquidacion.before_or_equal' => 'La fecha de liquidación no puede ser futura.',
         ];
     }

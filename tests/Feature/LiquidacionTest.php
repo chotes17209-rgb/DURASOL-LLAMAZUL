@@ -82,7 +82,7 @@ class LiquidacionTest extends TestCase
         $this->assertSame(EstadoLiquidacion::Borrador, $liquidacion->fresh()->estado);
     }
 
-    public function test_precio_es_el_vigente_del_cliente_y_se_liquida_al_dia_siguiente(): void
+    public function test_precio_vigente_fechas_y_borrador(): void
     {
         $cliente = $this->cliente(['S10' => 45]);
         $item = ['cliente_id' => $cliente->id, 'empresa_id' => $this->empresa()->id, 'producto_id' => $this->producto('S10')->id, 'cantidad' => 2, 'precio' => 1, 'metodo_pago' => 'efectivo'];
@@ -95,9 +95,15 @@ class LiquidacionTest extends TestCase
         $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['items' => [['producto_id' => $this->producto('S45')->id] + $item]]))
             ->assertStatus(422)->assertJsonValidationErrors('items');
 
-        // La venta de hoy se liquida mañana.
-        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['fecha_venta' => today()->toDateString(), 'fecha_liquidacion' => today()->toDateString(), 'items' => [$item]]))
+        // Se puede liquidar el mismo día, pero no antes de la venta ni con fechas futuras.
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['fecha_venta' => today()->toDateString(), 'fecha_liquidacion' => today()->toDateString(), 'items' => [$item]]))->assertOk();
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['fecha_venta' => '2026-09-24', 'fecha_liquidacion' => '2026-09-23', 'items' => [$item]]))
+            ->assertStatus(422)->assertJsonValidationErrors('fecha_liquidacion');
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['fecha_venta' => today()->addDay()->toDateString(), 'fecha_liquidacion' => today()->addDay()->toDateString(), 'items' => [$item]]))
             ->assertStatus(422)->assertJsonValidationErrors(['fecha_venta', 'fecha_liquidacion']);
+
+        // El borrador puede guardarse sin ventas todavía.
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload())->assertOk();
     }
 
     public function test_cobranza_en_liquidacion_paga_deudas_antiguas_primero(): void

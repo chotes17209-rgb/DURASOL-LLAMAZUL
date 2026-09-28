@@ -47,6 +47,7 @@ class ClienteController extends Controller
     public function buscar(Request $request): JsonResponse
     {
         $clientes = Cliente::activos()->buscar($request->q)
+            ->when($request->boolean('solo_chofer') && $request->chofer_id, fn ($q) => $q->where('chofer_id', $request->integer('chofer_id')))
             ->when($request->chofer_id, fn ($q, $c) => $q->orderByRaw('CASE WHEN chofer_id = ? THEN 0 ELSE 1 END', [$c]))
             ->with('chofer')
             ->limit(30)->get();
