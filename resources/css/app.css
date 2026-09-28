@@ -2,8 +2,6 @@
 @import 'tom-select/dist/css/tom-select.css';
 @import '@fontsource-variable/inter';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
 @source '../views';
 @source '../js';
 @source '../../app';
@@ -62,6 +60,7 @@
     .table thead th { @apply bg-slate-50/80 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap; }
     .table tbody td { @apply border-t border-slate-100 px-4 py-3 align-middle text-slate-700; }
     .table tbody tr { @apply transition hover:bg-brand-50/40; }
+    .table td.text-right, .table th.text-right { @apply whitespace-nowrap; }
     .table tfoot td { @apply border-t-2 border-slate-200 bg-slate-50 px-4 py-3 font-semibold; }
     .table-compact thead th { @apply px-3 py-2; }
     .table-compact tbody td { @apply px-3 py-2; }
@@ -87,7 +86,7 @@
 
     .kpi { @apply relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70; }
     .kpi-label { @apply text-xs font-semibold uppercase tracking-wide text-slate-500; }
-    .kpi-value { @apply mt-2 text-2xl font-bold tracking-tight text-slate-900 tabular-nums; }
+    .kpi-value { @apply mt-2 text-xl font-bold tracking-tight whitespace-nowrap text-slate-900 tabular-nums 2xl:text-2xl; }
 
     .dl-grid { @apply grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3; }
     .dl-grid dt { @apply text-[11px] font-semibold uppercase tracking-wide text-slate-400; }
@@ -106,3 +105,5 @@
 .swal2-styled.swal2-confirm { border-radius: .75rem !important; }
 .swal2-styled.swal2-cancel { border-radius: .75rem !important; }
 .swal2-container { z-index: 90 !important; }
+/* Tom Select copia las clases del select original: evitar doble borde */
+.ts-wrapper.form-input { padding: 0; box-shadow: none; background: transparent; border: 0; }

@@ -1,0 +1,47 @@
+# Blueprint de Render: crea la aplicación web y su base de datos.
+# En Render: New → Blueprint → elegir este repositorio → Apply.
+services:
+  - type: web
+    name: durasol-llamazul-erp
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: "Durasol · Llamazul ERP"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_DEMO
+        value: "true"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_TIMEZONE
+        value: America/Lima
+      - key: APP_LOCALE
+        value: es
+      - key: APP_FALLBACK_LOCALE
+        value: es
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_LIFETIME
+        value: "480"
+      - key: CACHE_STORE
+        value: database
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: durasol-llamazul-db
+          property: connectionString
+
+databases:
+  - name: durasol-llamazul-db
+    plan: free
+    region: oregon
+    databaseName: durasol
+    user: durasol

@@ -1,47 +1,12 @@
-<laravel-boost-guidelines>
-# Laravel Application
+# Guía para asistentes de código
 
-This repository contains a Laravel application. Complete the following setup before working on the user's request.
+ERP de distribución de gas (Durasol · Llamazul) en Laravel 13. Lee `README.md` para el dominio y los módulos.
 
-## Prerequisites
-
-Verify that PHP and Composer are available:
-
-```sh
-php -v
-composer -V
-```
-
-If either command is unavailable, detect the user's operating system and install the prerequisites with the appropriate command:
-
-macOS:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/mac/8.5)"
-```
-
-Windows PowerShell:
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
-
-Linux:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
-```
-
-After installation, ask the user to restart their terminal. If the agent needs the restarted shell to continue, ask the user to reopen their terminal and rerun their original prompt.
-
-## Agent Setup
-
-Install Laravel Boost from the application root before making application changes:
-
-```sh
-composer require laravel/boost --dev
-php artisan boost:install
-```
-
-Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
-</laravel-boost-guidelines>
+- Idioma: todo lo visible al usuario y los nombres de dominio (modelos, tablas, rutas) están en **español**.
+- Reglas de negocio en `app/Services`; los controladores solo validan (Form Requests) y orquestan.
+- Todo cambio de stock pasa por `StockService::sincronizar()` desde `LogisticaService`; nunca escribir `stock_movimientos` a mano.
+- Los precios nunca se sobrescriben: cada cambio es una fila nueva con `vigente_desde`.
+- Toda tabla de negocio usa el trait `Auditable` (historial). Eventos especiales con `AuditLogger::event()`.
+- CRUD en modales: los controladores devuelven vistas parciales para `data-modal-url` y JSON `{message}` (ver `Controller::ok()`); los formularios usan `<x-form-modal>` y `data-ajax`.
+- Consultas compatibles con MySQL y PostgreSQL (evitar funciones propias de un motor).
+- Antes de subir cambios: `vendor/bin/pint` y `php artisan test`.

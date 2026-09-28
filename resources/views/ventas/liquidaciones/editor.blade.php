@@ -65,12 +65,12 @@
                 <div class="table-wrap">
                     <table class="table table-compact">
                         <thead>
-                        <tr><th class="min-w-56">Cliente</th><th>Producto</th><th>Empresa</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th>
+                        <tr><th class="min-w-48">Cliente</th><th>Producto / empresa</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th>
                             <th class="text-right">Vacíos dev.</th><th>Pago</th><th>Crédito</th><th></th></tr>
                         </thead>
                         <tbody>
                         <template x-if="!items.length">
-                            <tr><td colspan="10" class="py-10 text-center text-sm text-slate-400">Aún no hay ventas. Usa el buscador «Agregar cliente».</td></tr>
+                            <tr><td colspan="9" class="py-10 text-center text-sm text-slate-400">Aún no hay ventas. Usa el buscador «Agregar cliente».</td></tr>
                         </template>
                         <template x-for="(item, index) in items" :key="item.uid">
                             <tr :class="esPrimeraFilaCliente(item, index) ? '' : 'bg-slate-50/50'">
@@ -87,12 +87,10 @@
                                     <button type="button" class="mt-1 text-[11px] font-semibold text-brand-600 hover:underline" x-show="editable" @click="agregarProducto(item)">+ otro producto</button>
                                 </td>
                                 <td>
-                                    <select class="form-input w-24 py-1.5" x-model.number="item.producto_id" @change="cambiarProducto(item)">
+                                    <select class="form-input w-28 py-1.5 font-mono font-bold" x-model.number="item.producto_id" @change="cambiarProducto(item)">
                                         <template x-for="p in productos" :key="p.id"><option :value="p.id" x-text="p.codigo" :selected="p.id === +item.producto_id"></option></template>
                                     </select>
-                                </td>
-                                <td>
-                                    <select class="form-input w-32 py-1.5" x-model.number="item.empresa_id">
+                                    <select class="form-input mt-1 w-28 py-1 text-xs" x-model.number="item.empresa_id">
                                         <template x-for="e in empresas" :key="e.id"><option :value="e.id" x-text="e.nombre" :selected="e.id === +item.empresa_id"></option></template>
                                     </select>
                                 </td>
@@ -101,10 +99,10 @@
                                 <td class="text-right font-semibold tabular-nums" x-text="money(totalItem(item))"></td>
                                 <td><input type="number" min="0" class="form-input w-20 py-1.5 text-right" x-model="item.vacios_devueltos"></td>
                                 <td>
-                                    <select class="form-input w-32 py-1.5" x-model="item.metodo_pago">
+                                    <select class="form-input w-28 py-1.5" x-model="item.metodo_pago">
                                         @foreach (\App\Enums\MetodoPago::options() as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach
                                     </select>
-                                    <input type="text" class="form-input mt-1 w-32 py-1 text-xs" placeholder="N° operación" x-show="item.metodo_pago !== 'efectivo'" x-model="item.numero_operacion">
+                                    <input type="text" class="form-input mt-1 w-32 py-1 text-xs" placeholder="N° operación" x-show="item.metodo_pago !== 'efectivo'" x-model="item.numero_operacion" style="width:7rem">
                                 </td>
                                 <td>
                                     <label class="inline-flex items-center gap-1.5 text-xs font-medium"><input type="checkbox" class="form-check" x-model="item.es_credito" @change="toggleCredito(item)"> Crédito</label>
@@ -115,7 +113,7 @@
                         </template>
                         </tbody>
                         <tfoot x-show="items.length">
-                        <tr><td colspan="3">Total vendido</td><td class="text-right" x-text="totalBalones"></td><td></td><td class="text-right" x-text="money(totalVenta)"></td><td class="text-right" x-text="totalVacios"></td><td colspan="3"></td></tr>
+                        <tr><td colspan="2">Total vendido</td><td class="text-right" x-text="totalBalones"></td><td></td><td class="text-right" x-text="money(totalVenta)"></td><td class="text-right" x-text="totalVacios"></td><td colspan="3"></td></tr>
                         </tfoot>
                     </table>
                 </div>
@@ -260,5 +258,21 @@
             </div>
         </aside>
     </fieldset>
+
+    {{-- Barra fija con el resultado para pantallas donde el resumen queda abajo --}}
+    <div class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_-12px_rgba(15,23,42,.25)] backdrop-blur 2xl:hidden lg:left-[17rem]">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                <span>Venta <b class="tabular-nums" x-text="money(totalVenta)"></b></span>
+                <span class="text-rose-600">Créd. + vouchers + FISE + gastos <b class="tabular-nums" x-text="money(totalCredito + totalVouchers + totalFises + totalGastos)"></b></span>
+                <span class="text-base">Efectivo <b class="text-brand-700 tabular-nums" x-text="money(efectivo)"></b></span>
+            </div>
+            <div class="flex gap-2" x-show="editable">
+                <button type="button" class="btn btn-primary" @click="guardar()" :disabled="guardando"><x-heroicon-o-document-check class="h-4 w-4"/> Guardar</button>
+                <button type="button" class="btn btn-success" @click="guardar('cerrar')" :disabled="guardando"><x-heroicon-o-lock-closed class="h-4 w-4"/> Guardar y cerrar</button>
+            </div>
+        </div>
+    </div>
+    <div class="h-16 2xl:hidden"></div>
 </div>
 </x-layouts.app>

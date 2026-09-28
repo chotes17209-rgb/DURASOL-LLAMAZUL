@@ -61,7 +61,7 @@ class ClienteController extends Controller
     {
         $cliente = DB::transaction(function () use ($request) {
             $data = $request->safe()->except('precios');
-            $data['codigo'] ??= (int) Cliente::withTrashed()->lockForUpdate()->max('codigo') + 1;
+            $data['codigo'] ??= (int) Cliente::withTrashed()->max('codigo') + 1;
             $cliente = Cliente::create($data);
             $this->precios->guardarPreciosVenta($cliente, $request->input('precios', []), today(), 'Precio inicial');
 

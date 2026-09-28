@@ -1,58 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Durasol · Llamazul — ERP de distribución de gas
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema web para la distribuidora de gas **Mr. Durasol Perú S.A.C.** y **Llamazul**: movimiento de masa
+(balones llenos, vacíos, de color y cambios), guías de compra en la planta Solgas, despachos a choferes,
+liquidaciones diarias, créditos y cobranzas, caja, precios de compra y venta, flota vehicular e historial completo.
 
-## About Laravel
+Hecho en **Laravel 13 + MySQL** (también funciona con PostgreSQL), con Tailwind CSS, Alpine.js,
+SweetAlert2 (todos los avisos), Tom Select (buscadores) y Chart.js (gráficos). Todo el CRUD se hace en
+**ventanas modales**, incluida la opción **Ver**, y cada registro tiene su **historial de cambios**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Módulos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Área | Qué hace |
+|---|---|
+| **Panel de control** | Venta del día y del mes, gráficos, créditos por cobrar, saldo de caja, stock y alertas de documentos vehiculares. |
+| **Logística · Stock y kardex** | Stock de llenos por empresa, cambios, vacíos plomo y de color; kardex con saldo por producto/estado/empresa. |
+| **Logística · Guías de planta** | Salida a planta con N° de guía, empresa e instalación (código de 8 dígitos). Lo que dice la guía debe salir en vacíos/colores/cambios; al volver se registran los llenos y los vacíos rechazados. **Control de masa**: lo que sale debe volver. |
+| **Logística · Despachos** | Salida de balones a cada chofer (varias vueltas por día) y su retorno: llenos no vendidos, vacíos, colores y cambios. Calcula los vendidos y los compara con la liquidación. |
+| **Logística · Canjes y movimientos** | Canje de colores por plomos; stock inicial, ingreso de vacíos, préstamos, mermas y ajustes. |
+| **Liquidaciones** | Fecha → chofer → clientes (cantidad, vacíos, método de pago, crédito) → FISE (S/ 20, 30, 43) por cliente → cobranzas y gastos. **Efectivo = venta + cobranzas − créditos − vouchers − FISE − gastos.** Caja la cierra con el efectivo contado. |
+| **Clientes / Créditos** | Cartera por chofer, precios por cliente, cuenta corriente; las cobranzas pagan primero la deuda más antigua. |
+| **Precios** | Compra por **empresa e instalación**; venta por **cliente**, con historial y ajuste masivo (“subir/bajar S/ 0.70 a todos”). |
+| **Caja** | Ingresos de liquidaciones y cobranzas, depósitos bancarios, gastos, caja chica; saldo diario. |
+| **Reportes** | Hoja de liquidación diaria (como “RESUMEN GNRAL”), detalle de ventas exportable a Excel (CSV), caja por día (como “CAJA GNRAL”). |
+| **Flota y personal** | Vehículos con SOAT, revisión técnica, DGH/OSINERGMIN, póliza, etc. (semáforo de vencimientos y archivos), mantenimientos, choferes e instalaciones. |
+| **Administración** | Empresas, productos, cuentas bancarias, usuarios e **historial de todo** (quién, cuándo, antes/después). |
 
-## Learning Laravel
+### Roles
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Usuario | Ve |
+|---|---|
+| `admin` (gerencia) | Todo. Es el único que puede reabrir liquidaciones y cambiar precios de compra. |
+| `logistica` | Stock, guías, despachos, canjes, flota, choferes, instalaciones y precios de compra (solo lectura). |
+| `caja` | Caja, depósitos, cuentas bancarias, liquidaciones (para cerrarlas), clientes y créditos. |
+| `liquidaciones` | Liquidaciones, clientes, créditos, precios de venta y reportes de ventas. |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Contraseña de los usuarios de demostración: **`demo1234`** (cámbiala en *Administración → Usuarios*).
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## Datos importados del Excel `RENTABILIDAD SETIEMBRE`
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+El seeder `database/seeders/ExcelSeeder.php` carga los datos (convertidos a JSON en `database/seeders/data`):
+
+- **DATA** → 357 clientes con su chofer responsable y precios (S10, M10, S45, C10, C45, K10, K45); precios de compra de Durasol y Llamazul; placas.
+- **VENTAS** → 11 200 filas agrupadas en 1 552 liquidaciones históricas (10 008 ventas, S/ 18 170 711.80), créditos y cobranzas. Las cobranzas se aplican a los créditos más antiguos: quedan **S/ 1 620 820.73** por cobrar.
+- **FISES** → S/ 487 177 en vales, asignados a la liquidación del chofer de ese día.
+- **STOCK** → compras de agosto como guías históricas (no alteran el stock actual).
+- **B.LLENO / B.VACIO** → foto del almacén al 25/09: el stock final coincide con el Excel (S10 llenos 2 187, S45 75, M10 26, cambios 34/3, C10 308, C45 116, vacíos plomo 815/19, colores 336/5).
+- **RESUMEN GNRAL / CAJA GNRAL** → depósitos del 25/09 y totales de agosto.
+
+**Pendiente de completar por la empresa:** el Excel no trae los códigos de 8 dígitos de las instalaciones (se crearon
+`10000001` Durasol y `20000001` Llamazul), ni marca/modelo/SOAT de los vehículos, ni los números reales de guía del 25/09.
+
+---
+
+## Instalación local (Windows con XAMPP o Laragon)
+
+Requisitos: PHP 8.3+, Composer, Node 20+, MySQL 8 / MariaDB 10.6+.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/chotes17209-rgb/durasol-llamazul.git
+cd durasol-llamazul
+composer install
+npm install && npm run build
+cp .env.example .env          # en Windows: copy .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Crea la base de datos `durasol` en MySQL (phpMyAdmin) y revisa `DB_*` en `.env`. Luego:
 
-## Contributing
+```bash
+php artisan migrate --seed    # crea tablas, usuarios y carga el Excel (~30 s)
+php artisan serve             # http://localhost:8000
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Para trabajar en los estilos: `npm run dev` en otra terminal.
 
-## Code of Conduct
+## Pruebas
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan test              # usa la base durasol_test (MySQL); ver phpunit.xml
+vendor/bin/pint               # formato de código
+```
 
-## Security Vulnerabilities
+## Despliegue en Render
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+El repositorio incluye `Dockerfile` y `render.yaml` (Blueprint):
 
-## License
+1. En Render: **New → Blueprint** y elige este repositorio.
+2. Render crea la app web y una base de datos PostgreSQL, y genera la clave de la aplicación.
+3. En el primer arranque se ejecutan las migraciones y se cargan los datos del Excel.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+> Render no ofrece MySQL administrado; por eso el Blueprint usa PostgreSQL (el sistema funciona igual con ambos y las pruebas pasan en los dos).
+> La base de datos gratuita de Render **vence a los 30 días** y los archivos subidos (PDF de documentos vehiculares) se pierden en cada despliegue del plan gratuito:
+> para producción usa un plan pagado con disco o un almacenamiento externo (S3).
+
+---
+
+## Estructura del código
+
+- `app/Services` — reglas de negocio: `StockService` (kardex), `LogisticaService` (qué mueve cada documento),
+  `LiquidacionService` (fórmula y cierre), `CuentaService` (créditos FIFO), `CajaService`, `PrecioService` (precios vigentes).
+- `app/Http/Controllers` — por área (Admin, Flota, Logistica, Precios, Ventas, Caja); validación en `app/Http/Requests`.
+- `app/Models/Concerns/Auditable.php` — historial automático de cada modelo.
+- `resources/views` — Blade; `components/` (modales, campos, tablas); `resources/js` — Alpine (`liquidacion-editor.js`, …).

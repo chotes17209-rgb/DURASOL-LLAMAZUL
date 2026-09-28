@@ -13,6 +13,7 @@ use App\Models\Liquidacion;
 use App\Support\AuditLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -49,7 +50,7 @@ class LiquidacionService
                 $liquidacion->update($cabecera);
             } else {
                 $liquidacion = Liquidacion::create($cabecera + [
-                    'codigo' => 'LIQ-TMP-'.uniqid(),
+                    'codigo' => 'TMP-'.Str::random(12),
                     'estado' => EstadoLiquidacion::Borrador,
                     'user_id' => Auth::id(),
                 ]);

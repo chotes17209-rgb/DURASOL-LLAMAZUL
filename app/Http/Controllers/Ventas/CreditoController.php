@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Ventas;
 
 use App\Enums\CategoriaCaja;
-use App\Enums\EstadoCuenta;
 use App\Enums\MetodoPago;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CobranzaRequest;

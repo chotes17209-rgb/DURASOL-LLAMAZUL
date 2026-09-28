@@ -27,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('es');
         Paginator::defaultView('components.pagination');
         Route::resourceVerbs(['create' => 'crear', 'edit' => 'editar']);
+        // Los IDs de las rutas son numéricos: una URL como /liquidaciones/abc responde 404 y no un error de base de datos.
+        foreach (['empresa', 'producto', 'usuario', 'vehiculo', 'documento', 'mantenimiento', 'chofer', 'instalacion', 'guia', 'despacho',
+            'canje', 'movimiento', 'cliente', 'liquidacion', 'cuenta', 'cobranza', 'deposito', 'precio'] as $parametro) {
+            Route::pattern($parametro, '[0-9]+');
+        }
 
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
