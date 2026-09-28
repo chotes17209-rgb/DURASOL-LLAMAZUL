@@ -10,10 +10,7 @@
         <x-cifra label="Último cambio" :value="$resumen['ultimo'] ? fecha($resumen['ultimo']) : '—'"/>
         <x-cifra label="Precio S-10 promedio" :value="$resumen['promedio'] ? soles($resumen['promedio']) : '—'" total/>
     </dl>
-    <div class="help mb-3">
-        Cada cliente tiene su propio precio por producto. Al modificar un precio se guarda como un registro nuevo con fecha de vigencia,
-        así puedes ver cuándo y quién lo cambió. Usa <b>Subir / bajar precios</b> cuando Solgas cambie su precio para ajustar a todos los clientes a la vez.
-    </div>
+    <p class="help mb-3">Precio por cliente y producto. Cada modificación queda registrada con su fecha de vigencia y usuario. Para cambios generales de Solgas, utilice «Subir / bajar precios».</p>
     <x-remote-table :url="route('precios.venta.index')">
         <x-slot:filters>
             <x-search placeholder="Buscar cliente..."/>

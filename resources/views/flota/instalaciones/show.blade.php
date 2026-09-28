@@ -20,7 +20,7 @@
                         <div class="rounded bg-slate-50 p-4 border border-line">
                             <p class="text-xs font-bold text-slate-500">{{ $precio->producto?->codigo }} · {{ $precio->producto?->nombre }}</p>
                             <p class="mt-1 text-xl font-bold text-slate-900">{{ soles($precio->precio) }}</p>
-                            <p class="text-[11px] text-slate-400">desde {{ fecha($precio->vigente_desde) }} · {{ $precio->validado ? 'validado' : 'no validado' }}</p>
+                            <p class="text-[12px] text-slate-400">desde {{ fecha($precio->vigente_desde) }} · {{ $precio->validado ? 'validado' : 'no validado' }}</p>
                         </div>
                     @empty
                         <p class="text-sm text-slate-400">Sin precios registrados.</p>

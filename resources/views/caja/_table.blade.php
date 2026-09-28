@@ -8,8 +8,8 @@
                 <td><x-badge :color="$m->tipo === 'egreso' ? 'red' : 'green'">{{ $m->categoria->label() }}</x-badge></td>
                 <td class="text-sm">{{ $m->descripcion }} @if($m->esAutomatico())<x-badge color="slate">auto</x-badge>@endif</td>
                 <td class="text-xs">{{ $m->user?->name ?? 'Importado' }}</td>
-                <td class="text-right tabular-nums text-emerald-600">{{ $m->tipo === 'ingreso' ? soles($m->monto) : '' }}</td>
-                <td class="text-right tabular-nums text-rose-600">{{ $m->tipo === 'egreso' ? soles($m->monto) : '' }}</td>
+                <td class="text-right tabular-nums text-emerald-700">{{ $m->tipo === 'ingreso' ? soles($m->monto) : '' }}</td>
+                <td class="text-right tabular-nums text-red-700">{{ $m->tipo === 'egreso' ? soles($m->monto) : '' }}</td>
                 <td><x-row-actions size="md" :show="route('caja.movimientos.show', $m)" :edit="$m->esAutomatico() ? null : route('caja.movimientos.edit', $m)" :delete="$m->esAutomatico() ? null : route('caja.movimientos.destroy', $m)"/></td>
             </tr>
         @empty

@@ -10,7 +10,7 @@
                 <td>{{ $c->telefono ?: '—' }}</td>
                 <td class="text-center">{{ $c->documentos }}</td>
                 <td>{{ fecha($c->desde) }} <span class="text-xs text-slate-400">({{ \Illuminate\Support\Carbon::parse($c->desde)->diffInDays(today()) }} días)</span></td>
-                <td class="text-right text-base font-bold text-rose-600 tabular-nums">{{ soles($c->deuda) }}</td>
+                <td class="text-right text-base font-bold text-red-700 tabular-nums">{{ soles($c->deuda) }}</td>
                 <td>
                     <x-row-actions size="xl" :show="route('creditos.cliente', $c)">
                         <button type="button" class="btn btn-success btn-sm" data-modal-url="{{ route('creditos.cobranzas.create', ['cliente_id' => $c->id]) }}" data-modal-size="md">Cobrar</button>
@@ -30,7 +30,7 @@
         <tbody>
         @forelse ($registros as $c)
             <tr>
-                <td>{{ fecha($c->fecha) }}<p class="text-[11px] text-slate-400">{{ $c->diasVencida() }} días</p></td>
+                <td>{{ fecha($c->fecha) }}<p class="text-[12px] text-slate-400">{{ $c->diasVencida() }} días</p></td>
                 <td>{{ $c->cliente?->nombre }}</td>
                 <td>{{ $c->cliente?->chofer?->alias }}</td>
                 <td class="text-xs">{{ $c->observaciones }}</td>

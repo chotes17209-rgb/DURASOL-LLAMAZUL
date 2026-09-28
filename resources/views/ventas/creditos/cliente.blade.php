@@ -10,7 +10,7 @@
                 <tbody>
                 @forelse ($cuentas as $c)
                     <tr><td>{{ fecha($c->fecha) }}</td><td class="text-xs">{{ $c->observaciones }}</td><td class="text-right">{{ soles($c->monto) }}</td>
-                        <td class="text-right text-emerald-600">{{ soles($c->cobranzas->sum('monto')) }}</td><td class="text-right font-semibold">{{ soles($c->saldo) }}</td><td><x-status :value="$c->estado"/></td></tr>
+                        <td class="text-right text-emerald-700">{{ soles($c->cobranzas->sum('monto')) }}</td><td class="text-right font-semibold">{{ soles($c->saldo) }}</td><td><x-status :value="$c->estado"/></td></tr>
                 @empty
                     <tr><td colspan="6" class="py-6 text-center text-slate-400">Sin créditos.</td></tr>
                 @endforelse

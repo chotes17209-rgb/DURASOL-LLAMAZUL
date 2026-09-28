@@ -21,14 +21,14 @@
             <div class="doc-band">
                 <div class="flex items-center gap-4">
                     <div>
-                        <p class="text-[10.5px] font-semibold tracking-[.16em] text-[#b9c7df] uppercase">Hoja de liquidación diaria</p>
+                        <p class="text-[12px] text-slate-500">Hoja de liquidación diaria</p>
                         <p class="doc-num">{{ $liquidacion->exists ? $liquidacion->codigo : 'NUEVA' }}</p>
                     </div>
                     <span class="doc-tag">{{ $liquidacion->estado?->label() ?? 'Borrador' }}</span>
                 </div>
-                <div class="text-right text-[12px] leading-snug text-[#d4ddec]">
-                    <p><span x-text="esRuta ? 'Salida a ruta el' : 'Ventas del'"></span> <b class="text-white" x-text="fechaLarga(cab.fecha_venta)"></b></p>
-                    <p><span x-text="esRuta ? 'liquidada al volver, el' : 'se liquidan el'"></span> <b class="text-white" x-text="fechaLarga(cab.fecha_liquidacion)"></b></p>
+                <div class="text-right text-[12px] leading-snug text-slate-600">
+                    <p><span x-text="esRuta ? 'Salida a ruta el' : 'Ventas del'"></span> <b class="text-slate-900" x-text="fechaLarga(cab.fecha_venta)"></b></p>
+                    <p><span x-text="esRuta ? 'liquidada al volver, el' : 'se liquidan el'"></span> <b class="text-slate-900" x-text="fechaLarga(cab.fecha_liquidacion)"></b></p>
                 </div>
             </div>
             <div class="grid lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -64,20 +64,20 @@
                             <label class="form-label" x-text="esRuta ? 'Fecha de venta / liquidación' : 'Fecha de liquidación'"></label>
                             <input type="date" class="form-input" x-model="cab.fecha_liquidacion" max="{{ today()->format('Y-m-d') }}">
                         </div>
-                        <p class="self-end rounded border border-line-soft bg-panel px-3 py-2 text-[11px] leading-snug text-slate-600">
-                            <template x-if="esRuta"><span><b class="text-brand-900">Ruta:</b> el chofer sale en la fecha de atención y se liquida al volver (p. ej. sale el 26/09 y se liquida el 28/09). El cuadre usa la salida del parte de la fecha de atención.</span></template>
-                            <template x-if="!esRuta"><span><b class="text-brand-900">Reparto local:</b> las ventas de un día se liquidan normalmente al día siguiente (también se permite el mismo día).</span></template>
+                        <p class="self-end rounded border border-line-soft bg-panel px-3 py-2 text-[12px] leading-snug text-slate-600">
+                            <template x-if="esRuta"><span><b class="text-slate-900">Ruta:</b> salida en la fecha de atención y liquidación al retorno (ej.: salida 26/09, liquidación 28/09).</span></template>
+                            <template x-if="!esRuta"><span><b class="text-slate-900">Reparto local:</b> se liquida al día siguiente de la venta o el mismo día.</span></template>
                         </p>
                     </div>
                 </div>
                 <div class="border-t border-line bg-panel lg:border-t-0 lg:border-l">
-                    <p class="px-4 pt-3 text-[10.5px] font-semibold tracking-[.12em] text-brand-800 uppercase">Stock en almacén <span class="font-normal tracking-normal text-slate-500 normal-case" x-text="'al ' + stock.fecha"></span></p>
-                    <table class="mt-1.5 w-full text-[13px]">
-                        <thead><tr class="text-[10.5px] tracking-wide text-slate-500 uppercase"><th class="px-4 py-1 text-left font-semibold"></th><th class="px-2 text-right font-semibold">S-10</th><th class="px-2 text-right font-semibold">S-45</th><th class="px-4 text-right font-semibold">M-10</th></tr></thead>
+                    <p class="border-b border-line px-4 py-2 text-[13px] font-semibold text-slate-900">Stock en almacén <span class="font-normal text-slate-500" x-text="'al ' + stock.fecha"></span></p>
+                    <table class="mt-1 w-full text-[13px]">
+                        <thead><tr class="text-[12px] text-slate-500"><th class="px-4 py-1 text-left font-semibold"></th><th class="px-2 text-right font-semibold">S-10</th><th class="px-2 text-right font-semibold">S-45</th><th class="px-4 text-right font-semibold">M-10</th></tr></thead>
                         <tbody>
                         <template x-for="fila in stock.filas" :key="fila[0]">
-                            <tr class="border-t border-line-soft" :class="fila[0] === 'Total' && 'bg-brand-800 text-white'">
-                                <td class="px-4 py-1.5 font-semibold" :class="fila[0] === 'Total' ? 'text-white' : 'text-brand-900'" x-text="fila[0]"></td>
+                            <tr class="border-t border-line-soft" :class="fila[0] === 'Total' && 'bg-brand-50 font-semibold'">
+                                <td class="px-4 py-1.5 font-semibold" :class="fila[0] === 'Total' ? 'text-brand-900' : 'text-slate-700'" x-text="fila[0]"></td>
                                 <template x-for="(v, n) in fila.slice(1)" :key="n">
                                     <td class="py-1.5 text-right tabular-nums" :class="[n === 2 ? 'px-4' : 'px-2', fila[0] === 'Total' ? 'font-semibold' : '']" x-text="v === null ? '' : Number(v).toLocaleString('es-PE')"></td>
                                 </template>
@@ -105,7 +105,7 @@
             <div class="card-header flex-wrap">
                 <div>
                     <p class="card-title">Registro de ventas</p>
-                    <p class="mt-0.5 text-[11px] text-slate-500">Escribe el <b>código</b> o el <b>nombre</b> del cliente; al buscar por nombre solo aparecen los clientes del responsable elegido. El precio sale de su lista de precios vigente; para cambiarlo, haz clic en el precio (se abre su lista de precios). <b>Enter</b> baja a la fila siguiente; doble clic en crédito carga todo el importe.</p>
+                    <p class="mt-0.5 text-[12px] text-slate-500">Cliente por código o nombre (solo clientes del responsable). Precio según lista vigente; clic en el precio para modificarlo. Doble clic en crédito: importe total.</p>
                 </div>
                 <div class="flex items-center gap-2 no-print" x-show="editable">
                     <span class="text-xs text-slate-500" x-text="filasConDatos.length + ' venta(s)'"></span>
@@ -143,7 +143,7 @@
                     <tbody>
                     <template x-for="(item, i) in items" :key="item.uid">
                         <tr :data-fila="item.uid" :class="!item.cliente_id && !item.texto && 'fila-vacia'">
-                            <td class="bg-panel text-center text-[11px] text-slate-400" x-text="i + 1"></td>
+                            <td class="bg-panel text-center text-[12px] text-slate-400" x-text="i + 1"></td>
                             <td class="!p-0"><input class="cell-input text-left font-mono font-semibold text-brand-900" data-col="codigo" inputmode="numeric" x-model="item.codigo" @change="buscarCodigo(item)" @keydown.enter.prevent="$event.target.blur(); siguiente($event, items, item, () => agregarFilas(3))"></td>
                             <td class="!p-0">
                                 <div class="flex items-center">
@@ -151,7 +151,7 @@
                                            :class="item.cliente_id ? 'font-semibold text-slate-900' : ''"
                                            x-model="item.texto" @input="escribirNombre(item, $event, (f, c) => asignarCliente(f, c))"
                                            @keydown="teclaNombre($event)" @blur="cerrarSugerencias()">
-                                    <span class="mr-1.5 shrink-0 rounded-sm px-1.5 py-px text-[10px] font-semibold whitespace-nowrap" x-show="item.error || (item.cliente_id && clientes[item.cliente_id]?.deuda > 0)"
+                                    <span class="mr-1.5 shrink-0 rounded-sm px-1.5 py-px text-[11.5px] font-semibold whitespace-nowrap" x-show="item.error || (item.cliente_id && clientes[item.cliente_id]?.deuda > 0)"
                                           :class="item.error ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'"
                                           x-text="item.error || ('Debe ' + dec(clientes[item.cliente_id]?.deuda))"></span>
                                 </div>
@@ -222,7 +222,7 @@
                                 <input class="cell-input text-left" autocomplete="off" x-model="c.texto" placeholder="Buscar por nombre..."
                                        :class="c.cliente_id ? 'font-semibold text-slate-900' : ''"
                                        @input="escribirNombre(c, $event, (f, cl) => asignarCobranza(f, cl))" @keydown="teclaNombre($event)" @blur="cerrarSugerencias()">
-                                <p class="px-1.5 pb-1 text-[10px]" x-show="c.error || c.cliente_id" :class="c.error ? 'font-semibold text-red-700' : 'text-slate-500'"
+                                <p class="px-1.5 pb-1 text-[11.5px]" x-show="c.error || c.cliente_id" :class="c.error ? 'font-semibold text-red-700' : 'text-slate-500'"
                                    x-text="c.error || ('Deuda pendiente: S/ ' + dec(clientes[c.cliente_id]?.deuda))"></p>
                             </td>
                             <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input font-semibold" x-model="c.monto"></td>
@@ -237,7 +237,7 @@
                     </tbody>
                     <tfoot><tr><td colspan="2">TOTAL COBRADO</td><td class="text-right" x-text="dec(totalCobranzas)"></td><td colspan="2"></td></tr></tfoot>
                 </table>
-                <p class="px-4 py-2 text-[11px] text-slate-500">Se aplica a las deudas más antiguas del cliente.</p>
+                <p class="px-4 py-2 text-[12px] text-slate-500">Se aplica a las deudas más antiguas del cliente.</p>
             </section>
 
             {{-- FISE --}}
@@ -296,7 +296,7 @@
                 <div class="card-header">
                     <div>
                         <p class="card-title">Depósitos (−)</p>
-                        <p class="mt-0.5 text-[11px] text-slate-500">Cuenta o medio donde se depositó (BCP - Durasol, Yape...). No hace falta indicar quién depositó.</p>
+                        <p class="mt-0.5 text-[12px] text-slate-500">Cuenta o medio de depósito (BCP - Durasol, Yape, etc.).</p>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" x-show="editable" @click="agregarDeposito()"><x-heroicon-o-plus/> Agregar</button>
                 </div>
@@ -323,7 +323,7 @@
         <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             {{-- Cuadre de efectivo, como un comprobante --}}
             <section class="card overflow-hidden">
-                <div class="card-header"><p class="card-title">Cuadre de efectivo</p><span class="text-[11px] text-slate-500">Fórmula de la hoja RESUMEN GNRAL</span></div>
+                <div class="card-header"><p class="card-title">Cuadre de efectivo</p><span class="text-[12px] text-slate-500">Fórmula de la hoja RESUMEN GNRAL</span></div>
                 <table class="recibo">
                     <tr><td>Venta total <span class="text-xs text-slate-400" x-text="'(' + totalBalones + ' balones)'"></span></td><td x-text="dec(totalVenta)"></td></tr>
                     <tr><td>(+) Cobranzas de créditos anteriores</td><td x-text="dec(totalCobranzas)"></td></tr>
@@ -374,7 +374,7 @@
                     <tr x-show="!codigosCuadre.length"><td colspan="4" class="py-6 text-center text-slate-400">Selecciona el responsable y registra las ventas.</td></tr>
                     </tbody>
                 </table>
-                <p class="px-4 py-2 text-[11px] text-slate-500">«Según parte» = llenos que salieron con el chofer menos los que devolvió, en el parte diario de la fecha de venta.</p>
+                <p class="px-4 py-2 text-[12px] text-slate-500">«Según parte» = llenos que salieron con el chofer menos los que devolvió, en el parte diario de la fecha de venta.</p>
             </section>
         </div>
     </fieldset>
@@ -392,7 +392,7 @@
         </div>
     </template>
 
-    <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-6 py-2.5 lg:left-64 no-print" style="box-shadow: 0 -4px 12px -6px rgb(10 26 56 / .15)">
+    <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-6 py-2.5 lg:left-60 no-print" >
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p class="flex flex-wrap items-center gap-x-5 text-xs text-slate-500">
                 <span>Balones <b class="text-slate-800" x-text="totalBalones"></b></span>
@@ -400,7 +400,7 @@
                 <span>Crédito <b class="text-slate-800" x-text="dec(totalCredito)"></b></span>
                 <span>Por depositar <b class="text-slate-800" x-text="dec(efectivo)"></b></span>
                 <span>Depósitos <b class="text-slate-800" x-text="dec(totalDepositos)"></b></span>
-                <span class="rounded-sm bg-brand-800 px-2 py-1 text-white">Efectivo a entregar <b class="text-[13px]" x-text="'S/ ' + dec(efectivoAEntregar)"></b></span>
+                <span class="rounded-sm border border-brand-200 bg-brand-50 px-2 py-1 text-brand-900">Efectivo a entregar <b class="text-[13px]" x-text="'S/ ' + dec(efectivoAEntregar)"></b></span>
                 <span class="text-amber-700" x-show="sucio && editable">● Cambios sin guardar</span>
             </p>
             <div class="flex gap-2" x-show="editable">

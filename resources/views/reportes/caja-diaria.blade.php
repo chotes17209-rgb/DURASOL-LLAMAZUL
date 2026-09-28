@@ -34,7 +34,7 @@
                         <td class="text-right tabular-nums">{{ num($d['vouchers'], 2) }}</td>
                         <td class="text-right tabular-nums font-semibold">{{ num($d['general'], 2) }}</td>
                         <td class="text-right tabular-nums">{{ num($d['depositos'], 2) }}</td>
-                        <td class="text-right tabular-nums font-bold {{ $d['saldo'] < 0 ? 'text-rose-600' : '' }}">{{ num($d['saldo'], 2) }}</td>
+                        <td class="text-right tabular-nums font-bold {{ $d['saldo'] < 0 ? 'text-red-700' : '' }}">{{ num($d['saldo'], 2) }}</td>
                     </tr>
                 @endforeach
                 </tbody>

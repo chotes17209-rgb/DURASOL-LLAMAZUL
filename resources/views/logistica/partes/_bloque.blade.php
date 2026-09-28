@@ -37,7 +37,7 @@
             <tbody>
             <template x-for="(fila, i) in bloques['{{ $bloque }}']" :key="fila.uid">
                 <tr>
-                    <td class="bg-panel text-center text-[11px] text-slate-400" x-text="i + 1"></td>
+                    <td class="bg-panel text-center text-[12px] text-slate-400" x-text="i + 1"></td>
                     <td class="!p-0"><input class="cell-input text-left uppercase" list="lista-placas" x-model="fila.placa" @change="completarPorPlaca(fila)" :disabled="!editable"></td>
                     <td class="!p-0"><input class="cell-input text-left uppercase" list="lista-choferes" x-model="fila.responsable" :disabled="!editable"></td>
                     <td class="!p-0"><input class="cell-input text-left uppercase" list="lista-lugares" x-model="fila.lugar" :disabled="!editable"></td>

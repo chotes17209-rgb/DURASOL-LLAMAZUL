@@ -1,5 +1,5 @@
 <x-layouts.app title="Historial del sistema" breadcrumb="Administración">
-    <p class="help mb-4">Bitácora de auditoría: quién creó, modificó o eliminó cada registro (con los valores antes y después), inicios de sesión, cierres de liquidación y descargas de reportes.</p>
+    <p class="help mb-4">Registro de auditoría: creación, modificación y eliminación de registros (valores anteriores y nuevos), inicios de sesión, cierres de liquidación y descargas de reportes.</p>
     <x-remote-table :url="route('historial.index')">
         <x-slot:filters>
             <x-search placeholder="Buscar en los datos..."/>

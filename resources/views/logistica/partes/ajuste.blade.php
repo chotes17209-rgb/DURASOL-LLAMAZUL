@@ -1,4 +1,4 @@
-<x-form-modal :title="'Ajustar stock a conteo físico · '.$dia->format('d/m/Y')" subtitle="Escribe solo lo que contaste; el sistema registra la diferencia como fila de AJUSTE." :action="route('logistica.partes.ajuste.store', $dia->toDateString())" submit="Registrar ajuste">
+<x-form-modal :title="'Ajustar stock a conteo físico · '.$dia->format('d/m/Y')" subtitle="Ingrese las cantidades contadas; la diferencia se registra como fila de AJUSTE." :action="route('logistica.partes.ajuste.store', $dia->toDateString())" submit="Registrar ajuste">
     <table class="table table-compact table-grid">
         <thead><tr><th>Concepto</th><th class="text-right">Stock según sistema</th><th class="w-32 text-right">Conteo físico</th></tr></thead>
         <tbody>

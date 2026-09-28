@@ -8,9 +8,9 @@
         <tbody>
         @forelse ($liquidaciones as $l)
             <tr>
-                <td class="whitespace-nowrap"><span class="font-mono text-[12px] font-semibold text-brand-900">{{ $l->codigo }}</span>@if($l->historico)<p class="text-[10px] text-slate-400">importada del Excel</p>@endif</td>
-                <td class="whitespace-nowrap">{{ fecha($l->fecha_venta) }}<p class="text-[11px] text-slate-400">liq. {{ fecha($l->fecha_liquidacion) }}</p></td>
-                <td><p class="font-semibold text-slate-900">{{ $l->chofer?->alias }}</p><p class="font-mono text-[11px] text-slate-400">{{ $l->vehiculo?->placa ?? 'LOCAL' }}</p></td>
+                <td class="whitespace-nowrap"><span class="font-mono text-[12px] font-semibold text-brand-900">{{ $l->codigo }}</span>@if($l->historico)<p class="text-[11.5px] text-slate-400">importada del Excel</p>@endif</td>
+                <td class="whitespace-nowrap">{{ fecha($l->fecha_venta) }}<p class="text-[12px] text-slate-400">liq. {{ fecha($l->fecha_liquidacion) }}</p></td>
+                <td><p class="font-semibold text-slate-900">{{ $l->chofer?->alias }}</p><p class="font-mono text-[12px] text-slate-400">{{ $l->vehiculo?->placa ?? 'LOCAL' }}</p></td>
                 <td class="text-right tabular-nums">{{ num($l->balones) }}</td>
                 <td class="text-right font-semibold tabular-nums">{{ soles($l->total_venta) }}</td>
                 <td class="text-right tabular-nums text-red-700">{{ $l->total_credito > 0 ? soles($l->total_credito) : '—' }}</td>
@@ -20,7 +20,7 @@
                 <td class="text-right tabular-nums">
                     {{ $l->efectivo_entregado !== null ? soles($l->efectivo_entregado) : '—' }}
                     @if ($l->efectivo_entregado !== null && abs((float) $l->diferencia) >= 0.01)
-                        <p class="text-[11px] font-semibold {{ $l->diferencia > 0 ? 'text-emerald-700' : 'text-red-700' }}">{{ $l->diferencia > 0 ? '+' : '' }}{{ num($l->diferencia, 2) }}</p>
+                        <p class="text-[12px] font-semibold {{ $l->diferencia > 0 ? 'text-emerald-700' : 'text-red-700' }}">{{ $l->diferencia > 0 ? '+' : '' }}{{ num($l->diferencia, 2) }}</p>
                     @endif
                 </td>
                 <td><x-status :value="$l->estado"/></td>
@@ -34,7 +34,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="12"><x-empty title="Sin liquidaciones" text="Crea la liquidación del día anterior de cada chofer."/></td></tr>
+            <tr><td colspan="12"><x-empty title="Sin liquidaciones" text="No hay liquidaciones registradas con estos filtros."/></td></tr>
         @endforelse
         </tbody>
         @if ($liquidaciones->isNotEmpty())

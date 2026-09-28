@@ -9,7 +9,7 @@
                 <td class="font-mono text-xs">{{ $d->numero ?: '—' }}</td>
                 <td>{{ $d->entidad ?: '—' }}</td>
                 <td>{{ fecha($d->fecha_vencimiento) ?: '—' }}
-                    @if (! is_null($d->diasParaVencer()))<p class="text-[11px] text-slate-400">{{ $d->diasParaVencer() >= 0 ? 'en '.$d->diasParaVencer().' días' : 'hace '.abs($d->diasParaVencer()).' días' }}</p>@endif
+                    @if (! is_null($d->diasParaVencer()))<p class="text-[12px] text-slate-400">{{ $d->diasParaVencer() >= 0 ? 'en '.$d->diasParaVencer().' días' : 'hace '.abs($d->diasParaVencer()).' días' }}</p>@endif
                 </td>
                 <td><x-status :value="$d->estadoVencimiento()"/></td>
                 <td><x-row-actions size="md" :show="route('documentos.show', $d)" :edit="route('documentos.edit', $d)" :delete="route('documentos.destroy', $d)"/></td>

@@ -3,6 +3,6 @@
 <div class="kpi border-l-[3px] {{ $borde }}">
     <p class="kpi-label">{{ $label }}</p>
     <p class="kpi-value">{{ $value }}</p>
-    @if ($hint)<p class="mt-0.5 text-[11px] text-slate-500">{{ $hint }}</p>@endif
+    @if ($hint)<p class="mt-0.5 text-[12px] text-slate-500">{{ $hint }}</p>@endif
     {{ $slot }}
 </div>

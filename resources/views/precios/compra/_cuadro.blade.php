@@ -82,5 +82,5 @@
         </div>
     </div>
 @empty
-    <div class="card"><x-empty title="Sin instalaciones" text="Registra la primera instalación con su código de 8 dígitos."/></div>
+    <div class="card"><x-empty title="Sin instalaciones" text="Registre la primera instalación con su código de 8 dígitos."/></div>
 @endforelse

@@ -17,10 +17,10 @@
                                 <p class="font-semibold tabular-nums">{{ soles($r->precio) }}
                                     @if ($anterior)
                                         @php($dif = (float) $r->precio - (float) $anterior->precio)
-                                        <span class="ml-1 text-xs {{ $dif > 0 ? 'text-rose-600' : 'text-emerald-600' }}">{{ $dif > 0 ? '▲' : '▼' }} {{ num(abs($dif), 2) }}</span>
+                                        <span class="ml-1 text-xs {{ $dif > 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ $dif > 0 ? '▲' : '▼' }} {{ num(abs($dif), 2) }}</span>
                                     @endif
                                 </p>
-                                <p class="text-[11px] text-slate-400">desde {{ fecha($r->vigente_desde) }} · {{ $r->motivo }} · {{ $r->user?->name ?? 'Importado' }}</p>
+                                <p class="text-[12px] text-slate-400">desde {{ fecha($r->vigente_desde) }} · {{ $r->motivo }} · {{ $r->user?->name ?? 'Importado' }}</p>
                             </div>
                             @if (auth()->user()->hasRole('liquidaciones'))
                                 <button type="button" class="btn-icon danger" title="Eliminar registro" data-delete-url="{{ route('precios.venta.destroy', $r) }}" data-text="Se quitará este precio del historial."><x-heroicon-o-trash class="h-4 w-4"/></button>

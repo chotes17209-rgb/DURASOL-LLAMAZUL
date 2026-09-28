@@ -99,7 +99,7 @@ export async function request(url, { method = 'GET', body = null, json = false }
     const response = await fetch(url, { method: realMethod, headers, body: payload, credentials: 'same-origin' });
 
     if (response.status === 419) {
-        await alertError('Sesión expirada', 'Tu sesión expiró. La página se recargará.');
+        await alertError('Sesión expirada', 'La sesión ha expirado. La página se recargará.');
         window.location.reload();
         throw new Error('csrf');
     }
@@ -125,22 +125,22 @@ export function handleRequestError(error, form = null) {
     if (error.message === 'csrf' || error.message === 'auth') return;
     if (error.status === 422 && error.data?.errors) {
         if (form) showFormErrors(form, error.data.errors);
-        alertError('Revisa los datos', Object.values(error.data.errors).flat());
+        alertError('Datos incompletos o no válidos', Object.values(error.data.errors).flat());
         return;
     }
     if (error.status === 422) {
-        alertError('No se pudo completar', error.data?.message || 'Revisa los datos ingresados.');
+        alertError('No se pudo completar', error.data?.message || 'Verifique los datos ingresados.');
         return;
     }
     if (error.status === 403) {
-        alertError('Sin permiso', error.data?.message || 'Tu usuario no tiene acceso a esta acción.');
+        alertError('Sin permiso', error.data?.message || 'El usuario no tiene acceso a esta acción.');
         return;
     }
     if (error.status === 404) {
         alertError('No encontrado', 'El registro ya no existe o fue eliminado.');
         return;
     }
-    alertError('Ocurrió un error', error.data?.message || 'No se pudo completar la operación. Inténtalo nuevamente.');
+    alertError('Ocurrió un error', error.data?.message || 'No se pudo completar la operación. Intente nuevamente.');
     console.error(error);
 }
 window.handleRequestError = handleRequestError;

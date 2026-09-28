@@ -11,11 +11,11 @@
             <tr class="align-top">
                 <td class="whitespace-nowrap">
                     <p class="font-medium text-slate-800">{{ $audit->created_at->format('d/m/Y') }}</p>
-                    <p class="text-[11px] text-slate-500">{{ $audit->created_at->format('H:i:s') }} · {{ $audit->created_at->diffForHumans() }}</p>
+                    <p class="text-[12px] text-slate-500">{{ $audit->created_at->format('H:i:s') }} · {{ $audit->created_at->diffForHumans() }}</p>
                 </td>
                 <td>
                     <p class="font-semibold text-slate-900">{{ $audit->user?->name ?? 'Sistema' }}</p>
-                    @if ($audit->ip_address ?? null)<p class="font-mono text-[10px] text-slate-400">{{ $audit->ip_address }}</p>@endif
+                    @if ($audit->ip_address ?? null)<p class="font-mono text-[11.5px] text-slate-400">{{ $audit->ip_address }}</p>@endif
                 </td>
                 <td><span class="badge {{ $colores[$audit->eventColor()] ?? 'badge-slate' }}">{{ $audit->eventLabel() }}</span></td>
                 <td class="text-slate-700">{{ $audit->moduleLabel() }}</td>

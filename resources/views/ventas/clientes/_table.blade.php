@@ -14,7 +14,7 @@
                 @foreach ($productos as $p)
                     <td class="text-right tabular-nums">{{ isset($vigentes[$c->id][$p->id]) ? num($vigentes[$c->id][$p->id], 2) : '—' }}</td>
                 @endforeach
-                <td class="text-right tabular-nums {{ $c->deuda > 0 ? 'font-semibold text-rose-600' : 'text-slate-400' }}">{{ $c->deuda > 0 ? soles($c->deuda) : '—' }}</td>
+                <td class="text-right tabular-nums {{ $c->deuda > 0 ? 'font-semibold text-red-700' : 'text-slate-400' }}">{{ $c->deuda > 0 ? soles($c->deuda) : '—' }}</td>
                 <td><x-row-actions size="xl" :show="route('clientes.show', $c)" :edit="route('clientes.edit', $c)" :delete="route('clientes.destroy', $c)"/></td>
             </tr>
         @empty

@@ -8,18 +8,18 @@
     </x-slot:actions>
 
     <dl class="ledger !grid-cols-2 lg:!grid-cols-5">
-        <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p class="text-[11px] text-slate-500">{{ num($balonesDia) }} balones</p></div>
-        <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd><p class="text-[11px] text-slate-500">{{ num($balonesMes) }} balones</p></div>
+        <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p class="text-[12px] text-slate-500">{{ num($balonesDia) }} balones</p></div>
+        <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd><p class="text-[12px] text-slate-500">{{ num($balonesMes) }} balones</p></div>
         @php($totalStock = \App\Services\AlmacenService::totalesPorPresentacion($stock))
-        <div class="ledger-cell"><dt>Stock S-10 (llenos + cambios)</dt><dd>{{ num($totalStock['S10']) }}</dd><p class="text-[11px] text-slate-500">S-45 {{ num($totalStock['S45']) }} · M-10 {{ num($totalStock['M10']) }}</p></div>
+        <div class="ledger-cell"><dt>Stock S-10 (llenos + cambios)</dt><dd>{{ num($totalStock['S10']) }}</dd><p class="text-[12px] text-slate-500">S-45 {{ num($totalStock['S45']) }} · M-10 {{ num($totalStock['M10']) }}</p></div>
         @if ($u->hasRole('liquidaciones', 'caja'))
-            <div class="ledger-cell"><dt>Créditos por cobrar</dt><dd class="!text-red-700">{{ soles($porCobrar) }}</dd><p class="text-[11px] text-slate-500">saldo pendiente de clientes</p></div>
+            <div class="ledger-cell"><dt>Créditos por cobrar</dt><dd class="!text-red-700">{{ soles($porCobrar) }}</dd><p class="text-[12px] text-slate-500">saldo pendiente de clientes</p></div>
         @endif
-        <div class="ledger-cell ledger-total border-r-0"><dt>{{ $u->hasRole('caja') ? 'Saldo en caja hoy' : 'Liquidaciones por cerrar' }}</dt><dd>{{ $u->hasRole('caja') ? soles($saldoCaja) : $borradores }}</dd><p class="text-[11px] text-[#b9c7df]">{{ $borradores }} en borrador</p></div>
+        <div class="ledger-cell ledger-total border-r-0"><dt>{{ $u->hasRole('caja') ? 'Saldo en caja hoy' : 'Liquidaciones por cerrar' }}</dt><dd>{{ $u->hasRole('caja') ? soles($saldoCaja) : $borradores }}</dd><p>{{ $borradores }} en borrador</p></div>
     </dl>
 
     @if ($borradores)
-        <div class="help mt-3 flex items-center justify-between">
+        <div class="help mt-3 flex items-center justify-between border-amber-300 bg-amber-50 text-amber-900">
             <span>Hay <b>{{ $borradores }}</b> liquidación(es) en borrador pendientes de cerrar.</span>
             <a href="{{ route('liquidaciones.index', ['estado' => 'borrador']) }}" class="font-semibold text-brand-700 hover:underline">Revisar</a>
         </div>
@@ -27,7 +27,7 @@
 
     <div class="mt-4 grid gap-4 xl:grid-cols-3">
         <div class="card xl:col-span-2">
-            <div class="card-header"><p class="card-title">Venta diaria — últimos 30 días (S/)</p></div>
+            <div class="card-header"><p class="card-title">Venta diaria de los últimos 30 días (S/)</p></div>
             <div class="h-64 p-4"><canvas data-chart="{{ json_encode($graficoVentas) }}"></canvas></div>
         </div>
         <div class="card">

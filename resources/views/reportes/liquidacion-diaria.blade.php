@@ -1,4 +1,4 @@
-<x-layouts.app title="Hoja de liquidación diaria" breadcrumb="Reportes · igual a la hoja RESUMEN GNRAL">
+<x-layouts.app title="Hoja de liquidación diaria" breadcrumb="Reportes">
     <x-slot:actions>
         <form method="GET" class="flex items-center gap-2">
             <label class="text-xs text-slate-500">Fecha</label>
@@ -8,9 +8,8 @@
     </x-slot:actions>
 
     <p class="help mb-3">
-        <b>{{ ucfirst($fecha->translatedFormat('l d \\d\\e F \\d\\e Y')) }}</b> ·
-        Por depositar = venta total + cobranza − crédito − varios − FISE − vouchers (pagos por Yape/transferencia) − depósitos del chofer.
-        Reparto local por fecha de venta; choferes de ruta por fecha de liquidación.
+        <b>{{ ucfirst($fecha->translatedFormat('l d \\d\\e F \\d\\e Y')) }}</b> · Por depositar = venta + cobranza − crédito − varios − FISE − vouchers − depósitos.
+        Reparto local por fecha de venta; ruta por fecha de liquidación.
     </p>
 
     @foreach ($grupos as $g)

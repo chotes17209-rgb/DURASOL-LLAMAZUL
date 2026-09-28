@@ -10,7 +10,7 @@
                         'border-l-amber-500' => $info['estado'] === 'por_vencer',
                         'border-l-red-600' => $info['estado'] === 'vencido',
                         'border-l-slate-300' => in_array($info['estado'], ['sin_registro', 'sin_fecha'])])>
-                        <div class="flex items-center justify-between"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $info['label'] }}</p><x-status :value="$info['estado']"/></div>
+                        <div class="flex items-center justify-between"><p class="text-[12px] font-semibold text-slate-600">{{ $info['label'] }}</p><x-status :value="$info['estado']"/></div>
                         @if ($info['documento'])
                             <p class="mt-2 text-sm font-semibold text-slate-800">{{ $info['documento']->fecha_vencimiento?->format('d/m/Y') ?? 'Sin fecha' }}</p>
                             @if (! is_null($info['documento']->diasParaVencer()))

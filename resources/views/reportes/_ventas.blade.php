@@ -5,7 +5,7 @@
     <x-cifra label="Venta total" :value="soles($totales->total)" total/>
 </dl>
 <div class="flex flex-wrap gap-x-5 gap-y-1 border-b border-line bg-panel px-4 py-2 text-xs text-slate-600">
-    <span class="font-semibold tracking-wide text-brand-800 uppercase">Por presentación</span>
+    <span class="font-semibold text-slate-800">Por presentación</span>
     @foreach ($porProducto as $p)<span><b class="text-slate-800">{{ $p->codigo }}</b> {{ num($p->cantidad) }} bal. · {{ soles($p->total) }}</span>@endforeach
 </div>
 <div class="table-wrap">
@@ -24,7 +24,7 @@
                 <td class="text-right">{{ num($i->precio, 2) }}</td>
                 <td class="text-right font-semibold">{{ num($i->total, 2) }}</td>
                 <td class="text-right">{{ $i->vacios_devueltos ?: '' }}</td>
-                <td class="text-right text-rose-600">{{ $i->monto_credito > 0 ? num($i->monto_credito, 2) : '' }}</td>
+                <td class="text-right text-red-700">{{ $i->monto_credito > 0 ? num($i->monto_credito, 2) : '' }}</td>
                 <td class="text-xs">{{ $i->metodo_pago->label() }}</td>
             </tr>
         @empty

@@ -1,7 +1,7 @@
 <x-layouts.app title="Caja general" breadcrumb="Caja">
     <x-slot:actions>
-        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'ingreso']) }}" data-modal-size="md"><x-heroicon-o-arrow-down-circle class="h-4 w-4 text-emerald-600"/> Ingreso</button>
-        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'egreso']) }}" data-modal-size="md"><x-heroicon-o-arrow-up-circle class="h-4 w-4 text-rose-600"/> Gasto / egreso</button>
+        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'ingreso']) }}" data-modal-size="md"><x-heroicon-o-arrow-down-circle class="h-4 w-4 text-emerald-700"/> Ingreso</button>
+        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'egreso']) }}" data-modal-size="md"><x-heroicon-o-arrow-up-circle class="h-4 w-4 text-red-700"/> Gasto / egreso</button>
         <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-modal-size="md"><x-heroicon-o-building-library class="h-4 w-4"/> Depósito</button>
     </x-slot:actions>
 
@@ -31,7 +31,7 @@
                     @forelse ($resumen['por_categoria'] as $c)
                         <div class="flex items-center justify-between px-5 py-3 text-sm">
                             <span>{{ $c->categoria->label() }} <span class="text-xs text-slate-400">({{ $c->cantidad }})</span></span>
-                            <span class="font-semibold tabular-nums {{ $c->tipo === 'egreso' ? 'text-rose-600' : 'text-emerald-600' }}">{{ $c->tipo === 'egreso' ? '−' : '+' }}{{ soles($c->total) }}</span>
+                            <span class="font-semibold tabular-nums {{ $c->tipo === 'egreso' ? 'text-red-700' : 'text-emerald-700' }}">{{ $c->tipo === 'egreso' ? '−' : '+' }}{{ soles($c->total) }}</span>
                         </div>
                     @empty
                         <p class="px-5 py-6 text-center text-sm text-slate-400">Sin movimientos.</p>

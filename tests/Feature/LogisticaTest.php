@@ -51,7 +51,7 @@ class LogisticaTest extends TestCase
         $cuadre = app(AlmacenService::class)->cuadreChoferes(Carbon::parse('2026-09-14'))->first();
         $this->assertSame(64, $cuadre['productos']['S10']['vendido']);
 
-        $this->como('logistica')->get(route('logistica.partes.show', '2026-09-14'))->assertOk()->assertSee('INGRESO DE LLENOS');
+        $this->como('logistica')->get(route('logistica.partes.show', '2026-09-14'))->assertOk()->assertSee('Ingreso de llenos');
         $this->como('logistica')->get(route('logistica.stock.kardex', ['llave' => 'lleno_s10', 'desde' => '2026-09-01', 'hasta' => '2026-09-30']))->assertOk();
     }
 

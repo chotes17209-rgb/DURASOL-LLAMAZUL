@@ -18,7 +18,7 @@
     <div class="mt-6 rounded bg-slate-50 p-4 border border-line">
         <div class="mb-3 flex items-center justify-between">
             <p class="text-sm font-semibold text-slate-900">Precios de venta asignados</p>
-            <p class="text-xs text-slate-500">{{ $cliente->exists ? 'Si cambias un precio se guarda como nuevo en el historial (vigente desde hoy).' : 'Deja vacío lo que no le vendes.' }}</p>
+            <p class="text-xs text-slate-500">{{ $cliente->exists ? 'Los cambios de precio se registran en el historial con vigencia desde hoy.' : 'Deje en blanco los productos que no se venden al cliente.' }}</p>
         </div>
         <div class="grid gap-3 sm:grid-cols-4">
             @foreach ($productos as $p)

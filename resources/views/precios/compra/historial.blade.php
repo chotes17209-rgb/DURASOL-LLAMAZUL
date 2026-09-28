@@ -4,7 +4,7 @@
     </x-slot:actions>
     <x-remote-table :url="route('precios.compra.historial')">
         <x-slot:filters>
-            <x-field.select name="empresa_id" :options="$empresas" placeholder="Todas las empresas" class="w-48" :selected="request('empresa_id')"/>
+            <x-field.select name="empresa_id" :options="$empresas" placeholder="Todas las empresas" class="w-52" :selected="request('empresa_id')"/>
             <x-field.select name="instalacion_id" :options="$instalaciones" placeholder="Todas las instalaciones" class="w-64" :selected="request('instalacion_id')"/>
             <x-field.select name="producto_id" :options="$productos" placeholder="Todos los productos" class="w-44" :selected="request('producto_id')"/>
         </x-slot:filters>

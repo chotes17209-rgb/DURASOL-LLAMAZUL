@@ -15,7 +15,7 @@
                     <td>
                         <x-status :value="$docs[$tipo]['estado']"/>
                         @if ($docs[$tipo]['documento']?->fecha_vencimiento)
-                            <p class="mt-0.5 text-[11px] text-slate-400">{{ $docs[$tipo]['documento']->fecha_vencimiento->format('d/m/Y') }}</p>
+                            <p class="mt-0.5 text-[12px] text-slate-400">{{ $docs[$tipo]['documento']->fecha_vencimiento->format('d/m/Y') }}</p>
                         @endif
                     </td>
                 @endforeach

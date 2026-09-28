@@ -25,7 +25,7 @@
     <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {{-- Igual al cuadro CONTROL DE STOCK LLENOS de la hoja de logística --}}
         <div class="card">
-            <div class="card-header"><p class="card-title">Control de stock llenos</p><span class="text-[11px] text-slate-500">al {{ $fecha->format('d/m/Y') }}</span></div>
+            <div class="card-header"><p class="card-title">Control de stock llenos</p><span class="text-[12px] text-slate-500">al {{ $fecha->format('d/m/Y') }}</span></div>
             <table class="table table-compact table-grid">
                 <thead>
                 <tr class="th-group"><th></th><th colspan="2">Solgas</th><th>Masgas</th><th colspan="3">Cambios</th></tr>
@@ -45,7 +45,7 @@
             </table>
         </div>
         <div class="card">
-            <div class="card-header"><p class="card-title">Total</p><span class="text-[11px] text-slate-500">llenos + cambios</span></div>
+            <div class="card-header"><p class="card-title">Total</p><span class="text-[12px] text-slate-500">llenos + cambios</span></div>
             <table class="table table-grid">
                 <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th></tr></thead>
                 <tbody><tr>@foreach ($total as $v)<td class="text-right text-[18px] font-semibold text-brand-950">{{ num($v) }}</td>@endforeach</tr></tbody>
@@ -70,7 +70,7 @@
             </table>
         </div>
         <div class="card">
-            <div class="card-header"><p class="card-title">Total vacíos</p><span class="text-[11px] text-slate-500">plomos + colores</span></div>
+            <div class="card-header"><p class="card-title">Total vacíos</p><span class="text-[12px] text-slate-500">plomos + colores</span></div>
             <table class="table table-grid">
                 <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th></tr></thead>
                 <tbody><tr>@foreach ($vacios as $v)<td class="text-right text-[18px] font-semibold text-brand-950">{{ num($v) }}</td>@endforeach</tr></tbody>

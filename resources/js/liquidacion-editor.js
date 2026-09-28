@@ -379,21 +379,21 @@ export default function liquidacionEditor(config) {
             if (this.guardando) return;
             const filas = this.filasConDatos;
             if (!this.cab.chofer_id) {
-                window.alertError('Falta el responsable', 'Elige el chofer de la liquidación.');
+                window.alertError('Falta el responsable', 'Seleccione el responsable de la liquidación.');
                 return;
             }
             if (despues === 'cerrar' && !filas.length && !this.cobranzas.some((c) => c.cliente_id)) {
-                window.alertError('Liquidación vacía', 'Para cerrar, escribe al menos una venta o una cobranza.');
+                window.alertError('Liquidación vacía', 'Para cerrar se requiere al menos una venta o una cobranza.');
                 return;
             }
             const sinCliente = filas.filter((i) => !i.cliente_id).length;
             const sinCantidad = filas.filter((i) => !(+i.cantidad > 0)).length;
             const sinPrecio = filas.filter((i) => i.cliente_id && i.precio === '').length;
             if (sinCliente || sinCantidad || sinPrecio) {
-                window.alertError('Revisa la hoja', [
+                window.alertError('Hoja incompleta', [
                     sinCliente && `${sinCliente} fila(s) con cantidad pero sin cliente válido.`,
                     sinCantidad && `${sinCantidad} fila(s) sin cantidad.`,
-                    sinPrecio && `${sinPrecio} fila(s) sin precio: registra el precio del cliente en «Precios de venta».`,
+                    sinPrecio && `${sinPrecio} fila(s) sin precio registrado en «Precios de venta».`,
                 ].filter(Boolean).join(' '));
                 return;
             }

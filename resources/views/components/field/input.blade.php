@@ -2,7 +2,7 @@
 @php($id = 'f_'.str_replace(['[', ']', '.'], '_', $name).'_'.uniqid())
 <div {{ $attributes->only('class')->merge(['class' => '']) }}>
     @if ($label)
-        <label for="{{ $id }}" class="form-label">{{ $label }} @if($required)<span class="text-rose-500">*</span>@endif</label>
+        <label for="{{ $id }}" class="form-label">{{ $label }} @if($required)<span class="text-red-700">*</span>@endif</label>
     @endif
     <div class="relative">
         @if ($prefix)

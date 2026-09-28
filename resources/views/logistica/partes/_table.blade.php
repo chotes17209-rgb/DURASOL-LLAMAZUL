@@ -19,7 +19,7 @@
                 <td class="text-right"><a href="{{ route('logistica.partes.show', $p->fecha->toDateString()) }}" class="btn btn-secondary btn-sm">Abrir</a></td>
             </tr>
         @empty
-            <tr><td colspan="11"><x-empty title="Aún no hay partes" text="Abre el parte del día para empezar a registrar."/></td></tr>
+            <tr><td colspan="11"><x-empty title="Aún no hay partes" text="No hay partes registrados en el periodo."/></td></tr>
         @endforelse
         </tbody>
     </table>

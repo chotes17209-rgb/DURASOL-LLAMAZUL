@@ -23,27 +23,27 @@
     <div class="app-brand">
         <button class="btn-icon lg:hidden" @click="menu = !menu" title="Menú"><x-heroicon-o-bars-3/></button>
         <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-            <img src="{{ asset('img/durasol.jpg') }}" alt="Mr. Durasol Perú S.A.C." class="h-10 w-auto">
-            <span class="h-7 w-px bg-line"></span>
-            <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="h-[22px] w-auto">
+            <img src="{{ asset('img/durasol.jpg') }}" alt="Mr. Durasol Perú S.A.C." class="h-9 w-auto">
+            <span class="h-6 w-px bg-line"></span>
+            <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="h-5 w-auto">
         </a>
     </div>
     <div class="flex min-w-0 flex-1 items-center justify-between gap-4 px-6">
-        <div class="hidden min-w-0 md:block">
-            <p class="text-[11px] font-semibold tracking-[.12em] text-slate-400 uppercase">Sistema de gestión comercial</p>
-            <p class="truncate text-[15px] font-semibold text-brand-900">{{ $seccionActual }}</p>
+        <div class="hidden min-w-0 leading-tight md:block">
+            <p class="truncate text-[14px] font-semibold text-slate-900">Sistema de gestión comercial</p>
+            <p class="text-[12px] text-slate-500">Mr. Durasol Perú S.A.C. · Llamazul</p>
         </div>
         <div class="ml-auto flex items-center gap-5">
             <div class="hidden text-right leading-tight sm:block">
-                <p class="text-[11px] tracking-wide text-slate-400 uppercase">Fecha de trabajo</p>
-                <p class="text-[13px] font-medium text-slate-700">{{ ucfirst(now()->translatedFormat('l d \\d\\e F')) }}</p>
+                <p class="text-[12px] text-slate-500">Fecha</p>
+                <p class="text-[13px] font-medium text-slate-800">{{ now()->format('d/m/Y') }}</p>
             </div>
             <span class="hidden h-8 w-px bg-line sm:block"></span>
             <div class="flex items-center gap-3">
                 <span class="app-avatar">{{ mb_strtoupper($iniciales) }}</span>
                 <div class="hidden leading-tight sm:block">
                     <p class="text-[13px] font-semibold text-slate-800">{{ $usuario->name }}</p>
-                    <p class="text-[11px] text-slate-500">{{ $usuario->role->label() }}</p>
+                    <p class="text-[12px] text-slate-500">{{ $usuario->role->label() }}</p>
                 </div>
             </div>
             <form method="POST" action="{{ route('logout') }}" id="logout-form">@csrf</form>
@@ -56,7 +56,7 @@
 </header>
 
 {{-- Menú lateral --}}
-<div x-show="menu" x-cloak class="fixed inset-0 z-20 bg-slate-900/40 lg:hidden" @click="menu = false"></div>
+<div x-show="menu" x-cloak class="fixed inset-0 z-20 bg-slate-900/30 lg:hidden" @click="menu = false"></div>
 <aside class="app-sidebar -translate-x-full transition-transform lg:translate-x-0" :class="menu && '!translate-x-0'">
     <nav class="flex-1 py-3">
         @foreach ($menu as $seccion)
@@ -69,19 +69,18 @@
             @endforeach
         @endforeach
     </nav>
-    <div class="border-t border-white/10 px-5 py-4 text-[11px] leading-relaxed text-slate-400">
-        <p class="font-semibold text-slate-300">Mr. Durasol Perú S.A.C.</p>
-        <p>Llamazul · Distribución de GLP</p>
+    <div class="border-t border-line px-4 py-3 text-[11.5px] leading-relaxed text-slate-500">
+        <p>Versión {{ config('erp.version', '1.0') }} · Uso interno</p>
     </div>
 </aside>
 
-<div class="pt-16 lg:pl-64">
+<div class="pt-14 lg:pl-60">
     {{-- Encabezado de la página --}}
     <div class="page-head">
         <div class="min-w-0">
             <p class="page-crumb">
                 <span>{{ $seccionActual }}</span>
-                @if ($breadcrumb && $breadcrumb !== $seccionActual)<span class="text-slate-300">/</span><span>{{ $breadcrumb }}</span>@endif
+                @if ($breadcrumb && $breadcrumb !== $seccionActual)<x-heroicon-m-chevron-right class="h-3 w-3 text-slate-400"/><span>{{ $breadcrumb }}</span>@endif
             </p>
             <h1 class="page-title">{{ $title ?? 'Inicio' }}</h1>
         </div>
@@ -98,7 +97,7 @@
 <template x-for="(m, index) in $store.modal.stack" :key="m.id">
     <div class="fixed inset-0 flex items-start justify-center overflow-y-auto px-4 py-10" :style="`z-index: ${50 + index * 5}`" :data-modal-id="m.id"
          @keydown.escape.window="index === $store.modal.stack.length - 1 && $store.modal.close()">
-        <div class="fixed inset-0 bg-brand-950/50" @click="$store.modal.close()"></div>
+        <div class="fixed inset-0 bg-slate-900/40" @click="$store.modal.close()"></div>
         <div class="app-modal"
              :class="{ 'max-w-md': m.size === 'sm', 'max-w-2xl': m.size === 'md', 'max-w-4xl': m.size === 'lg', 'max-w-6xl': m.size === 'xl', 'max-w-[96rem]': m.size === 'full' }">
             <div x-show="m.loading" class="flex items-center justify-center gap-2 p-10 text-[13px] text-slate-500">

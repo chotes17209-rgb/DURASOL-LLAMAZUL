@@ -7,7 +7,7 @@
 @endphp
 <div {{ $attributes->only('class') }}>
     @if ($label)
-        <label for="{{ $id }}" class="form-label">{{ $label }} @if($required)<span class="text-rose-500">*</span>@endif</label>
+        <label for="{{ $id }}" class="form-label">{{ $label }} @if($required)<span class="text-red-700">*</span>@endif</label>
     @endif
     <select id="{{ $id }}" name="{{ $name }}" @if($tom) data-tom @endif placeholder="{{ $placeholder }}" @if($required) required @endif
             {{ $attributes->except('class')->merge(['class' => 'form-input']) }}>

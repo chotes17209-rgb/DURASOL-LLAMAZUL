@@ -65,7 +65,7 @@
                             <td class="text-right font-semibold">{{ soles($i->total) }}</td>
                             <td class="text-right">{{ $i->vacios_devueltos }}</td>
                             <td class="text-xs">{{ $i->metodo_pago->label() }} {{ $i->numero_operacion }}</td>
-                            <td class="text-right text-rose-600">{{ $i->monto_credito > 0 ? soles($i->monto_credito) : '' }}</td>
+                            <td class="text-right text-red-700">{{ $i->monto_credito > 0 ? soles($i->monto_credito) : '' }}</td>
                         </tr>
                     @endforeach
                     </tbody>

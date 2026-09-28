@@ -21,7 +21,7 @@
             <x-field.input :name="'precios['.$p->id.']'" type="number" step="0.01" min="0" :label="$p->codigo.' (S/)'" :value="isset($vigentes[$p->id]) ? $vigentes[$p->id]->precio : null"/>
         @endforeach
     </div>
-    <p class="form-hint">Si cambias un precio se guarda como un registro nuevo (queda el historial) y se marca como <b>no validado</b> hasta que figure en la factura.</p>
+    <p class="form-hint">Un cambio de precio se registra en el historial como <b>no validado</b> hasta su confirmación en factura.</p>
 
     <div class="mt-4 grid gap-3 sm:grid-cols-3">
         <x-field.textarea name="observaciones" label="Observaciones" :value="$instalacion->observaciones" rows="2" class="sm:col-span-2"/>

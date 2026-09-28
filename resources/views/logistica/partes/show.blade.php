@@ -38,13 +38,13 @@
             <div class="doc-band">
                 <div class="flex items-center gap-4">
                     <div>
-                        <p class="text-[10.5px] font-semibold tracking-[.16em] text-[#b9c7df] uppercase">Parte diario de almacén</p>
+                        <p class="text-[12px] text-slate-500">Parte diario de almacén</p>
                         <p class="doc-num">{{ $dia->format('d/m/Y') }}</p>
                     </div>
                     <span class="doc-tag">{{ ! $parte->exists ? 'Nuevo' : ($parte->esEditable() ? 'Abierto' : 'Cerrado') }}</span>
                 </div>
-                <div class="text-right text-[12px] leading-snug text-[#d4ddec]">
-                    <p class="font-semibold text-white">{{ ucfirst($dia->translatedFormat('l d \\d\\e F \\d\\e Y')) }}</p>
+                <div class="text-right text-[12px] leading-snug text-slate-600">
+                    <p class="font-semibold text-slate-900">{{ ucfirst($dia->translatedFormat('l d \\d\\e F \\d\\e Y')) }}</p>
                     @if ($parte->exists && ! $parte->esEditable())
                         <p>Cerrado{{ $parte->cerradoPor ? ' por '.$parte->cerradoPor->name : '' }}{{ $parte->cerrado_at ? ' el '.$parte->cerrado_at->format('d/m/Y H:i') : '' }}</p>
                     @else
@@ -57,26 +57,26 @@
                     <div class="ledger-cell">
                         <dt x-text="titulo"></dt>
                         <dd x-text="n(totalPresentacion(p))"></dd>
-                        <p class="text-[11px] text-slate-500"><span x-text="'llenos ' + n(control('lleno_' + p).final)"></span> + <span x-text="'cambios ' + n(control('cambio_' + p).final)"></span></p>
+                        <p class="text-[12px] text-slate-500"><span x-text="'llenos ' + n(control('lleno_' + p).final)"></span> + <span x-text="'cambios ' + n(control('cambio_' + p).final)"></span></p>
                     </div>
                 </template>
                 <template x-for="[p, titulo] in [['s10', 'Vacíos S-10'], ['s45', 'Vacíos S-45']]" :key="p">
                     <div class="ledger-cell">
                         <dt x-text="titulo"></dt>
                         <dd x-text="n(totalVacios(p))"></dd>
-                        <p class="text-[11px] text-slate-500"><span x-text="'plomos ' + n(control('plomo_' + p).final)"></span> + <span x-text="'colores ' + n(control('color_' + p).final)"></span></p>
+                        <p class="text-[12px] text-slate-500"><span x-text="'plomos ' + n(control('plomo_' + p).final)"></span> + <span x-text="'colores ' + n(control('color_' + p).final)"></span></p>
                     </div>
                 </template>
                 <template x-for="[llave, titulo] in [['cambio_s10', 'Cambios (fallados) S-10']]" :key="llave">
                     <div class="ledger-cell">
                         <dt x-text="titulo"></dt>
                         <dd :class="control(llave).final < 0 && '!text-red-700'" x-text="n(control(llave).final)"></dd>
-                        <p class="text-[11px] text-slate-500"><span x-text="'Inicial ' + n(control(llave).inicial)"></span> · <span class="text-emerald-700" x-text="'+' + n(control(llave).ingreso)"></span> · <span class="text-red-700" x-text="'−' + n(control(llave).salida)"></span></p>
+                        <p class="text-[12px] text-slate-500"><span x-text="'Inicial ' + n(control(llave).inicial)"></span> · <span class="text-emerald-700" x-text="'+' + n(control(llave).ingreso)"></span> · <span class="text-red-700" x-text="'−' + n(control(llave).salida)"></span></p>
                     </div>
                 </template>
             </dl>
         </section>
-        <p class="help mb-3" x-show="editable">Escribe las cantidades como en la hoja de logística; las filas vacías no se guardan. <b>Enter</b> baja a la fila siguiente. Al escribir la placa de un camión de planta se propone su instalación.</p>
+        <p class="help mb-3" x-show="editable">Las filas vacías no se guardan. Enter: fila siguiente · Flechas: moverse entre celdas.</p>
 
         <div class="tabs mb-4">
             <button type="button" class="tab" :class="tab === 'llenos' && 'active'" @click="tab = 'llenos'">Llenos</button>
@@ -86,12 +86,12 @@
         </div>
 
         <div x-show="tab === 'llenos'" class="space-y-4">
-            @include('logistica.partes._bloque', ['bloque' => 'lleno_ingreso', 'titulo' => 'INGRESO DE LLENOS — planta, retornos de choferes y cambios', 'columnas' => $llenos, 'conPlanta' => true])
-            @include('logistica.partes._bloque', ['bloque' => 'lleno_salida', 'titulo' => 'SALIDA DE LLENOS — choferes, local y clientes de ruta', 'columnas' => $llenos, 'conPlanta' => false])
+            @include('logistica.partes._bloque', ['bloque' => 'lleno_ingreso', 'titulo' => 'Ingreso de llenos (planta, retornos de choferes y cambios)', 'columnas' => $llenos, 'conPlanta' => true])
+            @include('logistica.partes._bloque', ['bloque' => 'lleno_salida', 'titulo' => 'Salida de llenos (choferes, local y clientes de ruta)', 'columnas' => $llenos, 'conPlanta' => false])
             <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
             @include('logistica.partes._control', ['titulo' => 'CONTROL DE STOCK LLENOS', 'llaves' => ['lleno_s10' => 'S-10', 'lleno_s45' => 'S-45', 'lleno_m10' => 'M-10', 'cambio_s10' => 'Cambio S-10', 'cambio_s45' => 'Cambio S-45', 'cambio_m10' => 'Cambio M-10']])
                 <div class="card">
-                    <div class="card-header"><p class="card-title">Total</p><span class="text-[11px] text-slate-500">llenos + cambios</span></div>
+                    <div class="card-header"><p class="card-title">Total</p><span class="text-[12px] text-slate-500">llenos + cambios</span></div>
                     <table class="table table-grid">
                         <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th></tr></thead>
                         <tbody><tr><template x-for="p in ['s10', 's45', 'm10']" :key="p"><td class="text-right text-[18px] font-semibold text-brand-950" x-text="n(totalPresentacion(p))"></td></template></tr></tbody>
@@ -101,12 +101,12 @@
         </div>
 
         <div x-show="tab === 'vacios'" class="space-y-4">
-            @include('logistica.partes._bloque', ['bloque' => 'vacio_ingreso', 'titulo' => 'INGRESO DE VACÍOS — choferes, clientes y canje', 'columnas' => $vacios, 'conPlanta' => false])
-            @include('logistica.partes._bloque', ['bloque' => 'vacio_salida', 'titulo' => 'SALIDA DE VACÍOS — a planta y canje', 'columnas' => $vacios, 'conPlanta' => true])
+            @include('logistica.partes._bloque', ['bloque' => 'vacio_ingreso', 'titulo' => 'Ingreso de vacíos (choferes, clientes y canje)', 'columnas' => $vacios, 'conPlanta' => false])
+            @include('logistica.partes._bloque', ['bloque' => 'vacio_salida', 'titulo' => 'Salida de vacíos (a planta y canje)', 'columnas' => $vacios, 'conPlanta' => true])
             <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 @include('logistica.partes._control', ['titulo' => 'CONTROL DE STOCK VACÍOS', 'llaves' => ['plomo_s10' => 'Plomos S-10', 'plomo_s45' => 'Plomos S-45', 'color_s10' => 'Colores S-10', 'color_s45' => 'Colores S-45']])
                 <div class="card">
-                    <div class="card-header"><p class="card-title">Total vacíos</p><span class="text-[11px] text-slate-500">plomos + colores</span></div>
+                    <div class="card-header"><p class="card-title">Total vacíos</p><span class="text-[12px] text-slate-500">plomos + colores</span></div>
                     <table class="table table-grid">
                         <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th></tr></thead>
                         <tbody><tr><template x-for="p in ['s10', 's45']" :key="p"><td class="text-right text-[18px] font-semibold text-brand-950" x-text="n(totalVacios(p))"></td></template></tr></tbody>
@@ -168,7 +168,7 @@
             <div class="p-3"><textarea class="form-input" rows="2" x-model="observaciones" :disabled="!editable"></textarea></div>
         </div>
 
-        <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-6 py-2.5 lg:left-64 no-print" style="box-shadow: 0 -4px 12px -6px rgb(10 26 56 / .15)" x-show="editable">
+        <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-6 py-2.5 lg:left-60 no-print"  x-show="editable">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-xs text-slate-500">
                     Total S-10: <b class="text-slate-800" x-text="n(totalPresentacion('s10'))"></b> ·
