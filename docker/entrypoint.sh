@@ -17,14 +17,17 @@ done
 
 php artisan migrate --force
 
-# Solo la primera vez: usuarios, catálogos y datos del Excel.
-if [ "$(php artisan tinker --execute='echo App\Models\User::count();' 2>/dev/null | tail -n1)" = "0" ]; then
-    echo "Base de datos vacía: cargando datos iniciales..."
-    php artisan db:seed --force
-fi
-
 php artisan storage:link > /dev/null 2>&1 || true
 php artisan optimize
+chown -R www-data:www-data storage bootstrap/cache
 
 php-fpm -D
+
+# Solo la primera vez: usuarios, catálogos y datos del Excel. Corre en segundo plano
+# para que el servidor responda de inmediato (la importación toma uno o dos minutos).
+if [ "$(php artisan tinker --execute='echo App\Models\User::count();' 2>/dev/null | tail -n1)" = "0" ]; then
+    echo "Base de datos vacía: cargando datos iniciales en segundo plano..."
+    (php artisan db:seed --force && echo "Datos iniciales cargados.") &
+fi
+
 exec nginx -g 'daemon off;'

@@ -17,7 +17,7 @@ COPY . .
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
 # ---------- 3) Imagen final: PHP-FPM + Nginx ----------
-FROM php:8.3-fpm-bookworm
+FROM php:8.4-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         nginx libzip-dev libpng-dev libicu-dev libpq-dev default-mysql-client \

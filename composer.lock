@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "00b5124f5465af117de08e0262c751ed",
+    "content-hash": "715c0fafbe3d49d8432e84ebc5005eb9",
     "packages": [
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -8501,7 +8501,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.3"
+        "php": "^8.4"
     },
     "platform-dev": {},
     "plugin-api-version": "2.6.0"

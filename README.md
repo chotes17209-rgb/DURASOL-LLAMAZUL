@@ -58,7 +58,7 @@ El seeder `database/seeders/ExcelSeeder.php` carga los datos (convertidos a JSON
 
 ## Instalación local (Windows con XAMPP o Laragon)
 
-Requisitos: PHP 8.3+, Composer, Node 20+, MySQL 8 / MariaDB 10.6+.
+Requisitos: PHP 8.4+, Composer, Node 20+, MySQL 8 / MariaDB 10.6+.
 
 ```bash
 git clone https://github.com/chotes17209-rgb/durasol-llamazul.git
