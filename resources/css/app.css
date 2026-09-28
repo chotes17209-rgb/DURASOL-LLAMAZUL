@@ -139,9 +139,11 @@
     .kpi-label { @apply text-[11px] font-semibold tracking-wide text-slate-500 uppercase; }
     .kpi-value { @apply mt-1 text-[22px] font-semibold tracking-tight whitespace-nowrap text-brand-950 tabular-nums; }
 
-    .dl-grid { @apply grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3; }
-    .dl-grid dt { @apply text-[11px] font-semibold tracking-wide text-slate-500 uppercase; }
-    .dl-grid dd { @apply mt-0.5 text-[13px] font-medium text-slate-800; }
+    /* Fichas: datos en cuadrícula con bordes, como un formulario administrativo */
+    .dl-grid { @apply grid grid-cols-2 overflow-hidden rounded border border-line bg-white sm:grid-cols-3; }
+    .dl-grid > div { @apply -mr-px -mb-px border-r border-b border-line-soft px-3 py-2; }
+    .dl-grid dt { @apply text-[10.5px] font-semibold tracking-[.06em] text-slate-500 uppercase; }
+    .dl-grid dd { @apply mt-0.5 min-h-5 text-[13px] font-medium text-slate-900; }
 
     .help { @apply rounded border border-l-[3px] border-line border-l-brand-700 bg-white px-3 py-2 text-xs text-slate-600; }
 

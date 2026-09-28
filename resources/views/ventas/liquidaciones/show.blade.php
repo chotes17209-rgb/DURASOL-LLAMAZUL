@@ -27,7 +27,7 @@
                     <td class="text-right {{ $l->diferencia !== null && abs((float) $l->diferencia) >= 0.01 ? 'font-semibold text-red-700' : '' }}">{{ $l->diferencia !== null ? num($l->diferencia, 2) : '—' }}</td>
                 </tr></tbody>
             </table>
-            <div class="mt-5 grid gap-6 lg:grid-cols-2">
+            <div class="mt-5 grid items-start gap-6 lg:grid-cols-2">
                 <dl class="dl-grid !grid-cols-2">
                     <div><dt>Estado</dt><dd><x-status :value="$l->estado"/></dd></div>
                     <div><dt>Tipo</dt><dd>{{ $l->tipo->label() }}</dd></div>
