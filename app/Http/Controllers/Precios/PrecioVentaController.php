@@ -57,10 +57,11 @@ class PrecioVentaController extends Controller
         return view('precios.venta.show', compact('cliente', 'historial', 'productos'));
     }
 
-    public function edit(Cliente $cliente): View
+    public function edit(Request $request, Cliente $cliente): View
     {
         return view('precios.venta.form', [
-            'cliente' => $cliente,
+            'cliente' => $cliente->load('chofer'),
+            'vigenteDesde' => $request->date('vigente_desde') ?? today(),
             'productos' => Producto::activos()->get(),
             'vigentes' => $this->precios->preciosVentaVigentes([$cliente->id])[$cliente->id] ?? [],
         ]);

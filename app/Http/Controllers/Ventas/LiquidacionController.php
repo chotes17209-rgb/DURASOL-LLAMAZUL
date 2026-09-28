@@ -197,7 +197,10 @@ class LiquidacionController extends Controller
     private function reporte(Liquidacion $l): Reporte
     {
         $l->loadMissing(['items.cliente', 'items.producto', 'items.empresa', 'fises.cliente', 'gastos', 'cobranzas.cliente', 'chofer', 'vehiculo']);
-        $reporte = (new Reporte('Liquidación '.$l->codigo, 'Venta del '.$l->fecha_venta->format('d/m/Y').' · liquidada el '.$l->fecha_liquidacion->format('d/m/Y'), true))
+        $periodo = $l->tipo === TipoChofer::Ruta
+            ? 'Ruta: atención (salida) el '.$l->fecha_venta->format('d/m/Y').' · venta y liquidación el '.$l->fecha_liquidacion->format('d/m/Y')
+            : 'Venta del '.$l->fecha_venta->format('d/m/Y').' · liquidada el '.$l->fecha_liquidacion->format('d/m/Y');
+        $reporte = (new Reporte('Liquidación '.$l->codigo, $periodo, true))
             ->datos(['Responsable' => $l->chofer?->alias, 'Placa' => $l->vehiculo?->placa ?? 'LOCAL', 'Estado' => $l->estado->label()]);
 
         $reporte->tabla('Registro de ventas', [
@@ -281,6 +284,8 @@ class LiquidacionController extends Controller
                 'datosCliente' => route('liquidaciones.datos-cliente'),
                 'clientesChofer' => route('liquidaciones.clientes-chofer'),
                 'cuadre' => route('liquidaciones.cuadre'),
+                // Edición global de precios del cliente (misma pantalla de Precios de venta, en ventana flotante).
+                'editarPrecio' => auth()->user()->hasRole('liquidaciones') ? route('precios.venta.edit', ['cliente' => '__ID__']) : null,
             ],
             'cabecera' => [
                 'fecha_venta' => $liquidacion->fecha_venta?->format('Y-m-d'),

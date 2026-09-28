@@ -27,39 +27,47 @@
                     <span class="doc-tag">{{ $liquidacion->estado?->label() ?? 'Borrador' }}</span>
                 </div>
                 <div class="text-right text-[12px] leading-snug text-[#d4ddec]">
-                    <p>Ventas del <b class="text-white" x-text="fechaLarga(cab.fecha_venta)"></b></p>
-                    <p>se liquidan el <b class="text-white" x-text="fechaLarga(cab.fecha_liquidacion)"></b></p>
+                    <p><span x-text="esRuta ? 'Salida a ruta el' : 'Ventas del'"></span> <b class="text-white" x-text="fechaLarga(cab.fecha_venta)"></b></p>
+                    <p><span x-text="esRuta ? 'liquidada al volver, el' : 'se liquidan el'"></span> <b class="text-white" x-text="fechaLarga(cab.fecha_liquidacion)"></b></p>
                 </div>
             </div>
             <div class="grid lg:grid-cols-[minmax(0,1fr)_22rem]">
-                <div class="grid gap-3 p-4 sm:grid-cols-3 xl:grid-cols-5">
-                    <div>
-                        <label class="form-label">Fecha de venta</label>
-                        <input type="date" class="form-input" x-model="cab.fecha_venta" max="{{ today()->format('Y-m-d') }}">
+                <div class="space-y-4 p-4">
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <div>
+                            <label class="form-label">Responsable</label>
+                            <select class="form-input font-semibold" x-model="cab.chofer_id">
+                                <option value="">Seleccionar...</option>
+                                @foreach ($choferes as $c)<option value="{{ $c->id }}">{{ $c->alias }}</option>@endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Placa</label>
+                            <select class="form-input font-mono" x-model="cab.vehiculo_id">
+                                <option value="">LOCAL</option>
+                                @foreach ($vehiculos as $id => $placa)<option value="{{ $id }}">{{ $placa }}</option>@endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Tipo de reparto</label>
+                            <select class="form-input" x-model="cab.tipo">
+                                @foreach (\App\Enums\TipoChofer::options() as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="form-label">Fecha de liquidación</label>
-                        <input type="date" class="form-input" x-model="cab.fecha_liquidacion" max="{{ today()->format('Y-m-d') }}">
-                    </div>
-                    <div>
-                        <label class="form-label">Responsable</label>
-                        <select class="form-input font-semibold" x-model="cab.chofer_id">
-                            <option value="">Seleccionar...</option>
-                            @foreach ($choferes as $c)<option value="{{ $c->id }}">{{ $c->alias }}</option>@endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Placa</label>
-                        <select class="form-input font-mono" x-model="cab.vehiculo_id">
-                            <option value="">LOCAL</option>
-                            @foreach ($vehiculos as $id => $placa)<option value="{{ $id }}">{{ $placa }}</option>@endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Tipo de reparto</label>
-                        <select class="form-input" x-model="cab.tipo">
-                            @foreach (\App\Enums\TipoChofer::options() as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach
-                        </select>
+                    <div class="grid gap-3 border-t border-line-soft pt-4 sm:grid-cols-3">
+                        <div>
+                            <label class="form-label" x-text="esRuta ? 'Fecha de atención (salida a ruta)' : 'Fecha de venta'"></label>
+                            <input type="date" class="form-input" x-model="cab.fecha_venta" max="{{ today()->format('Y-m-d') }}">
+                        </div>
+                        <div>
+                            <label class="form-label" x-text="esRuta ? 'Fecha de venta / liquidación' : 'Fecha de liquidación'"></label>
+                            <input type="date" class="form-input" x-model="cab.fecha_liquidacion" max="{{ today()->format('Y-m-d') }}">
+                        </div>
+                        <p class="self-end rounded border border-line-soft bg-panel px-3 py-2 text-[11px] leading-snug text-slate-600">
+                            <template x-if="esRuta"><span><b class="text-brand-900">Ruta:</b> el chofer sale en la fecha de atención y se liquida al volver (p. ej. sale el 26/09 y se liquida el 28/09). El cuadre usa la salida del parte de la fecha de atención.</span></template>
+                            <template x-if="!esRuta"><span><b class="text-brand-900">Reparto local:</b> las ventas de un día se liquidan normalmente al día siguiente (también se permite el mismo día).</span></template>
+                        </p>
                     </div>
                 </div>
                 <div class="border-t border-line bg-panel lg:border-t-0 lg:border-l">
@@ -97,7 +105,7 @@
             <div class="card-header flex-wrap">
                 <div>
                     <p class="card-title">Registro de ventas</p>
-                    <p class="mt-0.5 text-[11px] text-slate-500">Escribe el <b>código</b> o el <b>nombre</b> del cliente; al buscar por nombre solo aparecen los clientes del responsable elegido. El precio sale de su lista de precios vigente y no se modifica aquí. <b>Enter</b> baja a la fila siguiente; doble clic en crédito carga todo el importe.</p>
+                    <p class="mt-0.5 text-[11px] text-slate-500">Escribe el <b>código</b> o el <b>nombre</b> del cliente; al buscar por nombre solo aparecen los clientes del responsable elegido. El precio sale de su lista de precios vigente; para cambiarlo, haz clic en el precio (se abre su lista de precios). <b>Enter</b> baja a la fila siguiente; doble clic en crédito carga todo el importe.</p>
                 </div>
                 <div class="flex items-center gap-2 no-print" x-show="editable">
                     <span class="text-xs text-slate-500" x-text="filasConDatos.length + ' venta(s)'"></span>
@@ -159,7 +167,14 @@
                                 </select>
                             </td>
                             <td class="!p-0"><input type="number" min="0" class="cell-input font-semibold" data-col="cantidad" x-model="item.cantidad" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
-                            <td class="cell-fija text-right" title="Precio vigente del cliente (se cambia en «Precios de venta»)" x-text="item.precio !== '' ? dec(item.precio) : ''"></td>
+                            <td class="cell-fija !p-0 text-right">
+                                <button type="button" tabindex="-1" class="group flex h-7 w-full items-center justify-end gap-1 px-1.5 tabular-nums disabled:cursor-default"
+                                        :disabled="!item.cliente_id || !urls.editarPrecio || !editable" @click="editarPrecio(item)"
+                                        :title="item.cliente_id && urls.editarPrecio ? 'Modificar la lista de precios del cliente' : 'Precio vigente del cliente'">
+                                    <x-heroicon-o-pencil-square class="h-3.5 w-3.5 text-slate-300 group-enabled:group-hover:text-brand-700" x-show="item.cliente_id && urls.editarPrecio && editable"/>
+                                    <span x-text="item.precio !== '' ? dec(item.precio) : ''"></span>
+                                </button>
+                            </td>
                             <td class="text-right font-semibold text-brand-950" x-text="totalItem(item) ? dec(totalItem(item)) : ''"></td>
                             <td class="!p-0"><input type="number" min="0" class="cell-input" data-col="vacios" x-model="item.vacios_devueltos" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
                             <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input text-red-700" data-col="credito" x-model="item.monto_credito" @dblclick="todoCredito(item)" title="Doble clic: todo al crédito" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>

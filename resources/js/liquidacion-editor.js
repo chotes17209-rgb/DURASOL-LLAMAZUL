@@ -44,6 +44,7 @@ export default function liquidacionEditor(config) {
             }
 
             this.$nextTick(() => { this.sucio = false; });
+            document.addEventListener('erp:saved', () => this.precioGuardado());
             window.addEventListener('scroll', (e) => {
                 if (!e.target.closest?.('[data-sugerencias]')) this.sugerencias = null;
             }, true);
@@ -186,6 +187,28 @@ export default function liquidacionEditor(config) {
             return (this.productos.find((p) => cliente.precios?.[p.id] !== undefined) || s10 || this.productos[0]).id;
         },
 
+        /** Abre la pantalla de Precios de venta del cliente; al guardar, la hoja toma el nuevo precio. */
+        editarPrecio(item) {
+            if (!this.urls.editarPrecio || !item.cliente_id || !this.editable) return;
+            this.precioEditando = item.cliente_id;
+            const url = this.urls.editarPrecio.replace('__ID__', item.cliente_id) + `?vigente_desde=${this.cab.fecha_venta || ''}`;
+            Alpine.store('modal').open(url, 'md');
+        },
+        precioEditando: null,
+        async precioGuardado() {
+            const id = this.precioEditando;
+            if (!id) return;
+            this.precioEditando = null;
+            if (this.clientes[id]) this.clientes[id].precios = null;
+            try {
+                await this.datosCliente({ cliente_id: id });
+                this.items.filter((i) => i.cliente_id === id).forEach((i) => this.aplicarPrecio(i));
+            } catch (e) { /* sin cambios */ }
+        },
+
+        /** Chofer de ruta: sale un día (fecha de atención) y se liquida al volver. */
+        get esRuta() { return this.cab.tipo === 'ruta'; },
+
         cambiarProducto(item) {
             if (item.cliente_id) this.aplicarPrecio(item);
         },
@@ -301,6 +324,11 @@ export default function liquidacionEditor(config) {
         },
         sugerirFechaLiquidacion(fecha) {
             if (!fecha) return;
+            // En ruta la liquidación es cuando el chofer vuelve: se deja la fecha que se indique (por defecto, hoy).
+            if (this.esRuta) {
+                if (!this.cab.fecha_liquidacion || this.cab.fecha_liquidacion < fecha) this.cab.fecha_liquidacion = new Date().toLocaleDateString('en-CA');
+                return;
+            }
             const d = new Date(`${fecha}T12:00:00`);
             d.setDate(d.getDate() + (config.diasLiquidacion ?? 1));
             const hoy = new Date().toLocaleDateString('en-CA');
