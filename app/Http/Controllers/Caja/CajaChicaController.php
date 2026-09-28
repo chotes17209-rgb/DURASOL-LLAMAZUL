@@ -43,7 +43,7 @@ class CajaChicaController extends Controller
         $tipo = in_array($request->tipo, [CajaChicaMovimiento::APERTURA, CajaChicaMovimiento::REPOSICION], true) ? $request->tipo : CajaChicaMovimiento::GASTO;
 
         return $this->form(new CajaChicaMovimiento([
-            'fecha' => $request->date('fecha') ?? today(),
+            'fecha' => $request->date('fecha')?->lte(today()) ? $request->date('fecha') : today(),
             'tipo' => $tipo,
             'concepto' => match ($tipo) {
                 CajaChicaMovimiento::APERTURA => 'Saldo inicial', CajaChicaMovimiento::REPOSICION => 'Reposición de fondo', default => null

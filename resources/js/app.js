@@ -337,7 +337,14 @@ document.addEventListener('click', async (e) => {
     const modalTrigger = e.target.closest('[data-modal-url]');
     if (modalTrigger) {
         e.preventDefault();
-        Alpine.store('modal').open(modalTrigger.dataset.modalUrl, modalTrigger.dataset.modalSize || 'lg');
+        let url = modalTrigger.dataset.modalUrl;
+        // data-con-fecha: el formulario se abre con la fecha elegida en el filtro «Desde» de la página.
+        if (modalTrigger.hasAttribute('data-con-fecha')) {
+            const campo = document.querySelector('[data-table-filters] [name="desde"]');
+            const fecha = campo?.value || new URLSearchParams(window.location.search).get('desde');
+            if (fecha) url += `${url.includes('?') ? '&' : '?'}fecha=${encodeURIComponent(fecha)}`;
+        }
+        Alpine.store('modal').open(url, modalTrigger.dataset.modalSize || 'lg');
         return;
     }
 

@@ -1,7 +1,7 @@
 <x-layouts.app title="Depósitos bancarios" breadcrumb="Caja">
     <x-slot:actions>
         <a href="{{ route('cuentas-bancarias.index') }}" class="btn btn-secondary"><x-heroicon-o-building-library class="h-4 w-4"/> Cuentas</a>
-        <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-modal-size="md"><x-heroicon-o-plus class="h-4 w-4"/> Nuevo depósito</button>
+        <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-con-fecha data-modal-size="md"><x-heroicon-o-plus class="h-4 w-4"/> Nuevo depósito</button>
     </x-slot:actions>
     @include('caja._tabs')
     <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-4">

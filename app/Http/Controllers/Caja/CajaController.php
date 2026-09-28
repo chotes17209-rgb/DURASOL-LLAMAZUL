@@ -12,6 +12,7 @@ use App\Models\Liquidacion;
 use App\Services\CajaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 /**
@@ -40,7 +41,7 @@ class CajaController extends Controller
 
     public function create(Request $request): View
     {
-        return $this->form(new CajaMovimiento(['fecha' => today(), 'tipo' => $request->tipo === 'ingreso' ? CajaMovimiento::INGRESO : CajaMovimiento::EGRESO, 'categoria' => CategoriaCaja::Gasto]));
+        return $this->form(new CajaMovimiento(['fecha' => $this->fechaSugerida($request), 'tipo' => $request->tipo === 'ingreso' ? CajaMovimiento::INGRESO : CajaMovimiento::EGRESO, 'categoria' => CategoriaCaja::Gasto]));
     }
 
     public function store(CajaMovimientoRequest $request): JsonResponse
@@ -78,6 +79,13 @@ class CajaController extends Controller
         $movimiento->delete();
 
         return $this->ok('Movimiento de caja eliminado.', ['reloadPage' => true]);
+    }
+
+    private function fechaSugerida(Request $request): Carbon
+    {
+        $fecha = $request->date('fecha');
+
+        return $fecha && $fecha->lte(today()) ? $fecha : today();
     }
 
     private function form(CajaMovimiento $movimiento): View

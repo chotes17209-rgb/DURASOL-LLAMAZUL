@@ -36,9 +36,11 @@ class DepositoController extends Controller
         return $this->tableOrPage($request, 'caja.depositos.index', 'caja.depositos._table', compact('depositos', 'cuentas', 'totalMes'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return $this->form(new Deposito(['fecha' => today()]));
+        $fecha = $request->date('fecha');
+
+        return $this->form(new Deposito(['fecha' => $fecha && $fecha->lte(today()) ? $fecha : today()]));
     }
 
     public function store(DepositoRequest $request): JsonResponse

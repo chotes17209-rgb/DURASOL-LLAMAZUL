@@ -1,8 +1,8 @@
 <x-layouts.app title="Caja general" breadcrumb="Caja">
     <x-slot:actions>
-        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'ingreso']) }}" data-modal-size="md"><x-heroicon-o-arrow-down-circle class="h-4 w-4 text-emerald-700"/> Ingreso</button>
-        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'egreso']) }}" data-modal-size="md"><x-heroicon-o-arrow-up-circle class="h-4 w-4 text-red-700"/> Gasto / egreso</button>
-        <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-modal-size="md"><x-heroicon-o-building-library class="h-4 w-4"/> Depósito</button>
+        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'ingreso']) }}" data-con-fecha data-modal-size="md"><x-heroicon-o-arrow-down-circle class="h-4 w-4 text-emerald-700"/> Ingreso</button>
+        <button class="btn btn-secondary" data-modal-url="{{ route('caja.movimientos.create', ['tipo' => 'egreso']) }}" data-con-fecha data-modal-size="md"><x-heroicon-o-arrow-up-circle class="h-4 w-4 text-red-700"/> Gasto / egreso</button>
+        <button class="btn btn-primary" data-modal-url="{{ route('caja.depositos.create') }}" data-con-fecha data-modal-size="md"><x-heroicon-o-building-library class="h-4 w-4"/> Depósito</button>
     </x-slot:actions>
 
     @include('caja._tabs')
