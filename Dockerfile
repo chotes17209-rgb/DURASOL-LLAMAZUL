@@ -20,7 +20,8 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 FROM php:8.4-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        nginx libzip-dev libpng-dev libicu-dev libpq-dev default-mysql-client \
+        nginx libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev libicu-dev libpq-dev default-mysql-client \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype \
     && docker-php-ext-install pdo_mysql pdo_pgsql bcmath intl gd zip opcache \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
