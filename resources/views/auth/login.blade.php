@@ -13,22 +13,20 @@
 </head>
 <body class="min-h-screen bg-[#f2f4f8]">
 <div class="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-    <aside class="relative hidden overflow-hidden bg-gradient-to-br from-[#10245a] via-[#15306f] to-[#0b1a3d] px-12 py-10 text-white lg:flex lg:flex-col lg:justify-between">
-        <div class="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-[#f28a1c]/20 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#4f78c4]/25 blur-3xl"></div>
+    <aside class="relative hidden bg-[#122a52] px-12 py-10 text-white lg:flex lg:flex-col lg:justify-between">
         <div class="relative flex items-center gap-3">
-            <img src="{{ asset('favicon.svg') }}" alt="" class="h-10 w-10 rounded-xl ring-1 ring-white/20">
+            <img src="{{ asset('favicon.svg') }}" alt="" class="h-10 w-10 rounded-md">
             <div class="leading-tight">
                 <p class="text-[15px] font-semibold">Mr. Durasol Perú S.A.C.</p>
                 <p class="text-[12px] text-[#b9c7df]">y Llamazul · Distribución de GLP</p>
             </div>
         </div>
         <div class="relative max-w-md">
-            <h1 class="text-[32px] leading-tight font-semibold tracking-tight">Gestión comercial y operativa en un solo lugar.</h1>
-            <p class="mt-4 text-[14px] leading-relaxed text-[#c9d6f0]">Compras en planta, parte diario de almacén, liquidaciones, caja y rentabilidad, con los reportes que usa la empresa.</p>
-            <dl class="mt-8 grid grid-cols-3 gap-3 text-[12px]">
-                @foreach (['Compras y stock', 'Liquidación y caja', 'Rentabilidad'] as $t)
-                    <div class="rounded-xl bg-white/[.07] px-3 py-3 ring-1 ring-white/10"><dd class="font-medium text-white">{{ $t }}</dd></div>
+            <h1 class="text-[28px] leading-tight font-semibold">Sistema de gestión comercial</h1>
+            <div class="mt-3 h-[3px] w-14 bg-[#d9661a]"></div>
+            <dl class="mt-8 space-y-4 text-[13px]">
+                @foreach (['Compras y logística' => 'Compras en planta, parte diario de almacén y stock.', 'Ventas y caja' => 'Liquidaciones, créditos, caja general y caja chica.', 'Gerencia' => 'Rentabilidad y reportes de gestión.'] as $t => $d)
+                    <div class="border-l-2 border-white/25 pl-4"><dt class="font-semibold text-white">{{ $t }}</dt><dd class="mt-0.5 text-[#b9c7df]">{{ $d }}</dd></div>
                 @endforeach
             </dl>
         </div>
@@ -42,8 +40,8 @@
                 <span class="h-8 w-px bg-slate-300"></span>
                 <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="h-7 w-auto">
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-900/5">
-                <h2 class="text-[20px] font-semibold tracking-tight text-slate-900">Iniciar sesión</h2>
+            <div class="rounded-lg border border-slate-200 bg-white p-7 shadow-sm">
+                <h2 class="text-[19px] font-semibold text-slate-900">Iniciar sesión</h2>
                 <p class="mt-1 text-[13px] text-slate-500">Ingrese con el usuario asignado por administración.</p>
                 <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-4">
                     @csrf

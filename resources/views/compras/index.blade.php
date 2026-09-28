@@ -12,16 +12,16 @@
     $grafico = [
         'type' => 'bar',
         'data' => ['labels' => [$mesAnt, $mesAct], 'datasets' => [['label' => 'Base 10 kg', 'data' => [$c['base10']['anterior'], $c['base10']['actual']],
-            'backgroundColor' => ['#f6c9a4', '#1f3f95'], 'borderRadius' => 6, 'maxBarThickness' => 90]]],
+            'backgroundColor' => ['#a3adbd', '#173566'], 'borderRadius' => 0, 'maxBarThickness' => 72]]],
         'options' => ['responsive' => true, 'maintainAspectRatio' => false, 'plugins' => ['legend' => ['display' => false]],
             'scales' => ['x' => ['grid' => ['display' => false]], 'y' => ['beginAtZero' => true, 'grid' => ['color' => '#eef0f3']]]],
     ];
     $avance = [
         'type' => 'line',
         'data' => ['labels' => $c['dias']->map(fn ($d) => $d['fecha']->format('d'))->values(), 'datasets' => array_values(array_filter([
-            ['label' => 'Compras acumuladas S10', 'data' => $serie->values(), 'borderColor' => '#1f3f95', 'backgroundColor' => 'rgba(31,63,149,.08)', 'fill' => true, 'tension' => 0.25, 'pointRadius' => 0, 'borderWidth' => 2],
+            ['label' => 'Compras acumuladas S10', 'data' => $serie->values(), 'borderColor' => '#173566', 'backgroundColor' => 'rgba(23,53,102,.06)', 'fill' => true, 'tension' => 0.25, 'pointRadius' => 0, 'borderWidth' => 2],
             $c['cuota']['S10']['cuota'] ? ['label' => 'Cuota S10', 'data' => $c['dias']->map(fn ($d, $i) => round($c['cuota']['S10']['cuota'] * ($i + 1) / $diasMes))->values(),
-                'borderColor' => '#d9661a', 'borderDash' => [5, 4], 'pointRadius' => 0, 'borderWidth' => 1.5, 'fill' => false] : null,
+                'borderColor' => '#8a94a6', 'borderDash' => [5, 4], 'pointRadius' => 0, 'borderWidth' => 1.5, 'fill' => false] : null,
         ]))],
         'options' => ['responsive' => true, 'maintainAspectRatio' => false, 'interaction' => ['mode' => 'index', 'intersect' => false],
             'plugins' => ['legend' => ['position' => 'bottom', 'labels' => ['boxWidth' => 12]]],
@@ -89,62 +89,67 @@
                 <div class="card-header"><p class="card-title">Cuota del mes</p>
                     <button class="btn btn-ghost btn-sm" data-modal-url="{{ route('compras.cuotas', ['mes' => $c['mes']->format('Y-m')]) }}" data-modal-size="md"><x-heroicon-o-pencil-square/> Editar cuotas</button>
                 </div>
-                <div class="grid gap-3 p-4 md:grid-cols-3">
-                    @foreach (['S10', 'S45', 'M10'] as $k)
-                        @php($q = $c['cuota'][$k])
-                        @php($proyeccion = $transcurridos ? (int) round($q['avance'] / $transcurridos * $diasMes) : null)
-                        <div class="rounded-lg border border-line bg-white p-4">
-                            <div class="flex items-center justify-between">
-                                <p class="text-[13px] font-semibold text-slate-900">{{ $nombres[$k] }}</p>
-                                @if ($q['porcentaje'] !== null)
-                                    <span @class(['pill', 'pill-green' => $q['porcentaje'] >= 100, 'pill-amber' => $q['porcentaje'] < 100])>{{ number_format($q['porcentaje'], 1) }} %</span>
-                                @endif
-                            </div>
-                            <p class="mt-2 text-[24px] font-semibold tracking-tight text-slate-900 tabular-nums">{{ num($q['avance']) }} <span class="text-[13px] font-normal text-slate-500">/ {{ $q['cuota'] ? num($q['cuota']) : 'sin cuota' }}</span></p>
-                            <div class="progress mt-2"><span style="width: {{ min(100, $q['porcentaje'] ?? 0) }}%" @class(['!bg-emerald-600' => ($q['porcentaje'] ?? 0) >= 100])></span></div>
-                            <dl class="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-                                <div><dt class="text-slate-500">Diferencia</dt><dd class="font-semibold tabular-nums {{ $q['diferencia'] > 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ $q['cuota'] ? num($q['diferencia']) : '—' }}</dd></div>
-                                <div><dt class="text-slate-500">Proyección al cierre</dt><dd class="font-semibold tabular-nums text-slate-800">{{ $proyeccion !== null && $q['cuota'] ? num($proyeccion) : '—' }}</dd></div>
-                            </dl>
-                        </div>
-                    @endforeach
+                <div class="table-wrap">
+                    <table class="table table-grid">
+                        <thead><tr><th>Producto</th><th class="text-right">Cuota</th><th class="text-right">Avance</th><th class="w-56">% de avance</th><th class="text-right">Diferencia</th><th class="text-right">Proyección al cierre</th></tr></thead>
+                        <tbody>
+                        @foreach (['S10', 'S45', 'M10'] as $k)
+                            @php($q = $c['cuota'][$k])
+                            @php($proyeccion = $transcurridos ? (int) round($q['avance'] / $transcurridos * $diasMes) : null)
+                            <tr>
+                                <td class="font-medium whitespace-nowrap text-slate-900">{{ $nombres[$k] }}</td>
+                                <td class="text-right">{{ $q['cuota'] ? num($q['cuota']) : '—' }}</td>
+                                <td class="text-right font-semibold">{{ num($q['avance']) }}</td>
+                                <td>
+                                    @if ($q['porcentaje'] !== null)
+                                        <div class="flex items-center gap-2">
+                                            <div class="progress flex-1"><span style="width: {{ min(100, $q['porcentaje']) }}%"></span></div>
+                                            <span class="w-16 text-right text-[12px] font-semibold tabular-nums text-slate-800">{{ number_format($q['porcentaje'], 2) }} %</span>
+                                        </div>
+                                    @else
+                                        <span class="text-[12px] text-slate-400">Sin cuota</span>
+                                    @endif
+                                </td>
+                                <td class="text-right font-semibold {{ $q['cuota'] && $q['diferencia'] > 0 ? 'text-red-700' : 'text-slate-800' }}">{{ $q['cuota'] ? num($q['diferencia']) : '—' }}</td>
+                                <td class="text-right">{{ $proyeccion !== null && $q['cuota'] ? num($proyeccion) : '—' }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
                 </div>
+                <p class="border-t border-slate-200 px-4 py-2 text-[12px] text-slate-500">Diferencia: lo que falta comprar para cumplir la cuota (negativo: cuota superada). Proyección: ritmo diario actual llevado al fin de mes.</p>
             </section>
 
-            <div class="grid gap-4 lg:grid-cols-2">
-                <section class="card">
-                    <div class="card-header"><p class="card-title">Comparativa con el mes anterior</p></div>
+            <section class="card">
+                <div class="card-header"><p class="card-title">Comparativa con el mes anterior</p><span class="text-[12px] text-slate-500">Base 10 kg: S10 + Masgas + S45 × 4.5</span></div>
+                <div class="table-wrap">
                     <table class="table table-grid">
-                        <thead><tr><th>Producto</th><th class="text-right">{{ $mesAnt }}</th><th class="text-right">{{ $mesAct }}</th><th class="text-right">Sube / baja</th><th class="text-right">%</th></tr></thead>
+                        <thead><tr><th>Producto</th><th class="text-right">{{ $mesAnt }}</th><th class="text-right">{{ $mesAct }}</th><th class="text-right">Variación</th><th class="text-right">% respecto a {{ mb_strtolower($mesAnt) }}</th></tr></thead>
                         <tbody>
                         @foreach ($c['comparativa'] as $k => $q)
-                            <tr @class(['bg-brand-50 font-semibold' => $k === 'TOTAL'])>
-                                <td class="whitespace-nowrap {{ $k === 'TOTAL' ? 'text-brand-900' : 'font-medium text-slate-900' }}">{{ $k === 'TOTAL' ? 'Total (base 10 kg)' : $nombres[$k] }}</td>
+                            <tr @class(['font-semibold bg-slate-50' => $k === 'TOTAL'])>
+                                <td class="whitespace-nowrap text-slate-900 {{ $k === 'TOTAL' ? '' : 'font-medium' }}">{{ $k === 'TOTAL' ? 'Total (base 10 kg)' : $nombres[$k] }}</td>
                                 <td class="text-right">{{ num($q['anterior']) }}</td>
                                 <td class="text-right">{{ num($q['actual']) }}</td>
-                                <td class="text-right">
-                                    <span class="inline-flex items-center gap-1 {{ $q['variacion'] > 0 ? 'text-emerald-700' : ($q['variacion'] < 0 ? 'text-red-700' : 'text-slate-500') }}">
-                                        @if ($q['variacion'] > 0)<x-heroicon-m-arrow-trending-up class="h-4 w-4"/>@elseif ($q['variacion'] < 0)<x-heroicon-m-arrow-trending-down class="h-4 w-4"/>@else<x-heroicon-m-minus class="h-4 w-4"/>@endif
-                                        {{ $q['variacion'] > 0 ? '+' : '' }}{{ num($q['variacion']) }}
-                                    </span>
-                                </td>
+                                <td class="text-right {{ $q['variacion'] > 0 ? 'text-emerald-700' : ($q['variacion'] < 0 ? 'text-red-700' : 'text-slate-500') }}">{{ $q['variacion'] > 0 ? '+' : ($q['variacion'] < 0 ? '−' : '') }}{{ num(abs($q['variacion'])) }}</td>
                                 <td class="text-right">{{ $q['porcentaje'] !== null ? number_format($q['porcentaje'], 2).' %' : '—' }}</td>
                             </tr>
                         @endforeach
                         </tbody>
                     </table>
-                    <p class="border-t border-line px-4 py-2 text-[12px] text-slate-500">Base 10 kg: S10 + Masgas + S45 × 4.5.</p>
+                </div>
+            </section>
+
+            <div class="grid gap-4 2xl:grid-cols-2">
+                <section class="card">
+                    <div class="card-header"><p class="card-title">Base 10 kg · {{ $mesAnt }} frente a {{ mb_strtolower($mesAct) }}</p></div>
+                    <div class="h-60 p-4"><canvas data-chart="{{ json_encode($grafico) }}"></canvas></div>
                 </section>
                 <section class="card">
-                    <div class="card-header"><p class="card-title">Comparativa a base 10 kg · {{ $titulo }}</p></div>
-                    <div class="h-64 p-4"><canvas data-chart="{{ json_encode($grafico) }}"></canvas></div>
+                    <div class="card-header"><p class="card-title">Avance acumulado S10 frente a la cuota</p></div>
+                    <div class="h-60 p-4"><canvas data-chart="{{ json_encode($avance) }}"></canvas></div>
                 </section>
             </div>
-
-            <section class="card">
-                <div class="card-header"><p class="card-title">Avance acumulado S10 frente a la cuota</p></div>
-                <div class="h-60 p-4"><canvas data-chart="{{ json_encode($avance) }}"></canvas></div>
-            </section>
         </div>
     </div>
 
@@ -169,7 +174,7 @@
                             <td class="text-right">{{ $r->importe() !== null ? num($r->importe(), 2) : '—' }}</td>
                         @endcan
                         <td class="text-[12px]">{{ $r->documento }}</td>
-                        <td><span @class(['pill', 'pill-blue' => $r->origen === 'parte', 'pill-slate' => $r->origen !== 'parte'])>{{ \App\Models\CompraPlanta::ORIGENES[$r->origen] ?? $r->origen }}</span></td>
+                        <td><span class="text-[12px] text-slate-600">{{ \App\Models\CompraPlanta::ORIGENES[$r->origen] ?? $r->origen }}</span></td>
                         <td>@if ($r->editable())<x-row-actions size="md" :edit="route('compras.edit', $r)" :delete="route('compras.destroy', $r)"/>@endif</td>
                     </tr>
                 @empty

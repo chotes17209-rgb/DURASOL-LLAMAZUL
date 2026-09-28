@@ -81,7 +81,7 @@
                     @foreach (['lleno_s10', 'lleno_s45', 'lleno_m10', 'plomo_s10', 'color_s10', 'plomo_s45', 'color_s45'] as $llave)
                         @php($f = $stock[$llave])
                         <tr>
-                            <td>{{ $f['tipo'] === 'lleno' ? 'Lleno' : 'Vacío' }} {{ $f['titulo'] }}</td>
+                            <td class="whitespace-nowrap">{{ $f['tipo'] === 'lleno' ? 'Lleno' : 'Vacío' }} {{ $f['titulo'] }}</td>
                             <td class="text-right">{{ num($f['inicial']) }}</td><td class="text-right">{{ num($f['ingreso']) }}</td><td class="text-right">{{ num($f['salida']) }}</td>
                             <td class="text-right font-semibold">{{ num($f['final']) }}</td>
                         </tr>
@@ -96,7 +96,7 @@
                     <tbody>
                     @forelse ($alertasDocs as $a)
                         <tr class="cursor-pointer" data-modal-url="{{ route('vehiculos.show', $a['vehiculo']) }}" data-modal-size="xl">
-                            <td class="font-mono font-semibold">{{ $a['vehiculo']->placa }}</td>
+                            <td class="whitespace-nowrap font-mono font-semibold">{{ $a['vehiculo']->placa }}</td>
                             <td>{{ $a['label'] }}</td>
                             <td class="text-xs text-slate-500">{{ $a['documento']?->fecha_vencimiento ? fecha($a['documento']->fecha_vencimiento) : '' }}</td>
                             <td class="text-right"><x-status :value="$a['estado']"/></td>
