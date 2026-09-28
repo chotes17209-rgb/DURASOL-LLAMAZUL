@@ -10,7 +10,8 @@
     <dl class="ledger !grid-cols-2 lg:!grid-cols-5">
         <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p class="text-[11px] text-slate-500">{{ num($balonesDia) }} balones</p></div>
         <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd><p class="text-[11px] text-slate-500">{{ num($balonesMes) }} balones</p></div>
-        <div class="ledger-cell"><dt>Llenos en almacén</dt><dd>{{ num($stock['lleno_s10']['final']) }} <span class="text-xs font-medium text-slate-500">S-10</span></dd><p class="text-[11px] text-slate-500">S-45 {{ num($stock['lleno_s45']['final']) }} · M-10 {{ num($stock['lleno_m10']['final']) }}</p></div>
+        @php($totalStock = \App\Services\AlmacenService::totalesPorPresentacion($stock))
+        <div class="ledger-cell"><dt>Stock S-10 (llenos + cambios)</dt><dd>{{ num($totalStock['S10']) }}</dd><p class="text-[11px] text-slate-500">S-45 {{ num($totalStock['S45']) }} · M-10 {{ num($totalStock['M10']) }}</p></div>
         @if ($u->hasRole('liquidaciones', 'caja'))
             <div class="ledger-cell"><dt>Créditos por cobrar</dt><dd class="!text-red-700">{{ soles($porCobrar) }}</dd><p class="text-[11px] text-slate-500">saldo pendiente de clientes</p></div>
         @endif

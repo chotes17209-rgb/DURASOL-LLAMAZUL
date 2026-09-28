@@ -481,3 +481,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
 Alpine.plugin(collapse);
 Alpine.start();
+
+/* ------------------------------------------------------------------ *
+ * Hojas de captura (parte diario, liquidación): moverse entre celdas
+ * con las flechas del teclado, como en Excel.
+ * ------------------------------------------------------------------ */
+const FLECHAS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+
+function celdasDeFila(fila) {
+    return [...fila.querySelectorAll('.cell-input')].filter((c) => !c.disabled && c.offsetParent !== null);
+}
+
+function enfocarCelda(celda) {
+    if (!celda) return;
+    celda.focus();
+    if (celda.tagName === 'INPUT') celda.select();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (!FLECHAS.includes(e.key) || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const celda = e.target;
+    if (!celda.matches?.('.cell-input')) return;
+    const td = celda.closest('td');
+    const fila = td?.closest('tr');
+    const cuerpo = fila?.closest('tbody');
+    if (!cuerpo) return;
+
+    // En texto, izquierda/derecha mueven el cursor hasta llegar al borde del contenido.
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && celda.tagName === 'INPUT' && typeof celda.selectionStart === 'number') {
+        const { selectionStart: ini, selectionEnd: fin, value } = celda;
+        if (e.key === 'ArrowLeft' && !(ini === 0 && fin === 0) && !(ini === 0 && fin === value.length)) return;
+        if (e.key === 'ArrowRight' && !(ini === value.length) && !(ini === 0 && fin === value.length)) return;
+    }
+
+    e.preventDefault();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const celdas = celdasDeFila(fila);
+        enfocarCelda(celdas[celdas.indexOf(celda) + (e.key === 'ArrowRight' ? 1 : -1)]);
+        return;
+    }
+
+    // Arriba/abajo: misma columna en la fila anterior o siguiente que tenga una celda editable.
+    const filas = [...cuerpo.rows];
+    const paso = e.key === 'ArrowDown' ? 1 : -1;
+    for (let i = filas.indexOf(fila) + paso; i >= 0 && i < filas.length; i += paso) {
+        const destino = filas[i].cells[td.cellIndex]?.querySelector('.cell-input');
+        if (destino && !destino.disabled && destino.offsetParent !== null) {
+            enfocarCelda(destino);
+            return;
+        }
+    }
+});

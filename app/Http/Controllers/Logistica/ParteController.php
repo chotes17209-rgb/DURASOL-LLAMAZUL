@@ -196,6 +196,10 @@ class ParteController extends Controller
                     array_merge(['(+) Ingreso'], array_map(fn ($l) => $control[$l]['ingreso'], $llaves)),
                     array_merge(['(−) Salida'], array_map(fn ($l) => $control[$l]['salida'], $llaves)),
                 ], array_merge(['STOCK FINAL'], array_map(fn ($l) => $control[$l]['final'], $llaves)));
+                if ($bloque === ParteFila::LLENO_SALIDA) {
+                    $reporte->tabla('Total (llenos + cambios)', ['S-10' => 'entero', 'S-45' => 'entero', 'M-10' => 'entero'],
+                        [array_values(AlmacenService::totalesPorPresentacion($control))]);
+                }
             }
         }
 

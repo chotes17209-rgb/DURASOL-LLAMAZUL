@@ -9,36 +9,63 @@
         <a href="{{ route('logistica.partes.show', $fecha->toDateString()) }}" class="btn btn-primary">Parte del día</a>
     </x-slot:actions>
 
-    <dl class="ledger mb-4">
-        <x-cifra label="Llenos S-10" :value="num($control['lleno_s10']['final'])"/>
-        <x-cifra label="Llenos S-45" :value="num($control['lleno_s45']['final'])"/>
-        <x-cifra label="Llenos M-10" :value="num($control['lleno_m10']['final'])"/>
-        <x-cifra label="Cambios (fallados)" :value="num($control['cambio_s10']['final'] + $control['cambio_s45']['final'] + $control['cambio_m10']['final'])"/>
-        <x-cifra label="Vacíos plomo" :value="num($control['plomo_s10']['final'] + $control['plomo_s45']['final'])" :hint="'S-10 '.num($control['plomo_s10']['final']).' · S-45 '.num($control['plomo_s45']['final'])"/>
-        <x-cifra label="Vacíos de color" :value="num($control['color_s10']['final'] + $control['color_s45']['final'])" :hint="'S-10 '.num($control['color_s10']['final']).' · S-45 '.num($control['color_s45']['final'])"/>
-        <x-cifra label="Total llenos" :value="num($control['lleno_s10']['final'] + $control['lleno_s45']['final'] + $control['lleno_m10']['final'])" :hint="'al '.$fecha->format('d/m/Y')" total/>
+    @php
+        $total = \App\Services\AlmacenService::totalesPorPresentacion($control);
+        $f = fn ($llave, $campo) => num($control[$llave][$campo]);
+    @endphp
+    <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-5">
+        <x-cifra label="Total S-10" :value="num($total['S10'])" :hint="'llenos '.$f('lleno_s10', 'final').' + cambios '.$f('cambio_s10', 'final')" total/>
+        <x-cifra label="Total S-45" :value="num($total['S45'])" :hint="'llenos '.$f('lleno_s45', 'final').' + cambios '.$f('cambio_s45', 'final')"/>
+        <x-cifra label="Total M-10" :value="num($total['M10'])" :hint="'llenos '.$f('lleno_m10', 'final').' + cambios '.$f('cambio_m10', 'final')"/>
+        <x-cifra label="Vacíos plomo" :value="num($control['plomo_s10']['final'] + $control['plomo_s45']['final'])" :hint="'S-10 '.$f('plomo_s10', 'final').' · S-45 '.$f('plomo_s45', 'final')"/>
+        <x-cifra label="Vacíos de color" :value="num($control['color_s10']['final'] + $control['color_s45']['final'])" :hint="'S-10 '.$f('color_s10', 'final').' · S-45 '.$f('color_s45', 'final')"/>
     </dl>
 
-    @php($grupos = ['Llenos' => ['lleno_s10', 'lleno_s45', 'lleno_m10'], 'Cambios (fallados)' => ['cambio_s10', 'cambio_s45', 'cambio_m10'], 'Vacíos' => ['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45']])
-    <div class="grid gap-4 xl:grid-cols-3">
-        @foreach ($grupos as $titulo => $llaves)
-            <div class="card">
-                <div class="card-header"><p class="card-title">{{ $titulo }}</p></div>
-                <table class="table table-compact table-grid">
-                    <thead><tr><th></th><th class="text-right">Inicial</th><th class="text-right">Ingreso</th><th class="text-right">Salida</th><th class="text-right">Final</th></tr></thead>
-                    <tbody>
-                    @foreach ($llaves as $llave)
-                        @php($f = $control[$llave])
-                        <tr>
-                            <td><a class="text-brand-700 hover:underline" href="{{ route('logistica.stock.kardex', ['llave' => $llave]) }}">{{ $f['titulo'] }}</a></td>
-                            <td class="text-right">{{ num($f['inicial']) }}</td><td class="text-right">{{ num($f['ingreso']) }}</td><td class="text-right">{{ num($f['salida']) }}</td>
-                            <td class="text-right font-semibold {{ $f['final'] < 0 ? 'text-red-700' : '' }}">{{ num($f['final']) }}</td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endforeach
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        {{-- Igual al cuadro CONTROL DE STOCK LLENOS de la hoja de logística --}}
+        <div class="card">
+            <div class="card-header"><p class="card-title">Control de stock llenos</p><span class="text-[11px] text-slate-500">al {{ $fecha->format('d/m/Y') }}</span></div>
+            <table class="table table-compact table-grid">
+                <thead>
+                <tr class="th-group"><th></th><th colspan="2">Solgas</th><th>Masgas</th><th colspan="3">Cambios</th></tr>
+                <tr><th>Stock</th><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th></tr>
+                </thead>
+                <tbody>
+                @foreach (['inicial' => 'Stock inicial', 'ingreso' => '(+) Ingreso', 'salida' => '(−) Salida'] as $campo => $etiqueta)
+                    <tr>
+                        <td class="font-medium">{{ $etiqueta }}</td>
+                        @foreach (['lleno_s10', 'lleno_s45', 'lleno_m10', 'cambio_s10', 'cambio_s45', 'cambio_m10'] as $llave)<td class="text-right">{{ $f($llave, $campo) }}</td>@endforeach
+                    </tr>
+                @endforeach
+                </tbody>
+                <tfoot>
+                <tr><td>FINAL</td>@foreach (['lleno_s10', 'lleno_s45', 'lleno_m10', 'cambio_s10', 'cambio_s45', 'cambio_m10'] as $llave)<td class="text-right {{ $control[$llave]['final'] < 0 ? 'text-red-700' : '' }}"><a href="{{ route('logistica.stock.kardex', ['llave' => $llave]) }}" class="hover:underline">{{ $f($llave, 'final') }}</a></td>@endforeach</tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card">
+            <div class="card-header"><p class="card-title">Total</p><span class="text-[11px] text-slate-500">llenos + cambios</span></div>
+            <table class="table table-grid">
+                <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th></tr></thead>
+                <tbody><tr>@foreach ($total as $v)<td class="text-right text-[18px] font-semibold text-brand-950">{{ num($v) }}</td>@endforeach</tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header"><p class="card-title">Control de stock vacíos</p></div>
+        <table class="table table-compact table-grid">
+            <thead>
+            <tr class="th-group"><th></th><th colspan="2">Plomo</th><th colspan="2">Color</th></tr>
+            <tr><th>Stock</th><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">S-10</th><th class="text-right">S-45</th></tr>
+            </thead>
+            <tbody>
+            @foreach (['inicial' => 'Stock inicial', 'ingreso' => '(+) Ingreso', 'salida' => '(−) Salida'] as $campo => $etiqueta)
+                <tr><td class="font-medium">{{ $etiqueta }}</td>@foreach (['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45'] as $llave)<td class="text-right">{{ $f($llave, $campo) }}</td>@endforeach</tr>
+            @endforeach
+            </tbody>
+            <tfoot><tr><td>FINAL</td>@foreach (['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45'] as $llave)<td class="text-right"><a href="{{ route('logistica.stock.kardex', ['llave' => $llave]) }}" class="hover:underline">{{ $f($llave, 'final') }}</a></td>@endforeach</tr></tfoot>
+        </table>
     </div>
 
     <div class="card mt-4 max-w-2xl">

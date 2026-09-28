@@ -50,6 +50,21 @@ class AlmacenService
         return $this->aStock($totales);
     }
 
+    /**
+     * TOTAL por presentación, como el cuadro "TOTAL" de la hoja de logística:
+     * llenos + cambios (los fallados también son balones con gas en almacén).
+     *
+     * @return array{S10: int, S45: int, M10: int}
+     */
+    public static function totalesPorPresentacion(array $control): array
+    {
+        return [
+            'S10' => $control['lleno_s10']['final'] + $control['cambio_s10']['final'],
+            'S45' => $control['lleno_s45']['final'] + $control['cambio_s45']['final'],
+            'M10' => $control['lleno_m10']['final'] + $control['cambio_m10']['final'],
+        ];
+    }
+
     /** Resumen del día: stock inicial, ingresos, salidas y final (como "CONTROL DE STOCK"). */
     public function controlDelDia(Carbon $fecha): array
     {

@@ -100,6 +100,11 @@ export default function parteEditor(config) {
             return columnas.reduce((s, c) => s + this.totalColumna(bloque, c), 0);
         },
 
+        /** TOTAL por presentación (llenos + cambios), como el cuadro TOTAL de la hoja. */
+        totalPresentacion(p) {
+            return this.control(`lleno_${p}`).final + this.control(`cambio_${p}`).final;
+        },
+
         /** Control de stock en vivo. */
         control(llave) {
             const [tipo, columna] = STOCK[llave];

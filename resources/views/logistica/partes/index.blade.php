@@ -6,14 +6,14 @@
         </form>
     </x-slot:actions>
     @php($c = $hoy['control'])
-    <dl class="ledger mb-4">
-        <x-cifra label="Llenos S-10" :value="num($c['lleno_s10']['final'])"/>
-        <x-cifra label="Llenos S-45" :value="num($c['lleno_s45']['final'])"/>
-        <x-cifra label="Llenos M-10" :value="num($c['lleno_m10']['final'])"/>
+    <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-6">
+        @php($t = \App\Services\AlmacenService::totalesPorPresentacion($c))
+        <x-cifra label="Total S-10" :value="num($t['S10'])" :hint="'llenos '.num($c['lleno_s10']['final']).' + cambios '.num($c['cambio_s10']['final'])" total/>
+        <x-cifra label="Total S-45" :value="num($t['S45'])" :hint="'llenos '.num($c['lleno_s45']['final']).' + cambios '.num($c['cambio_s45']['final'])"/>
+        <x-cifra label="Total M-10" :value="num($t['M10'])" :hint="'llenos '.num($c['lleno_m10']['final']).' + cambios '.num($c['cambio_m10']['final'])"/>
         <x-cifra label="Vacíos S-10" :value="num($c['plomo_s10']['final'] + $c['color_s10']['final'])" :hint="'plomo '.num($c['plomo_s10']['final']).' · color '.num($c['color_s10']['final'])"/>
         <x-cifra label="Último parte" :value="$hoy['ultimo'] ? fecha($hoy['ultimo']) : '—'"/>
         <x-cifra label="Partes abiertos" :value="num($hoy['abiertos'])" :tone="$hoy['abiertos'] ? 'red' : 'green'" hint="pendientes de cerrar"/>
-        <x-cifra label="Stock al día de hoy" :value="num($c['lleno_s10']['final'] + $c['lleno_s45']['final'] + $c['lleno_m10']['final'])" hint="total de llenos" total/>
     </dl>
     <x-remote-table :url="route('logistica.partes.index')">
         <x-slot:filters>

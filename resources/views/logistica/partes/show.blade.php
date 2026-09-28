@@ -53,7 +53,14 @@
                 </div>
             </div>
             <dl class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7">
-                <template x-for="[llave, titulo] in [['lleno_s10', 'Llenos S-10'], ['lleno_s45', 'Llenos S-45'], ['lleno_m10', 'Llenos M-10'], ['cambio_s10', 'Cambios S-10'], ['plomo_s10', 'Plomo S-10'], ['color_s10', 'Color S-10'], ['plomo_s45', 'Plomo S-45']]" :key="llave">
+                <template x-for="[p, titulo] in [['s10', 'Total S-10'], ['s45', 'Total S-45'], ['m10', 'Total M-10']]" :key="p">
+                    <div class="ledger-cell">
+                        <dt x-text="titulo"></dt>
+                        <dd x-text="n(totalPresentacion(p))"></dd>
+                        <p class="text-[11px] text-slate-500"><span x-text="'llenos ' + n(control('lleno_' + p).final)"></span> + <span x-text="'cambios ' + n(control('cambio_' + p).final)"></span></p>
+                    </div>
+                </template>
+                <template x-for="[llave, titulo] in [['plomo_s10', 'Plomo S-10'], ['color_s10', 'Color S-10'], ['plomo_s45', 'Plomo S-45'], ['color_s45', 'Color S-45']]" :key="llave">
                     <div class="ledger-cell">
                         <dt x-text="titulo"></dt>
                         <dd :class="control(llave).final < 0 && '!text-red-700'" x-text="n(control(llave).final)"></dd>
@@ -74,7 +81,16 @@
         <div x-show="tab === 'llenos'" class="space-y-4">
             @include('logistica.partes._bloque', ['bloque' => 'lleno_ingreso', 'titulo' => 'INGRESO DE LLENOS — planta, retornos de choferes y cambios', 'columnas' => $llenos, 'conPlanta' => true])
             @include('logistica.partes._bloque', ['bloque' => 'lleno_salida', 'titulo' => 'SALIDA DE LLENOS — choferes, local y clientes de ruta', 'columnas' => $llenos, 'conPlanta' => false])
+            <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
             @include('logistica.partes._control', ['titulo' => 'CONTROL DE STOCK LLENOS', 'llaves' => ['lleno_s10' => 'S-10', 'lleno_s45' => 'S-45', 'lleno_m10' => 'M-10', 'cambio_s10' => 'Cambio S-10', 'cambio_s45' => 'Cambio S-45', 'cambio_m10' => 'Cambio M-10']])
+                <div class="card">
+                    <div class="card-header"><p class="card-title">Total</p><span class="text-[11px] text-slate-500">llenos + cambios</span></div>
+                    <table class="table table-grid">
+                        <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">M-10</th></tr></thead>
+                        <tbody><tr><template x-for="p in ['s10', 's45', 'm10']" :key="p"><td class="text-right text-[18px] font-semibold text-brand-950" x-text="n(totalPresentacion(p))"></td></template></tr></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <div x-show="tab === 'vacios'" class="space-y-4">
