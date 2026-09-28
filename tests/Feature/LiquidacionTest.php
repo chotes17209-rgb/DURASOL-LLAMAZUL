@@ -136,5 +136,10 @@ class LiquidacionTest extends TestCase
             ->assertOk()->assertJsonPath('precios.'.$this->producto('S10')->id, 45);
         $this->como('liquidaciones')->getJson(route('liquidaciones.datos-cliente', ['cliente_id' => $cliente->id, 'fecha' => '2026-09-10']))
             ->assertOk()->assertJsonPath('precios.'.$this->producto('S10')->id, 46.5);
+
+        // Búsqueda por código, como el BUSCARV de la hoja REGISTRO.
+        $this->como('liquidaciones')->getJson(route('liquidaciones.datos-cliente', ['codigo' => $cliente->codigo, 'fecha' => '2026-09-10']))
+            ->assertOk()->assertJsonPath('id', $cliente->id);
+        $this->como('liquidaciones')->getJson(route('liquidaciones.datos-cliente', ['codigo' => 999999]))->assertNotFound();
     }
 }

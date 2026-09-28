@@ -5,11 +5,11 @@
         <div x-show="tab === 'detalle'" class="space-y-6">
             <div class="grid gap-3 sm:grid-cols-3">
                 @foreach ($vehiculo->estadoDocumentos() as $tipo => $info)
-                    <div @class(['rounded p-4',
-                        'bg-emerald-50 ring-emerald-200' => $info['estado'] === 'vigente',
-                        'bg-amber-50 ring-amber-200' => $info['estado'] === 'por_vencer',
-                        'bg-rose-50 ring-rose-200' => $info['estado'] === 'vencido',
-                        'bg-slate-50 ring-slate-200' => in_array($info['estado'], ['sin_registro', 'sin_fecha'])])>
+                    <div @class(['kpi border-l-[3px]',
+                        'border-l-emerald-600' => $info['estado'] === 'vigente',
+                        'border-l-amber-500' => $info['estado'] === 'por_vencer',
+                        'border-l-red-600' => $info['estado'] === 'vencido',
+                        'border-l-slate-300' => in_array($info['estado'], ['sin_registro', 'sin_fecha'])])>
                         <div class="flex items-center justify-between"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $info['label'] }}</p><x-status :value="$info['estado']"/></div>
                         @if ($info['documento'])
                             <p class="mt-2 text-sm font-semibold text-slate-800">{{ $info['documento']->fecha_vencimiento?->format('d/m/Y') ?? 'Sin fecha' }}</p>

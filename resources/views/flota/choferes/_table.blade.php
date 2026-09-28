@@ -9,7 +9,7 @@
                 <td><x-badge :color="$colores[$c->tipo->value] ?? 'slate'">{{ $c->tipo->label() }}</x-badge></td>
                 <td class="font-mono text-xs">{{ $c->dni ?: '—' }}</td>
                 <td>{{ $c->telefono ?: '—' }}</td>
-                <td>@if($c->vehiculo)<span class="rounded-lg bg-slate-900 px-2 py-1 font-mono text-xs font-bold text-white">{{ $c->vehiculo->placa }}</span>@else — @endif</td>
+                <td>@if($c->vehiculo)<span class="font-mono font-semibold text-slate-800">{{ $c->vehiculo->placa }}</span>@else — @endif</td>
                 <td class="text-center">{{ $c->clientes_count }}</td>
                 <td class="text-xs">
                     {{ $c->licencia_categoria }} {{ $c->licencia }}

@@ -4,7 +4,7 @@
         <tbody>
         @forelse ($documentos as $d)
             <tr>
-                <td><span class="rounded-lg bg-slate-900 px-2 py-1 font-mono text-xs font-bold text-white">{{ $d->vehiculo?->placa }}</span></td>
+                <td><span class="font-mono font-semibold text-slate-800">{{ $d->vehiculo?->placa }}</span></td>
                 <td class="font-medium">{{ $d->tipo->label() }}</td>
                 <td class="font-mono text-xs">{{ $d->numero ?: '—' }}</td>
                 <td>{{ $d->entidad ?: '—' }}</td>

@@ -1,13 +1,19 @@
 import TomSelect from 'tom-select';
 
 /**
- * Editor de liquidación diaria.
+ * Liquidación diaria, igual que la hoja REGISTRO del Excel:
+ * se escribe el CÓDIGO del cliente y se completan su nombre y su precio (como el BUSCARV);
+ * luego presentación, cantidad, balones devueltos, crédito y forma de pago.
  *
- * Flujo: fecha → chofer → agregar clientes (cantidad, vacíos, método de pago, crédito)
- * → FISE por cliente → cobranzas y gastos → resumen:
- *   Efectivo = Venta + Cobranzas − Créditos − Vouchers − FISE − Gastos
+ *   Contado       = Total − Crédito
+ *   Por depositar = Venta total + Cobranza − Crédito − Varios − FISE − Vouchers
  */
+let secuencia = 0;
+const uid = () => `n${++secuencia}`;
+
 export default function liquidacionEditor(config) {
+    const productoPorCodigo = (codigo) => config.productos.find((p) => p.codigo === codigo);
+
     return {
         urls: config.urls,
         productos: config.productos,
@@ -15,11 +21,12 @@ export default function liquidacionEditor(config) {
         choferes: config.choferes,
         metodos: config.metodos,
         valoresFise: config.valoresFise,
+        stock: config.stock || {},
         editable: config.editable,
         cab: config.cabecera,
-        items: config.items || [],
+        items: [],
         fises: config.fises || {},
-        cobranzas: config.cobranzas || [],
+        cobranzas: [],
         gastos: config.gastos || [],
         clientes: config.clientes || {},
         cuadre: {},
@@ -28,31 +35,29 @@ export default function liquidacionEditor(config) {
         empresaDefecto: config.empresas[0]?.id ?? null,
 
         init() {
+            this.items = (config.items || []).map((i) => ({ ...i, codigo: this.clientes[i.cliente_id]?.codigo ?? '', error: '' }));
+            this.cobranzas = (config.cobranzas || []).map((c) => ({ ...c, codigo: this.clientes[c.cliente_id]?.codigo ?? '', error: '' }));
+            if (!this.fises.sin) this.fises.sin = {};
+            if (this.editable) {
+                this.agregarFilas(Math.max(3, 10 - this.items.length));
+                if (!this.cobranzas.length) this.agregarCobranza();
+                if (!this.gastos.length) this.agregarGasto();
+            }
+
             this.$nextTick(() => {
                 this.initBuscador(this.$refs.buscadorCliente, (id) => this.agregarCliente(id));
-                this.initBuscador(this.$refs.buscadorCobranza, (id) => this.agregarCobranza(id));
+                this.sucio = false;
             });
             this.cargarCuadre();
-            this.$watch('cab.chofer_id', () => {
-                this.cambiarChofer();
-                this.cargarCuadre();
-            });
-            this.$watch('cab.fecha_venta', (v) => {
-                this.sugerirFechaLiquidacion(v);
-                this.cargarCuadre();
-            });
-            ['items', 'fises', 'cobranzas', 'gastos', 'cab'].forEach((k) => this.$watch(k, () => {
-                this.sucio = true;
-            }));
+            this.$watch('cab.chofer_id', () => { this.cambiarChofer(); this.cargarCuadre(); });
+            this.$watch('cab.fecha_venta', (v) => { this.sugerirFechaLiquidacion(v); this.cargarCuadre(); });
+            ['items', 'fises', 'cobranzas', 'gastos', 'cab'].forEach((k) => this.$watch(k, () => { this.sucio = true; }));
             window.addEventListener('beforeunload', (e) => {
-                if (this.sucio && this.editable) {
-                    e.preventDefault();
-                    e.returnValue = '';
-                }
+                if (this.sucio && this.editable) { e.preventDefault(); e.returnValue = ''; }
             });
         },
 
-        /* ---------------- Buscadores de clientes (Tom Select remoto) ---------------- */
+        /* ---------------- Buscador por nombre (Tom Select remoto) ---------------- */
         initBuscador(el, onPick) {
             if (!el || el.tomselect) return;
             const self = this;
@@ -63,12 +68,9 @@ export default function liquidacionEditor(config) {
                 maxOptions: 30,
                 placeholder: el.getAttribute('placeholder'),
                 dropdownParent: 'body',
-                preload: 'focus',
                 load(query, callback) {
                     const params = new URLSearchParams({ q: query, chofer_id: self.cab.chofer_id || '' });
-                    window.request(`${self.urls.buscarClientes}?${params}`, { json: true })
-                        .then((d) => callback(d.results))
-                        .catch(() => callback());
+                    window.request(`${self.urls.buscarClientes}?${params}`, { json: true }).then((d) => callback(d.results)).catch(() => callback());
                 },
                 render: { no_results: () => '<div class="no-results p-2 text-slate-400">Sin resultados</div>' },
                 onChange(value) {
@@ -80,192 +82,179 @@ export default function liquidacionEditor(config) {
             });
         },
 
-        async datosCliente(id) {
-            if (this.clientes[id]?.precios) return this.clientes[id];
-            const params = new URLSearchParams({ cliente_id: id, fecha: this.cab.fecha_venta });
-            const data = await window.request(`${this.urls.datosCliente}?${params}`, { json: true });
-            this.clientes[id] = data;
+        async datosCliente(params) {
+            const cacheado = params.cliente_id ? this.clientes[params.cliente_id] : Object.values(this.clientes).find((c) => String(c.codigo) === String(params.codigo));
+            if (cacheado?.precios) return cacheado;
+            const q = new URLSearchParams({ ...params, fecha: this.cab.fecha_venta || '' });
+            const data = await window.request(`${this.urls.datosCliente}?${q}`, { json: true });
+            this.clientes[data.id] = data;
             return data;
         },
 
-        /* ---------------- Ventas ---------------- */
+        /* ---------------- Hoja de ventas ---------------- */
+        filaVacia(empresaId = null) {
+            return {
+                uid: uid(), codigo: '', cliente_id: null, producto_id: productoPorCodigo('S10')?.id ?? this.productos[0]?.id,
+                empresa_id: empresaId ?? this.empresaDefecto, cantidad: '', precio: '', vacios_devueltos: '',
+                metodo_pago: 'efectivo', monto_credito: '', numero_operacion: '', observacion: '', error: '',
+            };
+        },
+        agregarFilas(n = 5) {
+            const ultima = this.items[this.items.length - 1];
+            for (let i = 0; i < n; i++) this.items.push(this.filaVacia(ultima?.empresa_id));
+        },
+
+        /** Al escribir el código: trae cliente y precio (BUSCARV). */
+        async buscarCodigo(item) {
+            item.error = '';
+            const codigo = String(item.codigo || '').trim();
+            if (!codigo) { item.cliente_id = null; return; }
+            try {
+                const cliente = await this.datosCliente({ codigo });
+                item.cliente_id = cliente.id;
+                item.codigo = cliente.codigo;
+                if (cliente.precios?.[item.producto_id] === undefined) item.producto_id = this.productoSugerido(cliente);
+                item.precio = cliente.precios?.[item.producto_id] ?? '';
+                if (cliente.deuda > 0) window.notify('info', `${cliente.nombre} debe ${this.money(cliente.deuda)}`);
+            } catch (e) {
+                item.cliente_id = null;
+                item.precio = '';
+                item.error = e.status === 404 ? 'Código no existe' : 'Error';
+            }
+        },
+
+        /** Desde el buscador por nombre: usa la primera fila vacía. */
         async agregarCliente(id) {
             try {
-                const cliente = await this.datosCliente(id);
-                this.items.push(this.nuevoItem(id, this.productoSugerido(cliente)));
-                this.$nextTick(() => {
-                    const inputs = this.$root.querySelectorAll('[data-cantidad]');
-                    inputs[inputs.length - 1]?.focus();
-                });
-                if (cliente.deuda > 0) {
-                    window.notify('info', `${cliente.nombre} tiene deuda pendiente de ${this.money(cliente.deuda)}`);
-                }
+                const cliente = await this.datosCliente({ cliente_id: id });
+                let fila = this.items.find((i) => !i.cliente_id && !i.codigo && !(+i.cantidad));
+                if (!fila) { this.agregarFilas(3); fila = this.items.find((i) => !i.cliente_id && !i.codigo); }
+                fila.codigo = cliente.codigo;
+                fila.cliente_id = cliente.id;
+                fila.producto_id = this.productoSugerido(cliente);
+                fila.precio = cliente.precios?.[fila.producto_id] ?? '';
+                this.$nextTick(() => document.querySelector(`[data-fila="${fila.uid}"] [data-col="cantidad"]`)?.focus());
             } catch (e) {
                 window.handleRequestError(e);
             }
         },
 
         productoSugerido(cliente) {
-            const principal = this.productos.find((p) => p.codigo === 'S10');
-            if (principal && cliente.precios?.[principal.id] !== undefined) return principal.id;
-            const conPrecio = this.productos.find((p) => cliente.precios?.[p.id] !== undefined);
-            return (conPrecio || principal || this.productos[0]).id;
-        },
-
-        nuevoItem(clienteId, productoId) {
-            const precio = this.clientes[clienteId]?.precios?.[productoId] ?? '';
-            return {
-                uid: `${Date.now()}${Math.random()}`,
-                cliente_id: clienteId,
-                producto_id: productoId,
-                empresa_id: this.empresaDefecto,
-                cantidad: '',
-                precio,
-                vacios_devueltos: '',
-                metodo_pago: 'efectivo',
-                es_credito: false,
-                monto_credito: '',
-                numero_operacion: '',
-                observacion: '',
-            };
-        },
-
-        agregarProducto(item) {
-            const usado = new Set(this.items.filter((i) => i.cliente_id === item.cliente_id).map((i) => +i.producto_id));
-            const precios = this.clientes[item.cliente_id]?.precios || {};
-            const siguiente = this.productos.find((p) => !usado.has(p.id) && precios[p.id] !== undefined)
-                || this.productos.find((p) => !usado.has(p.id))
-                || this.productos[0];
-            const nuevo = this.nuevoItem(item.cliente_id, siguiente.id);
-            nuevo.empresa_id = item.empresa_id;
-            this.items.splice(this.items.indexOf(item) + 1, 0, nuevo);
+            const s10 = productoPorCodigo('S10');
+            if (s10 && cliente.precios?.[s10.id] !== undefined) return s10.id;
+            return (this.productos.find((p) => cliente.precios?.[p.id] !== undefined) || s10 || this.productos[0]).id;
         },
 
         cambiarProducto(item) {
+            if (!item.cliente_id) return;
             const precio = this.clientes[item.cliente_id]?.precios?.[item.producto_id];
             item.precio = precio ?? '';
-            if (precio === undefined) window.notify('warning', 'El cliente no tiene precio para este producto; ingrésalo manualmente.');
+            if (precio === undefined) window.notify('warning', 'El cliente no tiene precio para esta presentación; escríbelo.');
         },
 
         async quitarItem(item) {
             if ((+item.cantidad || 0) > 0) {
-                const ok = await window.confirmAction({
-                    title: '¿Quitar esta venta?',
-                    text: this.nombreCliente(item.cliente_id),
-                    confirmText: 'Sí, quitar',
-                    danger: true,
-                    icon: 'warning',
-                });
+                const ok = await window.confirmAction({ title: '¿Quitar esta fila?', text: this.nombreCliente(item.cliente_id), confirmText: 'Sí, quitar', danger: true, icon: 'warning' });
                 if (!ok) return;
             }
             this.items.splice(this.items.indexOf(item), 1);
         },
 
-        totalItem(item) {
-            return this.round((+item.cantidad || 0) * (+item.precio || 0));
-        },
-        creditoItem(item) {
-            if (!item.es_credito) return 0;
-            const total = this.totalItem(item);
-            const monto = item.monto_credito === '' || item.monto_credito === null ? total : +item.monto_credito;
-            return Math.min(total, monto || total);
-        },
-        toggleCredito(item) {
-            if (item.es_credito && item.monto_credito === '') item.monto_credito = this.totalItem(item) || '';
+        /** Enter: baja a la misma columna de la fila siguiente (agrega filas al final). */
+        siguiente(event, lista, item, agregar) {
+            const col = event.target.dataset.col;
+            const i = lista.indexOf(item);
+            if (i >= lista.length - 1) agregar();
+            this.$nextTick(() => {
+                const sig = lista[i + 1];
+                document.querySelector(`[data-fila="${sig?.uid}"] [data-col="${col}"]`)?.focus();
+            });
         },
 
-        nombreCliente(id) {
-            return this.clientes[id]?.nombre ?? `Cliente ${id}`;
-        },
-        esPrimeraFilaCliente(item, index) {
-            return index === 0 || this.items[index - 1].cliente_id !== item.cliente_id;
-        },
-        codigoProducto(id) {
-            return this.productos.find((p) => p.id === +id)?.codigo ?? '';
-        },
+        totalItem(item) { return this.round((+item.cantidad || 0) * (+item.precio || 0)); },
+        creditoItem(item) { return Math.min(this.totalItem(item), Math.max(0, +item.monto_credito || 0)); },
+        contadoItem(item) { return this.round(this.totalItem(item) - this.creditoItem(item)); },
+        todoCredito(item) { item.monto_credito = this.totalItem(item) || ''; },
 
-        /* ---------------- FISE por cliente ---------------- */
-        get clientesDelDia() {
-            return [...new Set(this.items.map((i) => i.cliente_id))];
+        nombreCliente(id) { return id ? (this.clientes[id]?.nombre ?? `Cliente ${id}`) : ''; },
+        codigoProducto(id) { return this.productos.find((p) => p.id === +id)?.codigo ?? ''; },
+        get filasConDatos() { return this.items.filter((i) => i.cliente_id || +i.cantidad > 0); },
+
+        /* ---------------- FISE ---------------- */
+        get clientesDelDia() { return [...new Set(this.items.filter((i) => i.cliente_id).map((i) => i.cliente_id))]; },
+        get filasFise() { return Object.keys(this.fises); },
+        agregarFise(clienteId) {
+            if (clienteId && !this.fises[clienteId]) this.fises[clienteId] = {};
         },
-        fisesDe(clienteId) {
-            const key = clienteId ?? 'sin';
-            if (!this.fises[key]) this.fises[key] = {};
-            return this.fises[key];
-        },
+        quitarFise(key) { delete this.fises[key]; this.fises = { ...this.fises }; },
         subtotalFise(key) {
             const f = this.fises[key] || {};
             return this.valoresFise.reduce((s, v) => s + (+f[v] || 0) * v, 0);
         },
+        cantidadFise(valor) { return Object.values(this.fises).reduce((s, f) => s + (+f[valor] || 0), 0); },
 
-        /* ---------------- Cobranzas y gastos ---------------- */
-        async agregarCobranza(id) {
+        /* ---------------- Cobranzas y varios ---------------- */
+        agregarCobranza() {
+            this.cobranzas.push({ uid: uid(), codigo: '', cliente_id: null, monto: '', metodo_pago: 'efectivo', numero_operacion: '', error: '' });
+        },
+        async buscarCodigoCobranza(c) {
+            c.error = '';
+            if (!String(c.codigo || '').trim()) { c.cliente_id = null; return; }
             try {
-                const cliente = await this.datosCliente(id);
-                if (!(cliente.deuda > 0)) {
-                    window.alertError('Sin deuda', `${cliente.nombre} no tiene deudas pendientes.`);
-                    return;
-                }
-                this.cobranzas.push({ uid: `${Math.random()}`, cliente_id: id, monto: cliente.deuda, metodo_pago: 'efectivo', numero_operacion: '' });
+                const cliente = await this.datosCliente({ codigo: String(c.codigo).trim() });
+                c.cliente_id = cliente.id;
+                if (!(cliente.deuda > 0)) c.error = 'Sin deuda';
+                else if (!c.monto) c.monto = cliente.deuda;
             } catch (e) {
-                window.handleRequestError(e);
+                c.cliente_id = null;
+                c.error = e.status === 404 ? 'Código no existe' : 'Error';
             }
         },
-        agregarGasto() {
-            this.gastos.push({ uid: `${Math.random()}`, concepto: '', monto: '', comprobante: '' });
-        },
+        agregarGasto() { this.gastos.push({ uid: uid(), concepto: '', monto: '', comprobante: '' }); },
 
         /* ---------------- Totales (misma fórmula que el servidor) ---------------- */
-        get totalVenta() {
-            return this.round(this.items.reduce((s, i) => s + this.totalItem(i), 0));
-        },
-        get totalCredito() {
-            return this.round(this.items.reduce((s, i) => s + this.creditoItem(i), 0));
-        },
+        get totalVenta() { return this.round(this.items.reduce((s, i) => s + this.totalItem(i), 0)); },
+        get totalCredito() { return this.round(this.items.reduce((s, i) => s + this.creditoItem(i), 0)); },
+        get totalContado() { return this.round(this.totalVenta - this.totalCredito); },
         get totalVouchersVentas() {
-            return this.round(this.items.filter((i) => i.metodo_pago !== 'efectivo').reduce((s, i) => s + this.totalItem(i) - this.creditoItem(i), 0));
+            return this.round(this.items.filter((i) => i.metodo_pago !== 'efectivo').reduce((s, i) => s + this.contadoItem(i), 0));
         },
-        get totalCobranzas() {
-            return this.round(this.cobranzas.reduce((s, c) => s + (+c.monto || 0), 0));
-        },
+        get totalCobranzas() { return this.round(this.cobranzas.reduce((s, c) => s + (+c.monto || 0), 0)); },
         get totalCobranzasDigitales() {
             return this.round(this.cobranzas.filter((c) => c.metodo_pago !== 'efectivo').reduce((s, c) => s + (+c.monto || 0), 0));
         },
-        get totalVouchers() {
-            return this.round(this.totalVouchersVentas + this.totalCobranzasDigitales);
-        },
-        get totalFises() {
-            return this.round(Object.keys(this.fises).reduce((s, k) => s + this.subtotalFise(k), 0));
-        },
-        get cantidadFises() {
-            return Object.values(this.fises).reduce((s, f) => s + this.valoresFise.reduce((t, v) => t + (+f[v] || 0), 0), 0);
-        },
-        get totalGastos() {
-            return this.round(this.gastos.reduce((s, g) => s + (+g.monto || 0), 0));
-        },
+        get totalVouchers() { return this.round(this.totalVouchersVentas + this.totalCobranzasDigitales); },
+        get totalFises() { return this.round(Object.keys(this.fises).reduce((s, k) => s + this.subtotalFise(k), 0)); },
+        get totalGastos() { return this.round(this.gastos.reduce((s, g) => s + (+g.monto || 0), 0)); },
         get efectivo() {
             return this.round(this.totalVenta + this.totalCobranzas - this.totalCredito - this.totalVouchers - this.totalFises - this.totalGastos);
         },
         get diferencia() {
-            if (this.cab.efectivo_entregado === '' || this.cab.efectivo_entregado === null || this.cab.efectivo_entregado === undefined) return null;
-            return this.round(+this.cab.efectivo_entregado - this.efectivo);
+            const e = this.cab.efectivo_entregado;
+            if (e === '' || e === null || e === undefined) return null;
+            return this.round(+e - this.efectivo);
+        },
+        cantidadPor(codigo) {
+            return this.items.filter((i) => this.codigoProducto(i.producto_id) === codigo).reduce((s, i) => s + (+i.cantidad || 0), 0);
         },
         get balones() {
             const r = {};
             this.items.forEach((i) => {
+                if (!(+i.cantidad > 0)) return;
                 const c = this.codigoProducto(i.producto_id);
                 r[c] = (r[c] || 0) + (+i.cantidad || 0);
             });
             return r;
         },
-        get totalBalones() {
-            return this.items.reduce((s, i) => s + (+i.cantidad || 0), 0);
-        },
-        get totalVacios() {
-            return this.items.reduce((s, i) => s + (+i.vacios_devueltos || 0), 0);
-        },
-        get codigosCuadre() {
-            return [...new Set([...Object.keys(this.cuadre), ...Object.keys(this.balones)])];
+        get totalBalones() { return this.items.reduce((s, i) => s + (+i.cantidad || 0), 0); },
+        get totalVacios() { return this.items.reduce((s, i) => s + (+i.vacios_devueltos || 0), 0); },
+        get codigosCuadre() { return [...new Set([...Object.keys(this.cuadre), ...Object.keys(this.balones)])]; },
+        /** Stock disponible de la empresa después de esta liquidación (cuadro STOCK DISPONIBLE). */
+        disponible(empresa, codigo) {
+            const base = this.stock[empresa.nombre]?.[codigo] ?? 0;
+            const vendido = this.items.filter((i) => +i.empresa_id === empresa.id && this.codigoProducto(i.producto_id) === codigo)
+                .reduce((s, i) => s + (+i.cantidad || 0), 0);
+            return base - (config.metodo === 'POST' ? vendido : 0);
         },
 
         /* ---------------- Cabecera ---------------- */
@@ -282,10 +271,7 @@ export default function liquidacionEditor(config) {
             this.cab.fecha_liquidacion = d.toISOString().slice(0, 10);
         },
         async cargarCuadre() {
-            if (!this.cab.chofer_id || !this.cab.fecha_venta) {
-                this.cuadre = {};
-                return;
-            }
+            if (!this.cab.chofer_id || !this.cab.fecha_venta) { this.cuadre = {}; return; }
             try {
                 const params = new URLSearchParams({ chofer_id: this.cab.chofer_id, fecha: this.cab.fecha_venta });
                 this.cuadre = await window.request(`${this.urls.cuadre}?${params}`, { json: true });
@@ -302,25 +288,30 @@ export default function liquidacionEditor(config) {
                     if ((+valores[v] || 0) > 0) fises.push({ cliente_id: cliente === 'sin' ? null : +cliente, valor: v, cantidad: +valores[v] });
                 });
             });
+            const limpiar = ({ uid: _u, codigo: _c, error: _e, ...resto }) => resto;
             return {
                 ...this.cab,
                 efectivo_entregado: this.cab.efectivo_entregado === '' ? null : this.cab.efectivo_entregado,
-                items: this.items.map((i) => ({ ...i, cantidad: +i.cantidad || 0, monto_credito: i.es_credito ? this.creditoItem(i) : 0 })),
+                items: this.filasConDatos.map((i) => ({
+                    ...limpiar(i), cantidad: +i.cantidad || 0, es_credito: this.creditoItem(i) > 0, monto_credito: this.creditoItem(i),
+                })),
                 fises,
-                cobranzas: this.cobranzas,
-                gastos: this.gastos.filter((g) => g.concepto || g.monto),
+                cobranzas: this.cobranzas.filter((c) => c.cliente_id || +c.monto > 0).map(limpiar),
+                gastos: this.gastos.filter((g) => g.concepto || g.monto).map(({ uid: _u, ...g }) => g),
             };
         },
 
         async guardar(despues = null) {
             if (this.guardando) return;
-            if (!this.items.length && !this.cobranzas.length) {
-                window.alertError('Liquidación vacía', 'Agrega al menos una venta o una cobranza.');
+            const filas = this.filasConDatos;
+            if (!filas.length && !this.cobranzas.some((c) => c.cliente_id)) {
+                window.alertError('Liquidación vacía', 'Escribe al menos una venta o una cobranza.');
                 return;
             }
-            const sinCantidad = this.items.filter((i) => !(+i.cantidad > 0));
-            if (sinCantidad.length) {
-                window.alertError('Faltan cantidades', `Hay ${sinCantidad.length} venta(s) sin cantidad. Complétalas o quítalas.`);
+            const sinCliente = filas.filter((i) => !i.cliente_id).length;
+            const sinCantidad = filas.filter((i) => !(+i.cantidad > 0)).length;
+            if (sinCliente || sinCantidad) {
+                window.alertError('Revisa la hoja', [sinCliente && `${sinCliente} fila(s) con cantidad pero sin código de cliente válido.`, sinCantidad && `${sinCantidad} fila(s) sin cantidad.`].filter(Boolean).join(' '));
                 return;
             }
             this.guardando = true;
@@ -338,11 +329,8 @@ export default function liquidacionEditor(config) {
         },
 
         /* ---------------- Utilidades ---------------- */
-        round(v) {
-            return Math.round((v + Number.EPSILON) * 100) / 100;
-        },
-        money(v) {
-            return 'S/ ' + Number(v || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        },
+        round(v) { return Math.round((v + Number.EPSILON) * 100) / 100; },
+        money(v) { return 'S/ ' + this.dec(v); },
+        dec(v) { return Number(v || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     };
 }

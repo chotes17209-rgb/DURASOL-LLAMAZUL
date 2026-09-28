@@ -5,7 +5,7 @@
         @forelse ($vehiculos as $v)
             @php($docs = $v->estadoDocumentos())
             <tr>
-                <td><span class="rounded-lg bg-slate-900 px-2 py-1 font-mono text-xs font-bold tracking-wider text-white">{{ $v->placa }}</span></td>
+                <td><span class="font-mono font-semibold text-slate-800">{{ $v->placa }}</span></td>
                 <td>
                     <p class="font-medium text-slate-900">{{ \App\Models\Vehiculo::TIPOS[$v->tipo] ?? $v->tipo }} {{ $v->marca }} {{ $v->modelo }}</p>
                     <p class="text-xs text-slate-500">{{ $v->anio }} {{ $v->empresa ? '· '.$v->empresa->nombre : '' }} {{ $v->capacidad_balones ? '· '.$v->capacidad_balones.' balones' : '' }}</p>

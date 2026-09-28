@@ -141,3 +141,6 @@
     aside, header, .no-print { display: none !important; }
     main { padding: 0 !important; }
 }
+.swal2-popup.swal2-toast { padding: .6rem .9rem !important; }
+.swal2-toast .swal2-title { font-size: 13px !important; font-weight: 500 !important; margin: 0 .5rem !important; }
+.swal2-toast .swal2-icon { transform: scale(.7); margin: 0 !important; }

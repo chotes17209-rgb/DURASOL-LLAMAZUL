@@ -4,6 +4,8 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <x-tabs :tabs="['resumen' => 'Resumen', 'ventas' => 'Ventas ('.$l->items->count().')', 'otros' => 'FISE, cobranzas y gastos', 'historial' => 'Historial']" class="mb-0"/>
             <div class="flex flex-wrap gap-2">
+                <a href="{{ route('liquidaciones.show', [$l, 'formato' => 'pdf']) }}" class="btn btn-secondary btn-sm">PDF</a>
+                <a href="{{ route('liquidaciones.show', [$l, 'formato' => 'xlsx']) }}" class="btn btn-secondary btn-sm">Excel</a>
                 @if ($l->esEditable())
                     <a href="{{ route('liquidaciones.edit', $l) }}" class="btn btn-secondary btn-sm"><x-heroicon-o-pencil-square class="h-4 w-4"/> Editar</a>
                     <button class="btn btn-success btn-sm" data-modal-url="{{ route('liquidaciones.cerrar', $l) }}" data-modal-size="md"><x-heroicon-o-lock-closed class="h-4 w-4"/> Cerrar</button>
@@ -15,13 +17,16 @@
         </div>
 
         <div class="mt-5" x-show="tab === 'resumen'">
-            <div class="grid gap-3 sm:grid-cols-4">
-                <div class="rounded bg-slate-50 p-4 border border-line"><p class="kpi-label">Venta</p><p class="text-xl font-bold">{{ soles($l->total_venta) }}</p></div>
-                <div class="rounded bg-rose-50 p-4 border border-rose-200"><p class="kpi-label">Crédito</p><p class="text-xl font-bold text-rose-700">{{ soles($l->total_credito) }}</p></div>
-                <div class="rounded bg-violet-50 p-4 border border-violet-200"><p class="kpi-label">Vouchers + FISE</p><p class="text-xl font-bold text-violet-700">{{ soles($l->total_vouchers + $l->total_fises) }}</p></div>
-                <div class="rounded bg-brand-600 p-4 text-white"><p class="text-xs font-semibold uppercase tracking-wide text-brand-100">Efectivo</p><p class="text-xl font-bold">{{ soles($l->efectivo_esperado) }}</p>
-                    @if ($l->efectivo_entregado !== null)<p class="text-xs text-brand-100">Entregado {{ soles($l->efectivo_entregado) }} ({{ $l->diferencia >= 0 ? '+' : '' }}{{ num($l->diferencia, 2) }})</p>@endif</div>
-            </div>
+            <table class="table table-compact table-grid">
+                <thead><tr><th class="text-right">Venta total</th><th class="text-right">Cobranza</th><th class="text-right">Crédito</th><th class="text-right">Varios</th><th class="text-right">FISE</th><th class="text-right">Vouchers</th><th class="text-right">Por depositar</th><th class="text-right">Entregado</th><th class="text-right">Diferencia</th></tr></thead>
+                <tbody><tr>
+                    <td class="text-right">{{ num($l->total_venta, 2) }}</td><td class="text-right">{{ num($l->total_cobranzas, 2) }}</td><td class="text-right">{{ num($l->total_credito, 2) }}</td>
+                    <td class="text-right">{{ num($l->total_gastos, 2) }}</td><td class="text-right">{{ num($l->total_fises, 2) }}</td><td class="text-right">{{ num($l->total_vouchers, 2) }}</td>
+                    <td class="text-right font-bold text-brand-800">{{ num($l->efectivo_esperado, 2) }}</td>
+                    <td class="text-right">{{ $l->efectivo_entregado !== null ? num($l->efectivo_entregado, 2) : '—' }}</td>
+                    <td class="text-right {{ $l->diferencia !== null && abs((float) $l->diferencia) >= 0.01 ? 'font-semibold text-red-700' : '' }}">{{ $l->diferencia !== null ? num($l->diferencia, 2) : '—' }}</td>
+                </tr></tbody>
+            </table>
             <div class="mt-5 grid gap-6 lg:grid-cols-2">
                 <dl class="dl-grid !grid-cols-2">
                     <div><dt>Estado</dt><dd><x-status :value="$l->estado"/></dd></div>

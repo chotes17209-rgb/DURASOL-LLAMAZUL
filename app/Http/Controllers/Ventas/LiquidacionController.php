@@ -18,6 +18,7 @@ use App\Services\AlmacenService;
 use App\Services\CuentaService;
 use App\Services\LiquidacionService;
 use App\Services\PrecioService;
+use App\Support\Reporte;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,6 +29,7 @@ class LiquidacionController extends Controller
         private readonly LiquidacionService $service,
         private readonly PrecioService $precios,
         private readonly CuentaService $cuentas,
+        private readonly AlmacenService $almacen,
     ) {}
 
     public function index(Request $request)
@@ -66,10 +68,13 @@ class LiquidacionController extends Controller
         return $this->respuestaGuardado($liquidacion, "Liquidación {$liquidacion->codigo} guardada como borrador.");
     }
 
-    public function show(Liquidacion $liquidacion): View
+    public function show(Request $request, Liquidacion $liquidacion)
     {
         $liquidacion->load(['chofer', 'vehiculo', 'user', 'cerradaPor', 'items.cliente', 'items.producto', 'items.empresa',
             'fises.cliente', 'gastos', 'cobranzas.cliente', 'cuentasPorCobrar']);
+        if (in_array($request->formato, ['pdf', 'xlsx'], true)) {
+            return $this->reporte($liquidacion)->descargar($request->formato, 'liquidacion-'.$liquidacion->codigo);
+        }
         $porProducto = $liquidacion->items->groupBy('producto_id')->map(fn ($g) => [
             'codigo' => $g->first()->producto?->codigo, 'cantidad' => $g->sum('cantidad'), 'total' => $g->sum('total'), 'vacios' => $g->sum('vacios_devueltos'),
         ]);
@@ -136,7 +141,11 @@ class LiquidacionController extends Controller
     /** Precios vigentes y deuda de un cliente para el editor. */
     public function datosCliente(Request $request): JsonResponse
     {
-        $cliente = Cliente::with('chofer')->findOrFail($request->integer('cliente_id'));
+        // Por id (buscador) o por código (se escribe el código en la hoja, como el BUSCARV del Excel).
+        $cliente = $request->filled('codigo')
+            ? Cliente::with('chofer')->where('codigo', $request->integer('codigo'))->first()
+            : Cliente::with('chofer')->find($request->integer('cliente_id'));
+        abort_unless($cliente, 404, 'No existe un cliente con ese código.');
         $precios = $this->precios->preciosVentaVigentes([$cliente->id], $request->fecha ?: today())[$cliente->id] ?? [];
 
         return response()->json([
@@ -150,16 +159,49 @@ class LiquidacionController extends Controller
     }
 
     /** Balones vendidos según el parte de almacén (salida − retorno de llenos) para cuadrar. */
-    public function cuadre(Request $request, AlmacenService $almacen): JsonResponse
+    public function cuadre(Request $request): JsonResponse
     {
         $fecha = $request->date('fecha');
         if (! $fecha) {
             return response()->json((object) []);
         }
-        $fila = $almacen->cuadreChoferes($fecha)->first(fn ($c) => $c['chofer']->id === $request->integer('chofer_id'));
+        $fila = $this->almacen->cuadreChoferes($fecha)->first(fn ($c) => $c['chofer']->id === $request->integer('chofer_id'));
         $vendidos = collect($fila['productos'] ?? [])->filter(fn ($p) => $p['salio'] > 0)->map(fn ($p) => $p['vendido']);
 
         return response()->json((object) $vendidos->all());
+    }
+
+    /** Liquidación individual en el formato de la hoja REGISTRO. */
+    private function reporte(Liquidacion $l): Reporte
+    {
+        $l->loadMissing(['items.cliente', 'items.producto', 'items.empresa', 'fises.cliente', 'gastos', 'cobranzas.cliente', 'chofer', 'vehiculo']);
+        $reporte = (new Reporte('Liquidación '.$l->codigo, 'Venta del '.$l->fecha_venta->format('d/m/Y').' · liquidada el '.$l->fecha_liquidacion->format('d/m/Y'), true))
+            ->datos(['Responsable' => $l->chofer?->alias, 'Placa' => $l->vehiculo?->placa ?? 'LOCAL', 'Estado' => $l->estado->label()]);
+
+        $reporte->tabla('Registro de ventas', [
+            'Código' => 'texto', 'Cliente' => 'texto', 'Empresa' => 'texto', 'Pres.' => 'texto', 'Cant.' => 'entero', 'Precio' => 'decimal',
+            'Total' => 'decimal', 'Bal. dev.' => 'entero', 'Crédito' => 'decimal', 'Contado' => 'decimal', 'Pago' => 'texto', 'N° op.' => 'texto',
+        ], $l->items->map(fn ($i) => [
+            $i->cliente?->codigo, $i->cliente?->nombreMostrar(), $i->empresa?->nombre, $i->producto?->codigo, $i->cantidad, $i->precio,
+            $i->total, $i->vacios_devueltos, $i->monto_credito, (float) $i->total - (float) $i->monto_credito, $i->metodo_pago->label(), $i->numero_operacion,
+        ]), ['TOTAL', '', '', '', $l->items->sum('cantidad'), '', $l->total_venta, $l->items->sum('vacios_devueltos'), $l->total_credito, (float) $l->total_venta - (float) $l->total_credito, '', '']);
+
+        if ($l->cobranzas->isNotEmpty()) {
+            $reporte->tabla('Cobranzas', ['Código' => 'texto', 'Cliente' => 'texto', 'Pago' => 'texto', 'Monto' => 'decimal'],
+                $l->cobranzas->map(fn ($c) => [$c->cliente?->codigo, $c->cliente?->nombreMostrar(), $c->metodo_pago->label(), $c->monto]), ['TOTAL', '', '', $l->total_cobranzas]);
+        }
+        if ($l->fises->isNotEmpty()) {
+            $reporte->tabla('Vales FISE', ['Cliente' => 'texto', 'Valor' => 'decimal', 'Cantidad' => 'entero', 'Importe' => 'decimal'],
+                $l->fises->map(fn ($f) => [$f->cliente?->nombreMostrar() ?? 'General', $f->valor, $f->cantidad, $f->subtotal]), ['TOTAL', '', $l->fises->sum('cantidad'), $l->total_fises]);
+        }
+        if ($l->gastos->isNotEmpty()) {
+            $reporte->tabla('Varios', ['Concepto' => 'texto', 'Comprobante' => 'texto', 'Monto' => 'decimal'],
+                $l->gastos->map(fn ($g) => [$g->concepto, $g->comprobante, $g->monto]), ['TOTAL', '', $l->total_gastos]);
+        }
+
+        return $reporte->tabla('Resumen', ['Venta total' => 'decimal', 'Cobranza' => 'decimal', 'Crédito' => 'decimal', 'Varios' => 'decimal', 'FISE' => 'decimal',
+            'Vouchers' => 'decimal', 'Por depositar' => 'decimal', 'Entregado' => 'decimal', 'Diferencia' => 'decimal'],
+            [[$l->total_venta, $l->total_cobranzas, $l->total_credito, $l->total_gastos, $l->total_fises, $l->total_vouchers, $l->efectivo_esperado, $l->efectivo_entregado, $l->diferencia]]);
     }
 
     private function respuestaGuardado(Liquidacion $liquidacion, string $mensaje): JsonResponse
@@ -211,7 +253,7 @@ class LiquidacionController extends Controller
             'items' => $liquidacion->items->map(fn ($i) => [
                 'uid' => (string) $i->id, 'cliente_id' => $i->cliente_id, 'producto_id' => $i->producto_id, 'empresa_id' => $i->empresa_id,
                 'cantidad' => $i->cantidad, 'precio' => (float) $i->precio, 'vacios_devueltos' => $i->vacios_devueltos ?: '',
-                'metodo_pago' => $i->metodo_pago->value, 'es_credito' => (float) $i->monto_credito > 0, 'monto_credito' => (float) $i->monto_credito ?: '',
+                'metodo_pago' => $i->metodo_pago->value, 'monto_credito' => (float) $i->monto_credito ?: '',
                 'numero_operacion' => $i->numero_operacion ?? '', 'observacion' => $i->observacion ?? '',
             ])->values(),
             'fises' => (object) $fises,
@@ -222,6 +264,7 @@ class LiquidacionController extends Controller
             'empresas' => Empresa::activas()->get(['id', 'nombre'])->values(),
             'choferes' => $choferes->map(fn ($c) => ['id' => $c->id, 'alias' => $c->alias, 'tipo' => $c->tipo->value, 'vehiculo_id' => $c->vehiculo_id])->values(),
             'metodos' => MetodoPago::options(),
+            'stock' => $this->almacen->disponiblePorEmpresa(),
             'valoresFise' => LiquidacionFise::VALORES,
         ];
 

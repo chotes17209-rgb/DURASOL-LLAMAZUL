@@ -1,10 +1,10 @@
-<div class="grid gap-3 border-b border-slate-100 p-5 sm:grid-cols-4">
-    <div class="rounded bg-slate-50 p-4"><p class="kpi-label">Balones</p><p class="kpi-value">{{ num($totales->cantidad) }}</p></div>
-    <div class="rounded bg-brand-50 p-4"><p class="kpi-label">Venta</p><p class="kpi-value text-brand-700">{{ soles($totales->total) }}</p></div>
-    <div class="rounded bg-rose-50 p-4"><p class="kpi-label">Crédito</p><p class="kpi-value text-rose-700">{{ soles($totales->credito) }}</p></div>
-    <div class="rounded bg-slate-50 p-4"><p class="kpi-label">Vacíos devueltos</p><p class="kpi-value">{{ num($totales->vacios) }}</p></div>
+<div class="grid gap-3 border-b border-line p-3 sm:grid-cols-4">
+    <div class="kpi"><p class="kpi-label">Balones</p><p class="kpi-value">{{ num($totales->cantidad) }}</p></div>
+    <div class="kpi"><p class="kpi-label">Venta</p><p class="kpi-value">{{ soles($totales->total) }}</p></div>
+    <div class="kpi"><p class="kpi-label">Crédito</p><p class="kpi-value">{{ soles($totales->credito) }}</p></div>
+    <div class="kpi"><p class="kpi-label">Vacíos devueltos</p><p class="kpi-value">{{ num($totales->vacios) }}</p></div>
     <div class="flex flex-wrap gap-2 sm:col-span-4">
-        @foreach ($porProducto as $p)<x-badge color="blue">{{ $p->codigo }}: {{ num($p->cantidad) }} · {{ soles($p->total) }}</x-badge>@endforeach
+        @foreach ($porProducto as $p)<span class="text-xs text-slate-600"><b>{{ $p->codigo }}</b> {{ num($p->cantidad) }} · {{ soles($p->total) }}</span>@endforeach
     </div>
 </div>
 <div class="table-wrap">

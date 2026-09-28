@@ -1,25 +1,26 @@
-<x-layouts.app :title="$liquidacion->exists ? 'Liquidación '.$liquidacion->codigo : 'Nueva liquidación'" breadcrumb="Ventas · Liquidaciones">
+<x-layouts.app :title="$liquidacion->exists ? 'Liquidación '.$liquidacion->codigo : 'Nueva liquidación'" breadcrumb="Ventas · Registro de liquidación">
     <x-slot:actions>
-        <a href="{{ route('liquidaciones.index') }}" class="btn btn-secondary"><x-heroicon-o-arrow-left class="h-4 w-4"/> Volver</a>
+        <a href="{{ route('liquidaciones.index') }}" class="btn btn-secondary"><x-heroicon-o-arrow-left/> Volver</a>
         @if ($liquidacion->exists)
-            <button class="btn btn-secondary" data-modal-url="{{ route('liquidaciones.show', $liquidacion) }}" data-modal-size="xl"><x-heroicon-o-eye class="h-4 w-4"/> Ver</button>
+            <a href="{{ route('liquidaciones.show', [$liquidacion, 'formato' => 'pdf']) }}" class="btn btn-secondary"><x-heroicon-o-document-arrow-down/> PDF</a>
+            <button class="btn btn-secondary" data-modal-url="{{ route('liquidaciones.show', $liquidacion) }}" data-modal-size="xl">Ver</button>
         @endif
     </x-slot:actions>
 
-<div x-data="liquidacionEditor(@js($config))" x-cloak>
+<div x-data="liquidacionEditor(@js($config))" x-cloak class="pb-16">
     @unless ($liquidacion->esEditable())
-        <div class="mb-5 flex items-center gap-3 rounded bg-amber-50 p-4 text-sm text-amber-800 border border-amber-200">
-            <x-heroicon-o-lock-closed class="h-5 w-5"/>
-            <p>Esta liquidación está <b>{{ $liquidacion->estado->label() }}</b> y no se puede modificar.
-                @if (auth()->user()->isAdmin() && $liquidacion->estado === \App\Enums\EstadoLiquidacion::Cerrada) Un administrador puede reabrirla desde «Ver». @endif</p>
+        <div class="help mb-3 border-amber-300 bg-amber-50 text-amber-900">
+            Esta liquidación está <b>{{ $liquidacion->estado->label() }}</b> y no se puede modificar.
+            @if (auth()->user()->isAdmin() && $liquidacion->estado === \App\Enums\EstadoLiquidacion::Cerrada) Un administrador puede reabrirla desde «Ver». @endif
         </div>
     @endunless
 
-    <fieldset :disabled="!editable" class="grid gap-6 2xl:grid-cols-[1fr_22rem]">
-        <div class="min-w-0 space-y-6">
-            {{-- 1. Cabecera --}}
-            <div class="card card-body">
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <fieldset :disabled="!editable" class="space-y-4">
+        {{-- Cabecera y stock disponible --}}
+        <div class="grid gap-4 xl:grid-cols-[1fr_24rem]">
+            <div class="card">
+                <div class="card-header"><p class="card-title">Datos de la liquidación</p></div>
+                <div class="grid gap-3 p-4 sm:grid-cols-3 lg:grid-cols-5">
                     <div>
                         <label class="form-label">Fecha de venta *</label>
                         <input type="date" class="form-input" x-model="cab.fecha_venta" max="{{ today()->format('Y-m-d') }}">
@@ -29,16 +30,16 @@
                         <input type="date" class="form-input" x-model="cab.fecha_liquidacion">
                     </div>
                     <div>
-                        <label class="form-label">Chofer *</label>
+                        <label class="form-label">Responsable *</label>
                         <select class="form-input" x-model="cab.chofer_id">
                             <option value="">Seleccionar...</option>
-                            @foreach ($choferes as $c)<option value="{{ $c->id }}">{{ $c->alias }} · {{ $c->tipo->label() }}</option>@endforeach
+                            @foreach ($choferes as $c)<option value="{{ $c->id }}">{{ $c->alias }}</option>@endforeach
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Vehículo</label>
+                        <label class="form-label">Placa</label>
                         <select class="form-input" x-model="cab.vehiculo_id">
-                            <option value="">—</option>
+                            <option value="">LOCAL</option>
                             @foreach ($vehiculos as $id => $placa)<option value="{{ $id }}">{{ $placa }}</option>@endforeach
                         </select>
                     </div>
@@ -50,229 +51,276 @@
                     </div>
                 </div>
             </div>
-
-            {{-- 2. Ventas por cliente --}}
             <div class="card">
-                <div class="card-header flex-wrap">
-                    <div>
-                        <p class="card-title">1. Ventas por cliente</p>
-                        <p class="text-xs text-slate-500">Busca al cliente; se cargan sus precios. Ingresa balones vendidos, vacíos devueltos y cómo pagó.</p>
-                    </div>
-                    <div class="w-full max-w-md" x-show="editable">
-                        <select x-ref="buscadorCliente" placeholder="🔍 Agregar cliente (código, nombre o dirección)..."></select>
-                    </div>
-                </div>
-                <div class="table-wrap">
-                    <table class="table table-compact">
-                        <thead>
-                        <tr><th class="min-w-48">Cliente</th><th>Producto / empresa</th><th class="text-right">Cant.</th><th class="text-right">Precio</th><th class="text-right">Total</th>
-                            <th class="text-right">Vacíos dev.</th><th>Pago</th><th>Crédito</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                        <template x-if="!items.length">
-                            <tr><td colspan="9" class="py-10 text-center text-sm text-slate-400">Aún no hay ventas. Usa el buscador «Agregar cliente».</td></tr>
-                        </template>
-                        <template x-for="(item, index) in items" :key="item.uid">
-                            <tr :class="esPrimeraFilaCliente(item, index) ? '' : 'bg-slate-50/50'">
-                                <td>
-                                    <template x-if="esPrimeraFilaCliente(item, index)">
-                                        <div>
-                                            <p class="font-semibold text-slate-900" x-text="nombreCliente(item.cliente_id)"></p>
-                                            <p class="text-[11px] text-slate-400">
-                                                <span x-text="'Cód. ' + (clientes[item.cliente_id]?.codigo ?? '')"></span>
-                                                <template x-if="clientes[item.cliente_id]?.deuda > 0"><span class="font-semibold text-rose-600" x-text="' · debe ' + money(clientes[item.cliente_id].deuda)"></span></template>
-                                            </p>
-                                        </div>
-                                    </template>
-                                    <button type="button" class="mt-1 text-[11px] font-semibold text-brand-600 hover:underline" x-show="editable" @click="agregarProducto(item)">+ otro producto</button>
-                                </td>
-                                <td>
-                                    <select class="form-input w-28 py-1.5 font-mono font-bold" x-model.number="item.producto_id" @change="cambiarProducto(item)">
-                                        <template x-for="p in productos" :key="p.id"><option :value="p.id" x-text="p.codigo" :selected="p.id === +item.producto_id"></option></template>
-                                    </select>
-                                    <select class="form-input mt-1 w-28 py-1 text-xs" x-model.number="item.empresa_id">
-                                        <template x-for="e in empresas" :key="e.id"><option :value="e.id" x-text="e.nombre" :selected="e.id === +item.empresa_id"></option></template>
-                                    </select>
-                                </td>
-                                <td><input type="number" min="1" data-cantidad class="form-input w-20 py-1.5 text-right font-semibold" x-model="item.cantidad"></td>
-                                <td><input type="number" min="0" step="0.01" class="form-input w-24 py-1.5 text-right" x-model="item.precio"></td>
-                                <td class="text-right font-semibold tabular-nums" x-text="money(totalItem(item))"></td>
-                                <td><input type="number" min="0" class="form-input w-20 py-1.5 text-right" x-model="item.vacios_devueltos"></td>
-                                <td>
-                                    <select class="form-input w-28 py-1.5" x-model="item.metodo_pago">
-                                        @foreach (\App\Enums\MetodoPago::options() as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach
-                                    </select>
-                                    <input type="text" class="form-input mt-1 w-32 py-1 text-xs" placeholder="N° operación" x-show="item.metodo_pago !== 'efectivo'" x-model="item.numero_operacion" style="width:7rem">
-                                </td>
-                                <td>
-                                    <label class="inline-flex items-center gap-1.5 text-xs font-medium"><input type="checkbox" class="form-check" x-model="item.es_credito" @change="toggleCredito(item)"> Crédito</label>
-                                    <input type="number" min="0" step="0.01" class="form-input mt-1 w-24 py-1 text-right text-xs" x-show="item.es_credito" x-model="item.monto_credito" placeholder="Monto">
-                                </td>
-                                <td><button type="button" class="btn-icon danger" x-show="editable" @click="quitarItem(item)" title="Quitar"><x-heroicon-o-trash class="h-4 w-4"/></button></td>
-                            </tr>
-                        </template>
-                        </tbody>
-                        <tfoot x-show="items.length">
-                        <tr><td colspan="2">Total vendido</td><td class="text-right" x-text="totalBalones"></td><td></td><td class="text-right" x-text="money(totalVenta)"></td><td class="text-right" x-text="totalVacios"></td><td colspan="3"></td></tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            {{-- 3. FISE --}}
-            <div class="card">
-                <div class="card-header">
-                    <div><p class="card-title">2. FISE que dejaron los clientes</p><p class="text-xs text-slate-500">Vales de S/ 20, 30 y 43. Se descuentan del efectivo.</p></div>
-                    <x-badge color="violet"><span x-text="cantidadFises + ' vales · ' + money(totalFises)"></span></x-badge>
-                </div>
-                <div class="table-wrap">
-                    <table class="table table-compact">
-                        <thead><tr><th>Cliente</th><template x-for="v in valoresFise" :key="v"><th class="text-right" x-text="'S/ ' + v"></th></template><th class="text-right">Subtotal</th></tr></thead>
-                        <tbody>
-                        <template x-for="clienteId in clientesDelDia" :key="clienteId">
-                            <tr>
-                                <td class="font-medium" x-text="nombreCliente(clienteId)"></td>
-                                <template x-for="v in valoresFise" :key="v"><td class="text-right"><input type="number" min="0" class="form-input ml-auto w-20 py-1.5 text-right" x-model="fisesDe(clienteId)[v]"></td></template>
-                                <td class="text-right font-semibold tabular-nums" x-text="money(subtotalFise(clienteId))"></td>
-                            </tr>
-                        </template>
-                        <tr class="bg-slate-50/60">
-                            <td class="text-slate-500">Sin cliente asignado</td>
-                            <template x-for="v in valoresFise" :key="v"><td class="text-right"><input type="number" min="0" class="form-input ml-auto w-20 py-1.5 text-right" x-model="fisesDe(null)[v]"></td></template>
-                            <td class="text-right font-semibold tabular-nums" x-text="money(subtotalFise('sin'))"></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="grid gap-6 xl:grid-cols-2">
-                {{-- 4. Cobranzas --}}
-                <div class="card">
-                    <div class="card-header flex-wrap">
-                        <div><p class="card-title">3. Cobranzas de deudas anteriores</p><p class="text-xs text-slate-500">Clientes que pagaron créditos al chofer.</p></div>
-                        <div class="w-full" x-show="editable"><select x-ref="buscadorCobranza" placeholder="🔍 Cliente que pagó una deuda..."></select></div>
-                    </div>
-                    <div class="divide-y divide-slate-100">
-                        <template x-if="!cobranzas.length"><p class="px-5 py-6 text-center text-sm text-slate-400">Sin cobranzas.</p></template>
-                        <template x-for="c in cobranzas" :key="c.uid">
-                            <div class="grid grid-cols-[1fr_auto] gap-2 px-5 py-3">
-                                <div>
-                                    <p class="text-sm font-semibold" x-text="nombreCliente(c.cliente_id)"></p>
-                                    <p class="text-[11px] text-slate-400" x-text="'Deuda: ' + money(clientes[c.cliente_id]?.deuda)"></p>
-                                </div>
-                                <button type="button" class="btn-icon danger" x-show="editable" @click="cobranzas.splice(cobranzas.indexOf(c), 1)"><x-heroicon-o-trash class="h-4 w-4"/></button>
-                                <div class="col-span-2 grid grid-cols-3 gap-2">
-                                    <input type="number" min="0" step="0.01" class="form-input py-1.5 text-right" x-model="c.monto" placeholder="Monto">
-                                    <select class="form-input py-1.5" x-model="c.metodo_pago">@foreach (\App\Enums\MetodoPago::options() as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach</select>
-                                    <input type="text" class="form-input py-1.5" x-model="c.numero_operacion" placeholder="N° operación">
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                {{-- 5. Gastos --}}
-                <div class="card">
-                    <div class="card-header">
-                        <div><p class="card-title">4. Gastos del chofer</p><p class="text-xs text-slate-500">Combustible, peajes, viáticos (sobre todo en ruta).</p></div>
-                        <button type="button" class="btn btn-secondary btn-sm" x-show="editable" @click="agregarGasto()"><x-heroicon-o-plus class="h-4 w-4"/> Gasto</button>
-                    </div>
-                    <div class="divide-y divide-slate-100">
-                        <template x-if="!gastos.length"><p class="px-5 py-6 text-center text-sm text-slate-400">Sin gastos.</p></template>
-                        <template x-for="g in gastos" :key="g.uid">
-                            <div class="grid grid-cols-[1fr_7rem_6rem_auto] items-center gap-2 px-5 py-3">
-                                <input type="text" class="form-input py-1.5" x-model="g.concepto" placeholder="Concepto">
-                                <input type="number" min="0" step="0.01" class="form-input py-1.5 text-right" x-model="g.monto" placeholder="Monto">
-                                <input type="text" class="form-input py-1.5" x-model="g.comprobante" placeholder="Comprob.">
-                                <button type="button" class="btn-icon danger" x-show="editable" @click="gastos.splice(gastos.indexOf(g), 1)"><x-heroicon-o-trash class="h-4 w-4"/></button>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card card-body">
-                <label class="form-label">Observaciones</label>
-                <textarea class="form-input" rows="2" x-model="cab.observaciones"></textarea>
-            </div>
-        </div>
-
-        {{-- Resumen --}}
-        <aside class="space-y-4 2xl:sticky 2xl:top-24 2xl:self-start">
-            <div class="overflow-hidden rounded bg-gradient-to-br from-brand-900 via-brand-950 to-slate-950 text-white">
-                <div class="p-6">
-                    <p class="text-xs font-bold uppercase tracking-widest text-brand-200">Resumen de liquidación</p>
-                    <dl class="mt-4 space-y-2.5 text-sm">
-                        <div class="flex justify-between"><dt class="text-slate-300">Venta total</dt><dd class="font-semibold tabular-nums" x-text="money(totalVenta)"></dd></div>
-                        <div class="flex justify-between"><dt class="text-slate-300">+ Cobranzas</dt><dd class="tabular-nums text-emerald-300" x-text="money(totalCobranzas)"></dd></div>
-                        <div class="flex justify-between"><dt class="text-slate-300">− Créditos</dt><dd class="tabular-nums text-rose-300" x-text="money(totalCredito)"></dd></div>
-                        <div class="flex justify-between"><dt class="text-slate-300">− Vouchers (Yape/Plin/transf.)</dt><dd class="tabular-nums text-rose-300" x-text="money(totalVouchers)"></dd></div>
-                        <div class="flex justify-between"><dt class="text-slate-300">− FISE</dt><dd class="tabular-nums text-rose-300" x-text="money(totalFises)"></dd></div>
-                        <div class="flex justify-between"><dt class="text-slate-300">− Gastos</dt><dd class="tabular-nums text-rose-300" x-text="money(totalGastos)"></dd></div>
-                    </dl>
-                    <div class="mt-5 border-t border-white/10 pt-4">
-                        <p class="text-xs font-semibold text-brand-200">Efectivo que debe dejar en caja</p>
-                        <p class="mt-1 text-4xl font-extrabold tracking-tight tabular-nums" x-text="money(efectivo)"></p>
-                    </div>
-                </div>
-                <div class="bg-white/5 p-6">
-                    <label class="text-xs font-semibold text-brand-200">Efectivo entregado (contado en caja)</label>
-                    <input type="number" min="0" step="0.01" class="mt-1 w-full rounded border-0 bg-white/10 px-3 py-2 text-lg font-bold text-white border-white/20 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-400 focus:outline-none"
-                           x-model="cab.efectivo_entregado" placeholder="0.00">
-                    <template x-if="diferencia !== null">
-                        <p class="mt-2 text-sm font-semibold" :class="diferencia === 0 ? 'text-emerald-300' : (diferencia > 0 ? 'text-sky-300' : 'text-rose-300')"
-                           x-text="diferencia === 0 ? '✔ Cuadra exacto' : (diferencia > 0 ? 'Sobran ' : 'Faltan ') + money(Math.abs(diferencia))"></p>
-                    </template>
-                </div>
-            </div>
-
-            <div class="card card-body">
-                <p class="mb-3 text-sm font-semibold">Balones vendidos</p>
-                <table class="w-full text-sm">
-                    <thead><tr class="text-xs text-slate-400"><th class="text-left font-semibold">Prod.</th><th class="text-right font-semibold">Liquidación</th><th class="text-right font-semibold">Logística</th></tr></thead>
+                <div class="card-header"><p class="card-title">Stock disponible</p><span class="text-[11px] text-slate-500">compras − ventas</span></div>
+                <table class="table table-compact table-grid">
+                    <thead><tr><th></th><th class="text-right">S10</th><th class="text-right">S45</th><th class="text-right">M10</th></tr></thead>
                     <tbody>
-                    <template x-for="codigo in codigosCuadre" :key="codigo">
-                        <tr class="border-t border-slate-100">
-                            <td class="py-1.5 font-mono font-bold" x-text="codigo"></td>
-                            <td class="py-1.5 text-right tabular-nums" x-text="balones[codigo] ?? 0"></td>
-                            <td class="py-1.5 text-right tabular-nums">
-                                <span x-text="cuadre[codigo] ?? '—'"></span>
-                                <template x-if="cuadre[codigo] !== undefined && cuadre[codigo] !== (balones[codigo] ?? 0)"><span class="ml-1 text-xs font-bold text-rose-600">≠</span></template>
-                            </td>
+                    <template x-for="e in empresas" :key="e.id">
+                        <tr>
+                            <td class="font-semibold" x-text="e.nombre"></td>
+                            <template x-for="c in ['S10', 'S45', 'M10']" :key="c">
+                                <td class="text-right" :class="disponible(e, c) < 0 && 'text-red-700'" x-text="disponible(e, c).toLocaleString('es-PE')"></td>
+                            </template>
                         </tr>
                     </template>
                     </tbody>
                 </table>
-                <p class="mt-3 text-[11px] text-slate-400">«Logística» = vendidos según los despachos retornados del chofer ese día.</p>
+            </div>
+        </div>
+
+        {{-- Registro de ventas: una fila por venta, como la hoja REGISTRO --}}
+        <div class="card">
+            <div class="card-header flex-wrap">
+                <div>
+                    <p class="card-title">Registro de ventas</p>
+                    <p class="text-[11px] text-slate-500">Escribe el código del cliente: se completan el nombre y su precio. <b>Enter</b> baja a la siguiente fila.</p>
+                </div>
+                <div class="flex items-center gap-2 no-print" x-show="editable">
+                    <div class="w-80"><select x-ref="buscadorCliente" placeholder="Buscar cliente por nombre..."></select></div>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="agregarFilas(5)"><x-heroicon-o-plus/> Filas</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table table-compact table-grid">
+                    <thead>
+                    <tr>
+                        <th class="w-8 text-center">#</th>
+                        <th class="w-20">Código</th>
+                        <th class="min-w-56">Cliente</th>
+                        <th class="w-28">Empresa</th>
+                        <th class="w-20">Pres.</th>
+                        <th class="w-16 text-right">Cant.</th>
+                        <th class="w-20 text-right">Precio</th>
+                        <th class="w-24 text-right">Total</th>
+                        <th class="w-16 text-right">Bal. dev.</th>
+                        <th class="w-24 text-right">Crédito</th>
+                        <th class="w-24 text-right">Contado</th>
+                        <th class="w-28">Pago</th>
+                        <th class="w-28">N° operación</th>
+                        <th class="w-8"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <template x-for="(item, i) in items" :key="item.uid">
+                        <tr :data-fila="item.uid">
+                            <td class="text-center text-xs text-slate-400" x-text="i + 1"></td>
+                            <td class="!p-0"><input class="cell-input text-left font-mono" data-col="codigo" inputmode="numeric" x-model="item.codigo" @change="buscarCodigo(item)" @keydown.enter.prevent="$event.target.blur(); siguiente($event, items, item, () => agregarFilas(3))"></td>
+                            <td class="text-xs" :class="item.error ? 'text-red-700' : 'font-medium text-slate-800'">
+                                <span x-text="item.error || nombreCliente(item.cliente_id)"></span>
+                                <template x-if="item.cliente_id && clientes[item.cliente_id]?.deuda > 0"><span class="ml-1 text-[10px] text-amber-700" x-text="'debe ' + dec(clientes[item.cliente_id].deuda)"></span></template>
+                            </td>
+                            <td class="!p-0">
+                                <select class="cell-input text-left" x-model.number="item.empresa_id">
+                                    <template x-for="e in empresas" :key="e.id"><option :value="e.id" x-text="e.nombre" :selected="e.id === item.empresa_id"></option></template>
+                                </select>
+                            </td>
+                            <td class="!p-0">
+                                <select class="cell-input text-left" x-model.number="item.producto_id" @change="cambiarProducto(item)">
+                                    <template x-for="p in productos" :key="p.id"><option :value="p.id" x-text="p.codigo" :selected="p.id === item.producto_id"></option></template>
+                                </select>
+                            </td>
+                            <td class="!p-0"><input type="number" min="0" class="cell-input" data-col="cantidad" x-model="item.cantidad" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
+                            <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input" data-col="precio" x-model="item.precio" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
+                            <td class="text-right font-semibold" x-text="totalItem(item) ? dec(totalItem(item)) : ''"></td>
+                            <td class="!p-0"><input type="number" min="0" class="cell-input" data-col="vacios" x-model="item.vacios_devueltos" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
+                            <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input" data-col="credito" x-model="item.monto_credito" @dblclick="todoCredito(item)" title="Doble clic: todo al crédito" @keydown.enter.prevent="siguiente($event, items, item, () => agregarFilas(3))"></td>
+                            <td class="text-right" x-text="totalItem(item) ? dec(contadoItem(item)) : ''"></td>
+                            <td class="!p-0">
+                                <select class="cell-input text-left" x-model="item.metodo_pago">
+                                    <template x-for="(label, valor) in metodos" :key="valor"><option :value="valor" x-text="label" :selected="valor === item.metodo_pago"></option></template>
+                                </select>
+                            </td>
+                            <td class="!p-0"><input class="cell-input text-left" x-model="item.numero_operacion" x-show="item.metodo_pago !== 'efectivo'"></td>
+                            <td class="!p-0 text-center"><button type="button" class="btn-icon danger" tabindex="-1" x-show="editable" @click="quitarItem(item)"><x-heroicon-o-x-mark/></button></td>
+                        </tr>
+                    </template>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td colspan="5">TOTAL <span class="ml-2 text-xs font-normal text-slate-500" x-text="filasConDatos.length + ' venta(s)'"></span></td>
+                        <td class="text-right" x-text="totalBalones"></td>
+                        <td></td>
+                        <td class="text-right" x-text="dec(totalVenta)"></td>
+                        <td class="text-right" x-text="totalVacios || ''"></td>
+                        <td class="text-right" x-text="dec(totalCredito)"></td>
+                        <td class="text-right" x-text="dec(totalContado)"></td>
+                        <td colspan="3"></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid gap-4 xl:grid-cols-3">
+            {{-- Cobranzas --}}
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Cobranzas de créditos</p>
+                    <button type="button" class="btn btn-secondary btn-sm" x-show="editable" @click="agregarCobranza()"><x-heroicon-o-plus/></button>
+                </div>
+                <table class="table table-compact table-grid">
+                    <thead><tr><th class="w-20">Código</th><th>Cliente</th><th class="w-24 text-right">Monto</th><th class="w-28">Pago</th><th class="w-8"></th></tr></thead>
+                    <tbody>
+                    <template x-for="c in cobranzas" :key="c.uid">
+                        <tr :data-fila="c.uid">
+                            <td class="!p-0"><input class="cell-input text-left font-mono" data-col="codigo" x-model="c.codigo" @change="buscarCodigoCobranza(c)" @keydown.enter.prevent="$event.target.blur()"></td>
+                            <td class="text-xs">
+                                <span :class="c.error ? 'text-red-700' : ''" x-text="c.error || nombreCliente(c.cliente_id)"></span>
+                                <template x-if="c.cliente_id && clientes[c.cliente_id]"><span class="block text-[10px] text-slate-500" x-text="'Deuda: ' + dec(clientes[c.cliente_id].deuda)"></span></template>
+                            </td>
+                            <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input" x-model="c.monto"></td>
+                            <td class="!p-0">
+                                <select class="cell-input text-left" x-model="c.metodo_pago">
+                                    <template x-for="(label, valor) in metodos" :key="valor"><option :value="valor" x-text="label" :selected="valor === c.metodo_pago"></option></template>
+                                </select>
+                            </td>
+                            <td class="!p-0 text-center"><button type="button" class="btn-icon danger" tabindex="-1" x-show="editable" @click="cobranzas.splice(cobranzas.indexOf(c), 1)"><x-heroicon-o-x-mark/></button></td>
+                        </tr>
+                    </template>
+                    </tbody>
+                    <tfoot><tr><td colspan="2">TOTAL</td><td class="text-right" x-text="dec(totalCobranzas)"></td><td colspan="2"></td></tr></tfoot>
+                </table>
+                <p class="px-3 py-2 text-[11px] text-slate-500">Se aplica a las deudas más antiguas del cliente primero.</p>
             </div>
 
-            <div class="grid gap-2" x-show="editable">
-                <button type="button" class="btn btn-primary w-full py-3" @click="guardar()" :disabled="guardando">
-                    <x-heroicon-o-document-check class="h-5 w-5"/> <span x-text="guardando ? 'Guardando...' : 'Guardar borrador'"></span>
-                </button>
-                <button type="button" class="btn btn-success w-full py-3" @click="guardar('cerrar')" :disabled="guardando">
-                    <x-heroicon-o-lock-closed class="h-5 w-5"/> Guardar y cerrar liquidación
-                </button>
-                <p class="text-center text-[11px] text-slate-400" x-show="sucio">Hay cambios sin guardar</p>
+            {{-- FISE --}}
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Vales FISE</p>
+                    <select class="form-input h-7 w-44 text-xs" x-show="editable" @change="agregarFise($event.target.value); $event.target.value = ''">
+                        <option value="">+ FISE de un cliente</option>
+                        <template x-for="id in clientesDelDia" :key="id"><option :value="id" x-text="nombreCliente(id)"></option></template>
+                    </select>
+                </div>
+                <table class="table table-compact table-grid">
+                    <thead><tr><th>Cliente</th><template x-for="v in valoresFise" :key="v"><th class="w-16 text-right" x-text="'S/ ' + v"></th></template><th class="w-20 text-right">Importe</th><th class="w-8"></th></tr></thead>
+                    <tbody>
+                    <template x-for="key in filasFise" :key="key">
+                        <tr>
+                            <td class="text-xs" x-text="key === 'sin' ? 'General (sin cliente)' : nombreCliente(+key)"></td>
+                            <template x-for="v in valoresFise" :key="v">
+                                <td class="!p-0"><input type="number" min="0" class="cell-input" x-model="fises[key][v]"></td>
+                            </template>
+                            <td class="text-right" x-text="dec(subtotalFise(key))"></td>
+                            <td class="!p-0 text-center"><button type="button" class="btn-icon danger" tabindex="-1" x-show="editable && key !== 'sin'" @click="quitarFise(key)"><x-heroicon-o-x-mark/></button></td>
+                        </tr>
+                    </template>
+                    </tbody>
+                    <tfoot>
+                    <tr><td>TOTAL</td><template x-for="v in valoresFise" :key="v"><td class="text-right" x-text="cantidadFise(v) || ''"></td></template><td class="text-right" x-text="dec(totalFises)"></td><td></td></tr>
+                    </tfoot>
+                </table>
             </div>
-        </aside>
+
+            {{-- Varios --}}
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Varios (gastos del chofer)</p>
+                    <button type="button" class="btn btn-secondary btn-sm" x-show="editable" @click="agregarGasto()"><x-heroicon-o-plus/></button>
+                </div>
+                <table class="table table-compact table-grid">
+                    <thead><tr><th>Concepto</th><th class="w-24">Comprob.</th><th class="w-24 text-right">Monto</th><th class="w-8"></th></tr></thead>
+                    <tbody>
+                    <template x-for="g in gastos" :key="g.uid">
+                        <tr>
+                            <td class="!p-0"><input class="cell-input text-left" x-model="g.concepto" placeholder="Peaje, combustible..."></td>
+                            <td class="!p-0"><input class="cell-input text-left" x-model="g.comprobante"></td>
+                            <td class="!p-0"><input type="number" min="0" step="0.01" class="cell-input" x-model="g.monto"></td>
+                            <td class="!p-0 text-center"><button type="button" class="btn-icon danger" tabindex="-1" x-show="editable" @click="gastos.splice(gastos.indexOf(g), 1)"><x-heroicon-o-x-mark/></button></td>
+                        </tr>
+                    </template>
+                    </tbody>
+                    <tfoot><tr><td colspan="2">TOTAL</td><td class="text-right" x-text="dec(totalGastos)"></td><td></td></tr></tfoot>
+                </table>
+            </div>
+        </div>
+
+        {{-- Resumen como la hoja RESUMEN GNRAL --}}
+        <div class="grid gap-4 xl:grid-cols-[1fr_24rem]">
+            <div class="card">
+                <div class="card-header"><p class="card-title">Resumen de la liquidación</p></div>
+                <div class="table-wrap">
+                    <table class="table table-grid">
+                        <thead>
+                        <tr>
+                            <template x-for="p in productos" :key="p.id"><th class="text-right" x-text="p.codigo"></th></template>
+                            <th class="text-right">Venta total</th><th class="text-right">Cobranza</th><th class="text-right">Crédito</th><th class="text-right">Varios</th>
+                            <th class="text-right">FISE</th><th class="text-right">Vouchers</th><th class="text-right">Por depositar</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <template x-for="p in productos" :key="p.id"><td class="text-right" x-text="cantidadPor(p.codigo) || ''"></td></template>
+                            <td class="text-right font-semibold" x-text="dec(totalVenta)"></td>
+                            <td class="text-right" x-text="dec(totalCobranzas)"></td>
+                            <td class="text-right" x-text="dec(totalCredito)"></td>
+                            <td class="text-right" x-text="dec(totalGastos)"></td>
+                            <td class="text-right" x-text="dec(totalFises)"></td>
+                            <td class="text-right" x-text="dec(totalVouchers)"></td>
+                            <td class="text-right text-base font-bold text-brand-800" x-text="dec(efectivo)"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="px-4 py-2 text-[11px] text-slate-500">Por depositar = venta total + cobranza − crédito − varios − FISE − vouchers (pagos por Yape, Plin o transferencia).</p>
+                <div class="grid gap-3 border-t border-line p-4 sm:grid-cols-3">
+                    <div>
+                        <label class="form-label">Efectivo entregado por el chofer</label>
+                        <input type="number" min="0" step="0.01" class="form-input" x-model="cab.efectivo_entregado" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="form-label">Diferencia</label>
+                        <p class="flex h-8 items-center rounded border border-line bg-panel px-2.5 font-semibold tabular-nums"
+                           :class="diferencia === null ? 'text-slate-400' : (Math.abs(diferencia) < 0.01 ? 'text-emerald-700' : 'text-red-700')"
+                           x-text="diferencia === null ? '—' : (Math.abs(diferencia) < 0.01 ? 'Cuadra' : (diferencia > 0 ? 'Sobra ' : 'Falta ') + dec(Math.abs(diferencia)))"></p>
+                    </div>
+                    <div>
+                        <label class="form-label">Observaciones</label>
+                        <input class="form-input" x-model="cab.observaciones">
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><p class="card-title">Cuadre con el almacén</p></div>
+                <table class="table table-compact table-grid">
+                    <thead><tr><th>Pres.</th><th class="text-right">Liquidado</th><th class="text-right">Según parte</th><th></th></tr></thead>
+                    <tbody>
+                    <template x-for="codigo in codigosCuadre" :key="codigo">
+                        <tr>
+                            <td x-text="codigo"></td>
+                            <td class="text-right" x-text="balones[codigo] ?? 0"></td>
+                            <td class="text-right" x-text="cuadre[codigo] ?? '—'"></td>
+                            <td class="text-center">
+                                <template x-if="cuadre[codigo] !== undefined">
+                                    <span :class="cuadre[codigo] === (balones[codigo] ?? 0) ? 'text-emerald-700' : 'font-semibold text-red-700'" x-text="cuadre[codigo] === (balones[codigo] ?? 0) ? 'OK' : 'Revisar'"></span>
+                                </template>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="!codigosCuadre.length"><td colspan="4" class="py-4 text-center text-slate-400">Sin datos</td></tr>
+                    </tbody>
+                </table>
+                <p class="px-3 py-2 text-[11px] text-slate-500">«Según parte» = salida de llenos − llenos devueltos del chofer en el parte diario de esa fecha.</p>
+            </div>
+        </div>
     </fieldset>
 
-    {{-- Barra fija con el resultado para pantallas donde el resumen queda abajo --}}
-    <div class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_-12px_rgba(15,23,42,.25)] backdrop-blur 2xl:hidden lg:left-[17rem]">
+    <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-5 py-2.5 lg:left-60 no-print">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-                <span>Venta <b class="tabular-nums" x-text="money(totalVenta)"></b></span>
-                <span class="text-rose-600">Créd. + vouchers + FISE + gastos <b class="tabular-nums" x-text="money(totalCredito + totalVouchers + totalFises + totalGastos)"></b></span>
-                <span class="text-base">Efectivo <b class="text-brand-700 tabular-nums" x-text="money(efectivo)"></b></span>
-            </div>
+            <p class="flex flex-wrap gap-x-5 text-xs text-slate-500">
+                <span>Balones <b class="text-slate-800" x-text="totalBalones"></b></span>
+                <span>Venta <b class="text-slate-800" x-text="dec(totalVenta)"></b></span>
+                <span>Crédito <b class="text-slate-800" x-text="dec(totalCredito)"></b></span>
+                <span>FISE <b class="text-slate-800" x-text="dec(totalFises)"></b></span>
+                <span>Por depositar <b class="text-[13px] text-brand-800" x-text="money(efectivo)"></b></span>
+                <span class="text-amber-700" x-show="sucio && editable">Cambios sin guardar</span>
+            </p>
             <div class="flex gap-2" x-show="editable">
-                <button type="button" class="btn btn-primary" @click="guardar()" :disabled="guardando"><x-heroicon-o-document-check class="h-4 w-4"/> Guardar</button>
-                <button type="button" class="btn btn-success" @click="guardar('cerrar')" :disabled="guardando"><x-heroicon-o-lock-closed class="h-4 w-4"/> Guardar y cerrar</button>
+                <button type="button" class="btn btn-secondary" @click="guardar()" :disabled="guardando"><span x-text="guardando ? 'Guardando...' : 'Guardar borrador'"></span></button>
+                <button type="button" class="btn btn-primary" @click="guardar('cerrar')" :disabled="guardando">Guardar y cerrar</button>
             </div>
         </div>
     </div>
-    <div class="h-16 2xl:hidden"></div>
 </div>
 </x-layouts.app>

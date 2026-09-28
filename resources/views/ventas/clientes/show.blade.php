@@ -5,14 +5,14 @@
         <div x-show="tab === 'detalle'" class="space-y-6">
             <div class="grid gap-3 sm:grid-cols-4">
                 @foreach ($vigentes as $productoId => $precio)
-                    <div class="rounded bg-brand-50 p-4 border border-brand-100">
-                        <p class="text-xs font-bold text-brand-700">{{ $productos[$productoId]->codigo ?? '' }}</p>
-                        <p class="text-xl font-bold text-slate-900">{{ soles($precio) }}</p>
+                    <div class="kpi">
+                        <p class="kpi-label">Precio {{ $productos[$productoId]->codigo ?? '' }}</p>
+                        <p class="kpi-value">{{ soles($precio) }}</p>
                     </div>
                 @endforeach
-                <div class="rounded p-4 {{ $cliente->deudaPendiente() > 0 ? 'bg-rose-50 ring-rose-200' : 'bg-emerald-50 ring-emerald-200' }}">
-                    <p class="text-xs font-bold text-slate-600">Deuda pendiente</p>
-                    <p class="text-xl font-bold text-slate-900">{{ soles($cliente->deudaPendiente()) }}</p>
+                <div class="kpi border-l-[3px] {{ $cliente->deudaPendiente() > 0 ? 'border-l-red-600' : 'border-l-emerald-600' }}">
+                    <p class="kpi-label">Deuda pendiente</p>
+                    <p class="kpi-value">{{ soles($cliente->deudaPendiente()) }}</p>
                 </div>
             </div>
             <dl class="dl-grid">
