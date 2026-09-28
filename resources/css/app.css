@@ -1,0 +1,108 @@
+@import 'tailwindcss';
+@import 'tom-select/dist/css/tom-select.css';
+@import '@fontsource-variable/inter';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views';
+@source '../js';
+@source '../../app';
+
+@theme {
+    --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --color-brand-50: #eef4ff;
+    --color-brand-100: #dbe7ff;
+    --color-brand-200: #bfd3ff;
+    --color-brand-300: #93b4fd;
+    --color-brand-400: #608bfa;
+    --color-brand-500: #3b64f5;
+    --color-brand-600: #2545ea;
+    --color-brand-700: #1d35d7;
+    --color-brand-800: #1e2fae;
+    --color-brand-900: #1e2d89;
+    --color-brand-950: #161d53;
+    --color-flame-500: #f97316;
+    --color-flame-600: #ea580c;
+}
+
+@layer base {
+    html { -webkit-font-smoothing: antialiased; }
+    body { @apply bg-slate-100 text-slate-800; }
+    [x-cloak] { display: none !important; }
+    input[type='number']::-webkit-inner-spin-button { opacity: .4; }
+}
+
+@layer components {
+    .card { @apply rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70; }
+    .card-header { @apply flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4; }
+    .card-title { @apply text-sm font-semibold text-slate-900; }
+    .card-body { @apply p-5; }
+
+    .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap; }
+    .btn-sm { @apply rounded-lg px-2.5 py-1.5 text-xs; }
+    .btn-primary { @apply bg-brand-600 text-white shadow-sm shadow-brand-600/30 hover:bg-brand-700 focus-visible:ring-brand-500; }
+    .btn-secondary { @apply bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 focus-visible:ring-slate-400; }
+    .btn-success { @apply bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 hover:bg-emerald-700 focus-visible:ring-emerald-500; }
+    .btn-danger { @apply bg-rose-600 text-white shadow-sm shadow-rose-600/30 hover:bg-rose-700 focus-visible:ring-rose-500; }
+    .btn-warning { @apply bg-amber-500 text-white shadow-sm hover:bg-amber-600 focus-visible:ring-amber-400; }
+    .btn-ghost { @apply text-slate-600 hover:bg-slate-100; }
+    .btn-icon { @apply inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900; }
+    .btn-icon.danger { @apply hover:bg-rose-50 hover:text-rose-600; }
+    .btn-icon.info { @apply hover:bg-brand-50 hover:text-brand-700; }
+
+    .form-label { @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500; }
+    .form-input { @apply block w-full rounded-xl border-0 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200 transition placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500; }
+    .form-input.is-invalid { @apply ring-rose-400 focus:ring-rose-500; }
+    .form-error { @apply mt-1 text-xs font-medium text-rose-600; }
+    .form-hint { @apply mt-1 text-xs text-slate-400; }
+    .form-check { @apply h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500; }
+
+    .table-wrap { @apply overflow-x-auto; }
+    .table { @apply min-w-full text-sm; }
+    .table thead th { @apply bg-slate-50/80 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap; }
+    .table tbody td { @apply border-t border-slate-100 px-4 py-3 align-middle text-slate-700; }
+    .table tbody tr { @apply transition hover:bg-brand-50/40; }
+    .table tfoot td { @apply border-t-2 border-slate-200 bg-slate-50 px-4 py-3 font-semibold; }
+    .table-compact thead th { @apply px-3 py-2; }
+    .table-compact tbody td { @apply px-3 py-2; }
+
+    .badge { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset whitespace-nowrap; }
+    .badge-slate { @apply bg-slate-50 text-slate-600 ring-slate-200; }
+    .badge-blue { @apply bg-brand-50 text-brand-700 ring-brand-200; }
+    .badge-green { @apply bg-emerald-50 text-emerald-700 ring-emerald-200; }
+    .badge-red { @apply bg-rose-50 text-rose-700 ring-rose-200; }
+    .badge-amber { @apply bg-amber-50 text-amber-700 ring-amber-200; }
+    .badge-violet { @apply bg-violet-50 text-violet-700 ring-violet-200; }
+    .badge-sky { @apply bg-sky-50 text-sky-700 ring-sky-200; }
+    .badge-orange { @apply bg-orange-50 text-orange-700 ring-orange-200; }
+
+    .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium text-slate-300 transition hover:bg-white/10 hover:text-white; }
+    .nav-link.active { @apply bg-white/15 text-white shadow-inner; }
+    .nav-link svg { @apply h-4 w-4 shrink-0 opacity-80; }
+    .nav-section { @apply mt-5 mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500; }
+
+    .tabs { @apply flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1; }
+    .tab { @apply rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 whitespace-nowrap; }
+    .tab.active { @apply bg-white text-slate-900 shadow-sm; }
+
+    .kpi { @apply relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70; }
+    .kpi-label { @apply text-xs font-semibold uppercase tracking-wide text-slate-500; }
+    .kpi-value { @apply mt-2 text-2xl font-bold tracking-tight text-slate-900 tabular-nums; }
+
+    .dl-grid { @apply grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3; }
+    .dl-grid dt { @apply text-[11px] font-semibold uppercase tracking-wide text-slate-400; }
+    .dl-grid dd { @apply mt-0.5 text-sm font-medium text-slate-800; }
+}
+
+/* Tom Select integrado al estilo del ERP */
+.ts-wrapper.single .ts-control, .ts-wrapper.multi .ts-control { border: 0; border-radius: .75rem; box-shadow: 0 0 0 1px rgb(226 232 240), 0 1px 2px rgb(0 0 0 / .04); padding: .5rem .75rem; min-height: 2.35rem; font-size: .875rem; }
+.ts-wrapper.focus .ts-control { box-shadow: 0 0 0 2px var(--color-brand-500); }
+.ts-dropdown { border-radius: .75rem; border: 1px solid rgb(226 232 240); box-shadow: 0 10px 30px -10px rgb(15 23 42 / .25); font-size: .875rem; overflow: hidden; z-index: 70; }
+.ts-dropdown .active { background: var(--color-brand-50); color: var(--color-brand-800); }
+.ts-wrapper.is-invalid .ts-control { box-shadow: 0 0 0 1px rgb(251 113 133); }
+
+/* SweetAlert2 con la tipografía del sistema */
+.swal2-popup { font-family: var(--font-sans); border-radius: 1.25rem !important; }
+.swal2-styled.swal2-confirm { border-radius: .75rem !important; }
+.swal2-styled.swal2-cancel { border-radius: .75rem !important; }
+.swal2-container { z-index: 90 !important; }
