@@ -204,6 +204,24 @@ class LiquidacionController extends Controller
             [[$l->total_venta, $l->total_cobranzas, $l->total_credito, $l->total_gastos, $l->total_fises, $l->total_vouchers, $l->efectivo_esperado, $l->efectivo_entregado, $l->diferencia]]);
     }
 
+    /** Stock real del almacén hoy (igual a la pantalla de stock): llenos, cambios, total y vacíos. */
+    private function stockActual(): array
+    {
+        $c = $this->almacen->controlDelDia(today());
+        $total = AlmacenService::totalesPorPresentacion($c);
+        $vacios = AlmacenService::totalesVacios($c);
+
+        return [
+            'fecha' => today()->format('d/m/Y'),
+            'filas' => [
+                ['Llenos', $c['lleno_s10']['final'], $c['lleno_s45']['final'], $c['lleno_m10']['final']],
+                ['Cambios', $c['cambio_s10']['final'], $c['cambio_s45']['final'], $c['cambio_m10']['final']],
+                ['Total', $total['S10'], $total['S45'], $total['M10']],
+                ['Vacíos', $vacios['S10'], $vacios['S45'], null],
+            ],
+        ];
+    }
+
     private function respuestaGuardado(Liquidacion $liquidacion, string $mensaje): JsonResponse
     {
         return $this->ok($mensaje, [
@@ -264,7 +282,7 @@ class LiquidacionController extends Controller
             'empresas' => Empresa::activas()->get(['id', 'nombre'])->values(),
             'choferes' => $choferes->map(fn ($c) => ['id' => $c->id, 'alias' => $c->alias, 'tipo' => $c->tipo->value, 'vehiculo_id' => $c->vehiculo_id])->values(),
             'metodos' => MetodoPago::options(),
-            'stock' => $this->almacen->disponiblePorEmpresa(),
+            'stock' => $this->stockActual(),
             'valoresFise' => LiquidacionFise::VALORES,
         ];
 

@@ -63,15 +63,15 @@
                     </div>
                 </div>
                 <div class="border-t border-line bg-panel lg:border-t-0 lg:border-l">
-                    <p class="px-4 pt-3 text-[10.5px] font-semibold tracking-[.12em] text-brand-800 uppercase">Stock disponible <span class="font-normal tracking-normal text-slate-500 normal-case">(compras − ventas)</span></p>
+                    <p class="px-4 pt-3 text-[10.5px] font-semibold tracking-[.12em] text-brand-800 uppercase">Stock en almacén <span class="font-normal tracking-normal text-slate-500 normal-case" x-text="'al ' + stock.fecha"></span></p>
                     <table class="mt-1.5 w-full text-[13px]">
-                        <thead><tr class="text-[10.5px] tracking-wide text-slate-500 uppercase"><th class="px-4 py-1 text-left font-semibold">Empresa</th><th class="px-2 text-right font-semibold">S10</th><th class="px-2 text-right font-semibold">S45</th><th class="px-4 text-right font-semibold">M10</th></tr></thead>
+                        <thead><tr class="text-[10.5px] tracking-wide text-slate-500 uppercase"><th class="px-4 py-1 text-left font-semibold"></th><th class="px-2 text-right font-semibold">S-10</th><th class="px-2 text-right font-semibold">S-45</th><th class="px-4 text-right font-semibold">M-10</th></tr></thead>
                         <tbody>
-                        <template x-for="e in empresas" :key="e.id">
-                            <tr class="border-t border-line-soft">
-                                <td class="px-4 py-1.5 font-semibold text-brand-900" x-text="e.nombre"></td>
-                                <template x-for="(c, n) in ['S10', 'S45', 'M10']" :key="c">
-                                    <td class="py-1.5 text-right tabular-nums" :class="[n === 2 ? 'px-4' : 'px-2', disponible(e, c) < 0 ? 'font-semibold text-red-700' : '']" x-text="disponible(e, c).toLocaleString('es-PE')"></td>
+                        <template x-for="fila in stock.filas" :key="fila[0]">
+                            <tr class="border-t border-line-soft" :class="fila[0] === 'Total' && 'bg-brand-800 text-white'">
+                                <td class="px-4 py-1.5 font-semibold" :class="fila[0] === 'Total' ? 'text-white' : 'text-brand-900'" x-text="fila[0]"></td>
+                                <template x-for="(v, n) in fila.slice(1)" :key="n">
+                                    <td class="py-1.5 text-right tabular-nums" :class="[n === 2 ? 'px-4' : 'px-2', fila[0] === 'Total' ? 'font-semibold' : '']" x-text="v === null ? '' : Number(v).toLocaleString('es-PE')"></td>
                                 </template>
                             </tr>
                         </template>

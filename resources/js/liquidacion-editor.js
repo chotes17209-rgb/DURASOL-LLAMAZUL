@@ -19,7 +19,7 @@ export default function liquidacionEditor(config) {
         choferes: config.choferes,
         metodos: config.metodos,
         valoresFise: config.valoresFise,
-        stock: config.stock || {},
+        stock: config.stock || { fecha: '', filas: [] },
         editable: config.editable,
         cab: config.cabecera,
         items: [],
@@ -285,14 +285,6 @@ export default function liquidacionEditor(config) {
         get totalBalones() { return this.items.reduce((s, i) => s + (+i.cantidad || 0), 0); },
         get totalVacios() { return this.items.reduce((s, i) => s + (+i.vacios_devueltos || 0), 0); },
         get codigosCuadre() { return [...new Set([...Object.keys(this.cuadre), ...Object.keys(this.balones)])]; },
-        /** Stock disponible de la empresa después de esta liquidación (cuadro STOCK DISPONIBLE). */
-        disponible(empresa, codigo) {
-            const base = this.stock[empresa.nombre]?.[codigo] ?? 0;
-            const vendido = this.items.filter((i) => +i.empresa_id === empresa.id && this.codigoProducto(i.producto_id) === codigo)
-                .reduce((s, i) => s + (+i.cantidad || 0), 0);
-            return base - (config.metodo === 'POST' ? vendido : 0);
-        },
-
         /* ---------------- Cabecera ---------------- */
         cambiarChofer() {
             const chofer = this.choferes.find((c) => String(c.id) === String(this.cab.chofer_id));
