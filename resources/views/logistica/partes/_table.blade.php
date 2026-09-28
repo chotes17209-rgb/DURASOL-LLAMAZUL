@@ -1,7 +1,7 @@
 <div class="table-wrap">
     <table class="table">
         <thead><tr><th>Fecha</th><th>Estado</th><th class="text-right">Filas</th><th class="text-right">Ingreso llenos</th><th class="text-right">Salida llenos</th>
-            <th class="text-right">Stock S-10</th><th class="text-right">Stock S-45</th><th class="text-right">Stock M-10</th><th class="text-right">Vacíos S-10</th><th></th></tr></thead>
+            <th class="text-right" title="llenos + cambios">Total S-10</th><th class="text-right">Total S-45</th><th class="text-right">Total M-10</th><th class="text-right" title="plomos + colores">Vacíos S-10</th><th class="text-right">Vacíos S-45</th><th></th></tr></thead>
         <tbody>
         @forelse ($partes as $p)
             @php($r = $resumen[$p->id])
@@ -15,10 +15,11 @@
                 <td class="text-right">{{ num($r['final_s45']) }}</td>
                 <td class="text-right">{{ num($r['final_m10']) }}</td>
                 <td class="text-right">{{ num($r['vacios_s10']) }}</td>
+                <td class="text-right">{{ num($r['vacios_s45']) }}</td>
                 <td class="text-right"><a href="{{ route('logistica.partes.show', $p->fecha->toDateString()) }}" class="btn btn-secondary btn-sm">Abrir</a></td>
             </tr>
         @empty
-            <tr><td colspan="10"><x-empty title="Aún no hay partes" text="Abre el parte del día para empezar a registrar."/></td></tr>
+            <tr><td colspan="11"><x-empty title="Aún no hay partes" text="Abre el parte del día para empezar a registrar."/></td></tr>
         @endforelse
         </tbody>
     </table>

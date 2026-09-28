@@ -11,14 +11,15 @@
 
     @php
         $total = \App\Services\AlmacenService::totalesPorPresentacion($control);
+        $vacios = \App\Services\AlmacenService::totalesVacios($control);
         $f = fn ($llave, $campo) => num($control[$llave][$campo]);
     @endphp
     <dl class="ledger mb-4 !grid-cols-2 lg:!grid-cols-5">
         <x-cifra label="Total S-10" :value="num($total['S10'])" :hint="'llenos '.$f('lleno_s10', 'final').' + cambios '.$f('cambio_s10', 'final')" total/>
         <x-cifra label="Total S-45" :value="num($total['S45'])" :hint="'llenos '.$f('lleno_s45', 'final').' + cambios '.$f('cambio_s45', 'final')"/>
         <x-cifra label="Total M-10" :value="num($total['M10'])" :hint="'llenos '.$f('lleno_m10', 'final').' + cambios '.$f('cambio_m10', 'final')"/>
-        <x-cifra label="Vacíos plomo" :value="num($control['plomo_s10']['final'] + $control['plomo_s45']['final'])" :hint="'S-10 '.$f('plomo_s10', 'final').' · S-45 '.$f('plomo_s45', 'final')"/>
-        <x-cifra label="Vacíos de color" :value="num($control['color_s10']['final'] + $control['color_s45']['final'])" :hint="'S-10 '.$f('color_s10', 'final').' · S-45 '.$f('color_s45', 'final')"/>
+        <x-cifra label="Vacíos S-10" :value="num($vacios['S10'])" :hint="'plomos '.$f('plomo_s10', 'final').' + colores '.$f('color_s10', 'final')"/>
+        <x-cifra label="Vacíos S-45" :value="num($vacios['S45'])" :hint="'plomos '.$f('plomo_s45', 'final').' + colores '.$f('color_s45', 'final')"/>
     </dl>
 
     <div class="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -52,20 +53,29 @@
         </div>
     </div>
 
-    <div class="card mt-4">
-        <div class="card-header"><p class="card-title">Control de stock vacíos</p></div>
-        <table class="table table-compact table-grid">
-            <thead>
-            <tr class="th-group"><th></th><th colspan="2">Plomo</th><th colspan="2">Color</th></tr>
-            <tr><th>Stock</th><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">S-10</th><th class="text-right">S-45</th></tr>
-            </thead>
-            <tbody>
-            @foreach (['inicial' => 'Stock inicial', 'ingreso' => '(+) Ingreso', 'salida' => '(−) Salida'] as $campo => $etiqueta)
-                <tr><td class="font-medium">{{ $etiqueta }}</td>@foreach (['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45'] as $llave)<td class="text-right">{{ $f($llave, $campo) }}</td>@endforeach</tr>
-            @endforeach
-            </tbody>
-            <tfoot><tr><td>FINAL</td>@foreach (['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45'] as $llave)<td class="text-right"><a href="{{ route('logistica.stock.kardex', ['llave' => $llave]) }}" class="hover:underline">{{ $f($llave, 'final') }}</a></td>@endforeach</tr></tfoot>
-        </table>
+    <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div class="card">
+            <div class="card-header"><p class="card-title">Control de stock vacíos</p></div>
+            <table class="table table-compact table-grid">
+                <thead>
+                <tr class="th-group"><th></th><th colspan="2">Plomo</th><th colspan="2">Color</th></tr>
+                <tr><th>Stock</th><th class="text-right">S-10</th><th class="text-right">S-45</th><th class="text-right">S-10</th><th class="text-right">S-45</th></tr>
+                </thead>
+                <tbody>
+                @foreach (['inicial' => 'Stock inicial', 'ingreso' => '(+) Ingreso', 'salida' => '(−) Salida'] as $campo => $etiqueta)
+                    <tr><td class="font-medium">{{ $etiqueta }}</td>@foreach (['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45'] as $llave)<td class="text-right">{{ $f($llave, $campo) }}</td>@endforeach</tr>
+                @endforeach
+                </tbody>
+                <tfoot><tr><td>FINAL</td>@foreach (['plomo_s10', 'plomo_s45', 'color_s10', 'color_s45'] as $llave)<td class="text-right"><a href="{{ route('logistica.stock.kardex', ['llave' => $llave]) }}" class="hover:underline">{{ $f($llave, 'final') }}</a></td>@endforeach</tr></tfoot>
+            </table>
+        </div>
+        <div class="card">
+            <div class="card-header"><p class="card-title">Total vacíos</p><span class="text-[11px] text-slate-500">plomos + colores</span></div>
+            <table class="table table-grid">
+                <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th></tr></thead>
+                <tbody><tr>@foreach ($vacios as $v)<td class="text-right text-[18px] font-semibold text-brand-950">{{ num($v) }}</td>@endforeach</tr></tbody>
+            </table>
+        </div>
     </div>
 
     <div class="card mt-4 max-w-2xl">

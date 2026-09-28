@@ -105,6 +105,11 @@ export default function parteEditor(config) {
             return this.control(`lleno_${p}`).final + this.control(`cambio_${p}`).final;
         },
 
+        /** TOTAL de vacíos por presentación (plomos + colores). */
+        totalVacios(p) {
+            return this.control(`plomo_${p}`).final + this.control(`color_${p}`).final;
+        },
+
         /** Control de stock en vivo. */
         control(llave) {
             const [tipo, columna] = STOCK[llave];

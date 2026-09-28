@@ -23,6 +23,8 @@ class StockController extends Controller
                     collect($control)->map(fn ($f) => [($f['tipo'] === 'lleno' ? 'Llenos ' : 'Vacíos ').$f['titulo'], $f['inicial'], $f['ingreso'], $f['salida'], $f['final']])->values())
                 ->tabla('Total (llenos + cambios)', ['S-10' => 'entero', 'S-45' => 'entero', 'M-10' => 'entero'],
                     [array_values(AlmacenService::totalesPorPresentacion($control))])
+                ->tabla('Total vacíos (plomos + colores)', ['S-10' => 'entero', 'S-45' => 'entero'],
+                    [array_values(AlmacenService::totalesVacios($control))])
                 ->tabla('Stock disponible por empresa', ['Empresa' => 'texto', 'S-10' => 'entero', 'S-45' => 'entero', 'M-10' => 'entero'],
                     collect($this->almacen->disponiblePorEmpresa($fecha))->map(fn ($s, $e) => [$e, $s['S10'], $s['S45'], $s['M10']])->values())
                 ->descargar($request->formato, 'stock-'.$fecha->toDateString());

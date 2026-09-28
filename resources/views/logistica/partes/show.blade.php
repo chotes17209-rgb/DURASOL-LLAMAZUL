@@ -52,7 +52,7 @@
                     @endif
                 </div>
             </div>
-            <dl class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7">
+            <dl class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
                 <template x-for="[p, titulo] in [['s10', 'Total S-10'], ['s45', 'Total S-45'], ['m10', 'Total M-10']]" :key="p">
                     <div class="ledger-cell">
                         <dt x-text="titulo"></dt>
@@ -60,7 +60,14 @@
                         <p class="text-[11px] text-slate-500"><span x-text="'llenos ' + n(control('lleno_' + p).final)"></span> + <span x-text="'cambios ' + n(control('cambio_' + p).final)"></span></p>
                     </div>
                 </template>
-                <template x-for="[llave, titulo] in [['plomo_s10', 'Plomo S-10'], ['color_s10', 'Color S-10'], ['plomo_s45', 'Plomo S-45'], ['color_s45', 'Color S-45']]" :key="llave">
+                <template x-for="[p, titulo] in [['s10', 'Vacíos S-10'], ['s45', 'Vacíos S-45']]" :key="p">
+                    <div class="ledger-cell">
+                        <dt x-text="titulo"></dt>
+                        <dd x-text="n(totalVacios(p))"></dd>
+                        <p class="text-[11px] text-slate-500"><span x-text="'plomos ' + n(control('plomo_' + p).final)"></span> + <span x-text="'colores ' + n(control('color_' + p).final)"></span></p>
+                    </div>
+                </template>
+                <template x-for="[llave, titulo] in [['cambio_s10', 'Cambios (fallados) S-10']]" :key="llave">
                     <div class="ledger-cell">
                         <dt x-text="titulo"></dt>
                         <dd :class="control(llave).final < 0 && '!text-red-700'" x-text="n(control(llave).final)"></dd>
@@ -96,7 +103,16 @@
         <div x-show="tab === 'vacios'" class="space-y-4">
             @include('logistica.partes._bloque', ['bloque' => 'vacio_ingreso', 'titulo' => 'INGRESO DE VACÍOS — choferes, clientes y canje', 'columnas' => $vacios, 'conPlanta' => false])
             @include('logistica.partes._bloque', ['bloque' => 'vacio_salida', 'titulo' => 'SALIDA DE VACÍOS — a planta y canje', 'columnas' => $vacios, 'conPlanta' => true])
-            @include('logistica.partes._control', ['titulo' => 'CONTROL DE STOCK VACÍOS', 'llaves' => ['plomo_s10' => 'Plomo S-10', 'plomo_s45' => 'Plomo S-45', 'color_s10' => 'Color S-10', 'color_s45' => 'Color S-45']])
+            <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+                @include('logistica.partes._control', ['titulo' => 'CONTROL DE STOCK VACÍOS', 'llaves' => ['plomo_s10' => 'Plomos S-10', 'plomo_s45' => 'Plomos S-45', 'color_s10' => 'Colores S-10', 'color_s45' => 'Colores S-45']])
+                <div class="card">
+                    <div class="card-header"><p class="card-title">Total vacíos</p><span class="text-[11px] text-slate-500">plomos + colores</span></div>
+                    <table class="table table-grid">
+                        <thead><tr><th class="text-right">S-10</th><th class="text-right">S-45</th></tr></thead>
+                        <tbody><tr><template x-for="p in ['s10', 's45']" :key="p"><td class="text-right text-[18px] font-semibold text-brand-950" x-text="n(totalVacios(p))"></td></template></tr></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <div x-show="tab === 'masa'" class="card">
@@ -155,10 +171,10 @@
         <div class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-white px-6 py-2.5 lg:left-64 no-print" style="box-shadow: 0 -4px 12px -6px rgb(10 26 56 / .15)" x-show="editable">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-xs text-slate-500">
-                    Llenos S-10 final: <b class="text-slate-800" x-text="n(control('lleno_s10').final)"></b> ·
-                    S-45: <b class="text-slate-800" x-text="n(control('lleno_s45').final)"></b> ·
-                    M-10: <b class="text-slate-800" x-text="n(control('lleno_m10').final)"></b> ·
-                    Vacíos S-10 (plomo + color): <b class="text-slate-800" x-text="n(control('plomo_s10').final + control('color_s10').final)"></b>
+                    Total S-10: <b class="text-slate-800" x-text="n(totalPresentacion('s10'))"></b> ·
+                    S-45: <b class="text-slate-800" x-text="n(totalPresentacion('s45'))"></b> ·
+                    M-10: <b class="text-slate-800" x-text="n(totalPresentacion('m10'))"></b> ·
+                    Vacíos S-10: <b class="text-slate-800" x-text="n(totalVacios('s10'))"></b> · S-45: <b class="text-slate-800" x-text="n(totalVacios('s45'))"></b>
                     <span class="ml-2 text-amber-700" x-show="sucio">· Cambios sin guardar</span>
                 </p>
                 <button type="button" class="btn btn-primary" @click="guardar()" :disabled="guardando"><span x-text="guardando ? 'Guardando...' : 'Guardar parte'"></span></button>

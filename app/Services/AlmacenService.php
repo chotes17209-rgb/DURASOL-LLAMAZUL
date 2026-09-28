@@ -65,6 +65,19 @@ class AlmacenService
         ];
     }
 
+    /**
+     * TOTAL de vacíos por presentación, como el cuadro "TOTAL" de vacíos: plomos + colores.
+     *
+     * @return array{S10: int, S45: int}
+     */
+    public static function totalesVacios(array $control): array
+    {
+        return [
+            'S10' => $control['plomo_s10']['final'] + $control['color_s10']['final'],
+            'S45' => $control['plomo_s45']['final'] + $control['color_s45']['final'],
+        ];
+    }
+
     /** Resumen del día: stock inicial, ingresos, salidas y final (como "CONTROL DE STOCK"). */
     public function controlDelDia(Carbon $fecha): array
     {

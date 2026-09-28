@@ -39,10 +39,11 @@ class ParteController extends Controller
             $resumen[$parte->id] = [
                 'ingreso_llenos' => $control['lleno_s10']['ingreso'] + $control['lleno_s45']['ingreso'] + $control['lleno_m10']['ingreso'],
                 'salida_llenos' => $control['lleno_s10']['salida'] + $control['lleno_s45']['salida'] + $control['lleno_m10']['salida'],
-                'final_s10' => $control['lleno_s10']['final'],
-                'final_s45' => $control['lleno_s45']['final'],
-                'final_m10' => $control['lleno_m10']['final'],
-                'vacios_s10' => $control['plomo_s10']['final'] + $control['color_s10']['final'],
+                'final_s10' => AlmacenService::totalesPorPresentacion($control)['S10'],
+                'final_s45' => AlmacenService::totalesPorPresentacion($control)['S45'],
+                'final_m10' => AlmacenService::totalesPorPresentacion($control)['M10'],
+                'vacios_s10' => AlmacenService::totalesVacios($control)['S10'],
+                'vacios_s45' => AlmacenService::totalesVacios($control)['S45'],
             ];
         }
 
@@ -199,6 +200,9 @@ class ParteController extends Controller
                 if ($bloque === ParteFila::LLENO_SALIDA) {
                     $reporte->tabla('Total (llenos + cambios)', ['S-10' => 'entero', 'S-45' => 'entero', 'M-10' => 'entero'],
                         [array_values(AlmacenService::totalesPorPresentacion($control))]);
+                } else {
+                    $reporte->tabla('Total vacíos (plomos + colores)', ['S-10' => 'entero', 'S-45' => 'entero'],
+                        [array_values(AlmacenService::totalesVacios($control))]);
                 }
             }
         }
