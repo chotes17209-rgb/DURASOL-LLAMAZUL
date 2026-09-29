@@ -126,16 +126,16 @@
                     <tr>
                         <th class="w-8 text-center">N°</th>
                         <th class="w-20">Código</th>
-                        <th class="min-w-64">Nombre</th>
-                        <th class="w-28">Empresa</th>
-                        <th class="w-20">Pres.</th>
+                        <th class="min-w-56">Nombre</th>
+                        <th class="w-28 min-w-28">Empresa</th>
+                        <th class="w-20 min-w-20">Pres.</th>
                         <th class="w-16 text-right">Cant.</th>
                         <th class="w-20 text-right">P. unit.</th>
                         <th class="w-24 text-right">Total</th>
                         <th class="w-16 text-right">Devuelve</th>
                         <th class="w-24 text-right">Crédito</th>
                         <th class="w-24 text-right">Contado</th>
-                        <th class="w-28">Forma de pago</th>
+                        <th class="w-28 min-w-28">Forma de pago</th>
                         <th class="w-28">N° operación</th>
                         <th class="w-8"></th>
                     </tr>
@@ -205,7 +205,7 @@
             </div>
         </section>
 
-        <div class="grid gap-4 xl:grid-cols-2">
+        <div class="grid gap-4 min-[1150px]:grid-cols-2">
             {{-- Cobranzas --}}
             <section class="card">
                 <div class="card-header">
@@ -320,7 +320,7 @@
             </section>
         </div>
 
-        <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div class="grid gap-4 min-[1150px]:grid-cols-2">
             {{-- Cuadre de efectivo, como un comprobante --}}
             <section class="card overflow-hidden">
                 <div class="card-header"><p class="card-title">Cuadre de efectivo</p><span class="text-[12px] text-slate-500">Fórmula de la hoja RESUMEN GNRAL</span></div>

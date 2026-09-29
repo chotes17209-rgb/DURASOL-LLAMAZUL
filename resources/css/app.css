@@ -52,7 +52,7 @@
     ::selection { background: var(--color-brand-100); }
     .tabular-nums, td, dd { font-variant-numeric: tabular-nums; }
     /* Las columnas de una grilla no se estiran por una tabla ancha: la tabla se desplaza dentro de su tarjeta. */
-    .grid > *, .card, main { min-width: 0; }
+    .grid > *, .card, main, fieldset { min-width: 0; }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-thumb { background: #c9d0da; border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
     ::-webkit-scrollbar-thumb:hover { background-color: #aab3c0; }
