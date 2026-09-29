@@ -10,6 +10,23 @@ window.Alpine = Alpine;
 window.Swal = Swal;
 window.Chart = Chart;
 
+// Gráficos con la tipografía y colores del sistema.
+Chart.defaults.font.family = "'IBM Plex Sans', 'Segoe UI', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#556b82';
+Chart.defaults.animation.duration = 700;
+Object.assign(Chart.defaults.plugins.tooltip, {
+    backgroundColor: '#0f1f44', padding: 10, cornerRadius: 6, displayColors: false,
+    titleFont: { weight: '600' }, bodyFont: { size: 12.5 },
+    callbacks: {
+        label: (ctx) => {
+            const valor = ctx.parsed.y ?? ctx.parsed;
+            const soles = /S\//.test(ctx.dataset.label || '');
+            return `${ctx.dataset.label}: ${soles ? 'S/ ' : ''}${Number(valor).toLocaleString('en-US', { minimumFractionDigits: soles ? 2 : 0, maximumFractionDigits: 2 })}`;
+        },
+    },
+});
+
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content;
 
 /* ------------------------------------------------------------------ *

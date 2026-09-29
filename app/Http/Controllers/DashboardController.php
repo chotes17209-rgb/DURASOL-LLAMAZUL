@@ -32,6 +32,19 @@ class DashboardController extends Controller
         $balonesDia = (int) $itemsBase()->where('liquidaciones.fecha_venta', $fecha->toDateString())->sum('liquidacion_items.cantidad');
         $balonesMes = (int) $itemsBase()->whereBetween('liquidaciones.fecha_venta', [$inicioMes->toDateString(), $fecha->toDateString()])->sum('liquidacion_items.cantidad');
 
+        // Comparativos: mismo día de la semana anterior y mismos días del mes anterior.
+        $semanaAnterior = $fecha->copy()->subWeek();
+        $inicioMesAnt = $inicioMes->copy()->subMonthNoOverflow();
+        $finMesAnt = $inicioMesAnt->copy()->day(min($fecha->day, $inicioMesAnt->daysInMonth));
+        $comparativo = [
+            'dia_fecha' => $semanaAnterior,
+            'mes_hasta' => $finMesAnt,
+            'venta_dia' => (float) $liqValidas()->where('fecha_venta', $semanaAnterior->toDateString())->sum('total_venta'),
+            'venta_mes' => (float) $liqValidas()->whereBetween('fecha_venta', [$inicioMesAnt->toDateString(), $finMesAnt->toDateString()])->sum('total_venta'),
+            'balones_dia' => (int) $itemsBase()->where('liquidaciones.fecha_venta', $semanaAnterior->toDateString())->sum('liquidacion_items.cantidad'),
+            'balones_mes' => (int) $itemsBase()->whereBetween('liquidaciones.fecha_venta', [$inicioMesAnt->toDateString(), $finMesAnt->toDateString()])->sum('liquidacion_items.cantidad'),
+        ];
+
         // Utilidad bruta del mes (solo gerencia): venta valorizada menos costo a la fecha de venta.
         $utilidadMes = $request->user()->isAdmin() ? (float) $itemsBase()->where('liquidacion_items.total', '>', 0)
             ->whereBetween('liquidaciones.fecha_venta', [$inicioMes->toDateString(), $fecha->toDateString()])
@@ -66,11 +79,21 @@ class DashboardController extends Controller
             ->selectRaw('choferes.alias, SUM(liquidacion_items.cantidad) as cantidad, SUM(liquidacion_items.total) as total')
             ->groupBy('choferes.alias')->orderByDesc('total')->limit(8)->get();
 
+        // Promedio de los días con venta (línea de referencia del gráfico).
+        $conVenta = array_filter($valores, fn ($v) => $v > 0);
+        $promedio = $conVenta ? round(array_sum($conVenta) / count($conVenta), 2) : 0;
+
         $graficoVentas = [
             'type' => 'bar',
-            'data' => ['labels' => $labels, 'datasets' => [['label' => $enSoles ? 'Venta (S/)' : 'Balones', 'data' => $valores, 'backgroundColor' => '#1a3a80', 'borderRadius' => 0, 'maxBarThickness' => 26]]],
-            'options' => ['responsive' => true, 'maintainAspectRatio' => false, 'plugins' => ['legend' => ['display' => false]],
-                'scales' => ['x' => ['grid' => ['display' => false]], 'y' => ['grid' => ['color' => '#eef2f7'], 'beginAtZero' => true]]],
+            'data' => ['labels' => $labels, 'datasets' => [
+                ['label' => $enSoles ? 'Venta (S/)' : 'Balones', 'data' => $valores, 'backgroundColor' => '#1a3a80', 'hoverBackgroundColor' => '#0f2a5c',
+                    'borderRadius' => 2, 'borderSkipped' => 'bottom', 'maxBarThickness' => 26, 'order' => 2],
+                ['label' => $enSoles ? 'Promedio diario (S/)' : 'Promedio diario', 'type' => 'line', 'data' => array_fill(0, count($valores), $promedio),
+                    'borderColor' => '#7a8699', 'borderWidth' => 1.5, 'borderDash' => [5, 4], 'pointRadius' => 0, 'pointHoverRadius' => 0, 'pointStyle' => 'line', 'fill' => false, 'order' => 1],
+            ]],
+            'options' => ['responsive' => true, 'maintainAspectRatio' => false, 'interaction' => ['mode' => 'index', 'intersect' => false],
+                'plugins' => ['legend' => ['display' => true, 'position' => 'top', 'align' => 'end', 'labels' => ['boxWidth' => 12, 'boxHeight' => 12, 'usePointStyle' => true]]],
+                'scales' => ['x' => ['grid' => ['display' => false], 'border' => ['display' => false]], 'y' => ['grid' => ['color' => '#eef2f7'], 'border' => ['display' => false], 'beginAtZero' => true]]],
         ];
         $graficoProductos = [
             'type' => 'doughnut',
@@ -95,6 +118,7 @@ class DashboardController extends Controller
             'fecha' => $fecha,
             'ventaDia' => $ventaDia,
             'ventaMes' => $ventaMes,
+            'comparativo' => $comparativo,
             'balonesDia' => $balonesDia,
             'balonesMes' => $balonesMes,
             'porCobrar' => (float) CuentaPorCobrar::pendientes()->sum('saldo'),

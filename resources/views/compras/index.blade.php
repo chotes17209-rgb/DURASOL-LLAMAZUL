@@ -104,7 +104,7 @@
                                 <td>
                                     @if ($q['porcentaje'] !== null)
                                         <div class="flex items-center gap-2">
-                                            <div class="progress flex-1"><span style="width: {{ min(100, $q['porcentaje']) }}%"></span></div>
+                                            <div class="progress flex-1"><span class="{{ $q['porcentaje'] >= 100 ? '!bg-emerald-600' : ($q['porcentaje'] < 75 ? '!bg-amber-500' : '') }}" style="width: {{ min(100, $q['porcentaje']) }}%"></span></div>
                                             <span class="w-16 text-right text-[12px] font-semibold tabular-nums text-slate-800">{{ number_format($q['porcentaje'], 2) }} %</span>
                                         </div>
                                     @else

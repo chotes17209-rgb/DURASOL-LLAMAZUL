@@ -13,8 +13,10 @@
     @php($totalStock = \App\Services\AlmacenService::totalesPorPresentacion($stock))
     <dl class="ledger !grid-cols-2 lg:!grid-cols-5">
         @if ($enSoles)
-            <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p>{{ num($balonesDia) }} balones</p></div>
+            <div class="ledger-cell"><dt>Venta del {{ $fecha->format('d/m') }}</dt><dd>{{ soles($ventaDia) }}</dd><p>{{ num($balonesDia) }} balones</p>
+                <p><x-variacion :actual="$ventaDia" :anterior="$comparativo['venta_dia']" :texto="'vs. '.$comparativo['dia_fecha']->translatedFormat('D d/m')"/></p></div>
             <div class="ledger-cell"><dt>Acumulado del mes</dt><dd>{{ soles($ventaMes) }}</dd>
+                <p><x-variacion :actual="$ventaMes" :anterior="$comparativo['venta_mes']" :texto="'vs. 1–'.$comparativo['mes_hasta']->format('d').' '.$comparativo['mes_hasta']->translatedFormat('M')"/></p>
                 @if ($utilidadMes !== null)
                     <p><a href="{{ route('reportes.rentabilidad', ['mes' => $fecha->format('Y-m')]) }}" class="hover:text-brand-800 hover:underline">Utilidad bruta {{ soles($utilidadMes) }}{{ $ventaMes > 0 ? ' · '.number_format($utilidadMes / $ventaMes * 100, 1).' %' : '' }}</a></p>
                 @else
@@ -22,8 +24,10 @@
                 @endif
             </div>
         @else
-            <div class="ledger-cell"><dt>Balones vendidos el {{ $fecha->format('d/m') }}</dt><dd>{{ num($balonesDia) }}</dd><p>según liquidaciones</p></div>
-            <div class="ledger-cell"><dt>Balones vendidos en el mes</dt><dd>{{ num($balonesMes) }}</dd><p>desde el {{ $fecha->copy()->startOfMonth()->format('d/m') }}</p></div>
+            <div class="ledger-cell"><dt>Balones vendidos el {{ $fecha->format('d/m') }}</dt><dd>{{ num($balonesDia) }}</dd><p>según liquidaciones</p>
+                <p><x-variacion :actual="$balonesDia" :anterior="$comparativo['balones_dia']" :texto="'vs. '.$comparativo['dia_fecha']->translatedFormat('D d/m')"/></p></div>
+            <div class="ledger-cell"><dt>Balones vendidos en el mes</dt><dd>{{ num($balonesMes) }}</dd><p>desde el {{ $fecha->copy()->startOfMonth()->format('d/m') }}</p>
+                <p><x-variacion :actual="$balonesMes" :anterior="$comparativo['balones_mes']" :texto="'vs. 1–'.$comparativo['mes_hasta']->format('d').' '.$comparativo['mes_hasta']->translatedFormat('M')"/></p></div>
         @endif
         <div class="ledger-cell"><dt>Stock S-10 (llenos + cambios)</dt><dd>{{ num($totalStock['S10']) }}</dd><p>S-45 {{ num($totalStock['S45']) }} · M-10 {{ num($totalStock['M10']) }}</p></div>
         @if ($u->hasRole('liquidaciones', 'caja'))
