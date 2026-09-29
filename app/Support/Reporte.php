@@ -112,11 +112,15 @@ class Reporte
         $hoja->getRowDimension(2)->setRowHeight(8);
         $fila = 3;
         $hoja->setCellValue("A{$fila}", mb_strtoupper($this->titulo));
-        $hoja->getStyle("A{$fila}")->getFont()->setBold(true)->setSize(13)->getColor()->setRGB('1A3A80');
+        $hoja->getStyle("A{$fila}")->getFont()->setBold(true)->setSize(13)->getColor()->setRGB('111111');
         $fila++;
-        if ($this->subtitulo) {
-            $hoja->setCellValue("A{$fila}", $this->subtitulo);
-            $hoja->getStyle("A{$fila}")->getFont()->getColor()->setRGB('475569');
+        foreach (array_filter([$this->subtitulo ? 'Periodo' : 'Fecha' => $this->subtitulo ?? now()->format('d/m/Y'), 'Emisión' => now()->format('d/m/Y H:i')]) as $k => $v) {
+            $hoja->setCellValue("A{$fila}", $k);
+            $hoja->setCellValue("B{$fila}", $v);
+            $hoja->getStyle("A{$fila}")->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'BDD7EE']]]);
+            if ($k !== 'Emisión') {
+                $hoja->getStyle("B{$fila}")->applyFromArray(['font' => ['bold' => true], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF00']]]);
+            }
             $fila++;
         }
         foreach ($this->datos as [$k, $v]) {
@@ -139,8 +143,8 @@ class Reporte
             $inicioTabla = $fila;
             $hoja->fromArray(array_keys($t['columnas']), null, "A{$fila}");
             $hoja->getStyle("A{$fila}:{$fin}{$fila}")->applyFromArray([
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1A3A80']],
+                'font' => ['bold' => true, 'color' => ['rgb' => '111111']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'BDD7EE']],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
             ]);
             $fila++;
@@ -166,13 +170,13 @@ class Reporte
                 if ($t['total'] !== null && $i === count($filas) - 1) {
                     $hoja->getStyle("A{$fila}:{$fin}{$fila}")->applyFromArray([
                         'font' => ['bold' => true],
-                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8EDF5']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'BDD7EE']],
                     ]);
                 }
                 $fila++;
             }
             $hoja->getStyle("A{$inicioTabla}:{$fin}".($fila - 1))->getBorders()->getAllBorders()
-                ->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('C7CED8');
+                ->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('8A96A3');
             if ($t['nota']) {
                 $hoja->setCellValue("A{$fila}", $t['nota']);
                 $hoja->getStyle("A{$fila}")->getFont()->setItalic(true)->getColor()->setRGB('64748B');

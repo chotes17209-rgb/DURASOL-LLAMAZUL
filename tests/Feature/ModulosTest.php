@@ -62,9 +62,9 @@ class ModulosTest extends TestCase
         $this->assertSame(1, PrecioVenta::count());
 
         // Mismo precio = no crea historial; precio distinto = nueva fila.
-        $this->como('liquidaciones')->putJson(route('precios.venta.update', $cliente), ['vigente_desde' => '2026-09-28', 'precios' => [$s10 => 45.1]])->assertOk();
+        $this->como('liquidaciones')->putJson(route('precios.venta.update', $cliente), ['vigente_desde' => today()->toDateString(), 'precios' => [$s10 => 45.1]])->assertOk();
         $this->assertSame(1, PrecioVenta::count());
-        $this->como('liquidaciones')->putJson(route('precios.venta.update', $cliente), ['vigente_desde' => '2026-09-28', 'precios' => [$s10 => 45.8], 'motivo' => 'Subida'])->assertOk();
+        $this->como('liquidaciones')->putJson(route('precios.venta.update', $cliente), ['vigente_desde' => today()->toDateString(), 'precios' => [$s10 => 45.8], 'motivo' => 'Subida'])->assertOk();
         $this->assertSame(2, PrecioVenta::count());
 
         $this->como('liquidaciones')->get(route('clientes.show', $cliente), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertSee('45.80');

@@ -133,7 +133,7 @@ class CajaChicaController extends Controller
             ];
         }
 
-        return (new Reporte('Reporte de movimientos caja chica', null, true))
+        return (new Reporte('Reporte de movimientos caja chica', str_replace('-', '/', $periodo), true))
             ->datos(['Fecha' => $periodo, 'Sucursal' => config('erp.caja_chica.sucursal'), 'Responsable' => config('erp.caja_chica.responsable')])
             ->tabla(null, [
                 'Ítem' => 'texto', 'Fecha' => 'texto', 'Concepto' => 'texto', 'Descripción' => 'texto', 'Monto' => 'decimal', 'Saldo caja' => 'decimal',
