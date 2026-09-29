@@ -243,7 +243,7 @@ export default function liquidacionEditor(config) {
 
         nombreCliente(id) { return id ? (this.clientes[id]?.nombre ?? `Cliente ${id}`) : ''; },
         codigoProducto(id) { return this.productos.find((p) => p.id === +id)?.codigo ?? ''; },
-        get filasConDatos() { return this.items.filter((i) => i.cliente_id || +i.cantidad > 0); },
+        get filasConDatos() { return this.items.filter((i) => i.cliente_id || +i.cantidad > 0 || +i.vacios_devueltos > 0); },
 
         /* ---------------- FISE ---------------- */
         get clientesDelDia() { return [...new Set(this.items.filter((i) => i.cliente_id).map((i) => i.cliente_id))]; },
@@ -387,12 +387,13 @@ export default function liquidacionEditor(config) {
                 return;
             }
             const sinCliente = filas.filter((i) => !i.cliente_id).length;
-            const sinCantidad = filas.filter((i) => !(+i.cantidad > 0)).length;
-            const sinPrecio = filas.filter((i) => i.cliente_id && i.precio === '').length;
+            // Una fila puede ser solo de devolución de vacíos: cantidad 0 con balones devueltos.
+            const sinCantidad = filas.filter((i) => !(+i.cantidad > 0) && !(+i.vacios_devueltos > 0)).length;
+            const sinPrecio = filas.filter((i) => i.cliente_id && +i.cantidad > 0 && i.precio === '').length;
             if (sinCliente || sinCantidad || sinPrecio) {
                 window.alertError('Hoja incompleta', [
                     sinCliente && `${sinCliente} fila(s) con cantidad pero sin cliente válido.`,
-                    sinCantidad && `${sinCantidad} fila(s) sin cantidad.`,
+                    sinCantidad && `${sinCantidad} fila(s) sin cantidad ni balones devueltos.`,
                     sinPrecio && `${sinPrecio} fila(s) sin precio registrado en «Precios de venta».`,
                 ].filter(Boolean).join(' '));
                 return;

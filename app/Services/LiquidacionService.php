@@ -63,7 +63,8 @@ class LiquidacionService
             // El precio no se digita: es el vigente del cliente a la fecha de venta (como el BUSCARV del Excel).
             $items = array_values($data['items'] ?? []);
             $vigentes = $this->precios->preciosVentaVigentes(array_unique(array_column($items, 'cliente_id')), $data['fecha_venta']);
-            $sinPrecio = array_filter($items, fn ($item) => ! isset($vigentes[$item['cliente_id']][$item['producto_id']]));
+            // Las filas solo de devolución de vacíos (cantidad 0) no necesitan precio.
+            $sinPrecio = array_filter($items, fn ($item) => (int) $item['cantidad'] > 0 && ! isset($vigentes[$item['cliente_id']][$item['producto_id']]));
             if ($sinPrecio) {
                 throw ValidationException::withMessages(['items' => count($sinPrecio).' venta(s) sin precio vigente para el cliente. Regístralo en «Precios de venta».']);
             }
@@ -71,7 +72,7 @@ class LiquidacionService
             $liquidacion->items()->delete();
             foreach ($items as $i => $item) {
                 $cantidad = (int) $item['cantidad'];
-                $precio = round((float) $vigentes[$item['cliente_id']][$item['producto_id']], 2);
+                $precio = round((float) ($vigentes[$item['cliente_id']][$item['producto_id']] ?? 0), 2);
                 $total = round($cantidad * $precio, 2);
                 $credito = ! empty($item['es_credito'])
                     ? round(min($total, (float) ($item['monto_credito'] ?? $total) ?: $total), 2)

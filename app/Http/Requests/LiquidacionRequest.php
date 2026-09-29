@@ -27,7 +27,7 @@ class LiquidacionRequest extends FormRequest
             'items.*.cliente_id' => ['required', 'exists:clientes,id'],
             'items.*.empresa_id' => ['required', 'exists:empresas,id'],
             'items.*.producto_id' => ['required', 'exists:productos,id'],
-            'items.*.cantidad' => ['required', 'integer', 'min:1', 'max:100000'],
+            'items.*.cantidad' => ['required', 'integer', 'min:0', 'max:100000'],
             'items.*.precio' => ['required', 'numeric', 'min:0', 'max:99999'],
             'items.*.vacios_devueltos' => ['nullable', 'integer', 'min:0'],
             'items.*.metodo_pago' => ['required', Rule::enum(MetodoPago::class)],
@@ -62,6 +62,10 @@ class LiquidacionRequest extends FormRequest
     {
         return [function (Validator $validator) {
             foreach ($this->input('items', []) as $i => $item) {
+                // Una fila puede ser solo de devolución de balones vacíos (cantidad 0), pero no estar vacía.
+                if ((int) ($item['cantidad'] ?? 0) <= 0 && (int) ($item['vacios_devueltos'] ?? 0) <= 0) {
+                    $validator->errors()->add("items.$i.cantidad", 'Cada fila debe tener cantidad vendida o balones devueltos.');
+                }
                 if (! empty($item['es_credito']) && (float) ($item['monto_credito'] ?? 0) > (int) $item['cantidad'] * (float) $item['precio'] + 0.001) {
                     $validator->errors()->add("items.$i.monto_credito", 'El crédito no puede ser mayor al total de la venta.');
                 }

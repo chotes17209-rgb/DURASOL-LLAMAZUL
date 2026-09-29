@@ -123,6 +123,26 @@ class LiquidacionTest extends TestCase
         }
     }
 
+    public function test_fila_solo_con_balones_devueltos(): void
+    {
+        $cliente = $this->cliente(['S10' => 45]);
+        $base = ['cliente_id' => $cliente->id, 'empresa_id' => $this->empresa()->id, 'producto_id' => $this->producto('S10')->id, 'precio' => 0, 'metodo_pago' => 'efectivo'];
+
+        // El cliente no compra pero devuelve 12 vacíos: la fila se guarda con venta cero.
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['items' => [
+            $base + ['cantidad' => 3, 'vacios_devueltos' => 3],
+            $base + ['cantidad' => 0, 'vacios_devueltos' => 12],
+        ]]))->assertOk();
+        $liquidacion = Liquidacion::firstOrFail();
+        $this->assertSame('135.00', $liquidacion->total_venta);
+        $this->assertSame(15, (int) $liquidacion->items()->sum('vacios_devueltos'));
+        $this->assertSame(2, $liquidacion->items()->count());
+
+        // Una fila sin cantidad ni devueltos no se acepta.
+        $this->como('liquidaciones')->postJson(route('liquidaciones.store'), $this->payload(['items' => [$base + ['cantidad' => 0, 'vacios_devueltos' => 0]]]))
+            ->assertStatus(422)->assertJsonValidationErrors('items.0.cantidad');
+    }
+
     public function test_precio_vigente_fechas_y_borrador(): void
     {
         $cliente = $this->cliente(['S10' => 45]);
