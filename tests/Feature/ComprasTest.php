@@ -38,7 +38,7 @@ class ComprasTest extends TestCase
         $global = app(CompraService::class)->cuadro(Carbon::parse('2026-09-01'), null);
         $this->assertSame(1845, $global['total']['S10']);
 
-        $this->como('logistica')->get(route('compras.index', ['mes' => '2026-09']))->assertOk()->assertSee('Cuota del mes')->assertSee('1,345');
+        $this->como('logistica')->get(route('compras.index', ['mes' => '2026-09']))->assertOk()->assertSee('CUOTA DEL MES')->assertSee('1,345')->assertSee('67.25%');
         $this->assertSame(200, $this->como('admin')->get(route('compras.index', ['mes' => '2026-09', 'formato' => 'pdf']))->getStatusCode());
     }
 

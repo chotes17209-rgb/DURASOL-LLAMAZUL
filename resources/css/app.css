@@ -180,7 +180,43 @@
     .doc-num { @apply font-mono text-[18px] font-semibold text-brand-900; }
     .doc-tag { @apply rounded bg-white px-2 py-0.5 text-[11.5px] font-medium text-slate-700 ring-1 ring-slate-300; }
 
-    /* Indicadores en fila: tarjetas separadas */
+    /* Hoja de compras con el formato del Excel (DURASOL morado; LLAMAZUL y GLOBAL azul) */
+    .xl-hoja { @apply rounded-xl border border-[#e5e8ec] bg-white p-5; box-shadow: 0 0 .125rem rgb(34 53 72 / .12), 0 .125rem .5rem rgb(34 53 72 / .08); --banda: #1f3864; --total: #ffd966; }
+    .xl-durasol { --banda: #7030a0; --total: #d9d9d9; }
+    .xl-llamazul { --total: #c6e0b4; }
+    .xl-tabla { @apply border-collapse text-[12.5px] text-black tabular-nums; }
+    .xl-tabla th { @apply border border-[#7f7f7f] px-2 py-[3px] text-center text-[12px] font-bold whitespace-nowrap; }
+    .xl-tabla td { @apply border border-[#bfbfbf] px-2 py-[2px] whitespace-nowrap; }
+    .xl-tabla tbody tr:hover td { @apply bg-[#fff2cc]; }
+    .xl-blanco { @apply bg-white; }
+    .xl-gris-osc { background: #a6a6a6; }
+    .xl-gris { background: #bfbfbf; }
+    .xl-durazno { background: #f8cbad; }
+    .xl-durazno-claro { background: #fce4d6; }
+    .xl-celeste { background: #bdd7ee; }
+    .xl-tabla tr.xl-total td { @apply border-[#7f7f7f] font-bold; background: var(--total); }
+    .xl-tabla tr.xl-tot td { @apply border-[#7f7f7f] font-bold; background: #ffd966; }
+    .xl-banda { @apply py-1 text-center text-[12.5px] font-bold text-white italic; background: var(--banda); }
+    .xl-cuota { @apply border-collapse text-[12.5px] tabular-nums; }
+    .xl-cuota th { @apply w-56 border border-[#7f7f7f] bg-[#3a3a3a] px-2 py-[3px] text-center text-[12px] font-bold text-white; }
+    .xl-cuota-masgas th { background: #203864; }
+    .xl-cuota td { @apply border border-[#bfbfbf] px-2 py-[2px]; }
+    .xl-cuota .xl-meta { @apply bg-[#d9d9d9] text-center; }
+    .xl-cuota-masgas .xl-meta { background: #bdd7ee; }
+    .xl-cuota .xl-pct { @apply w-24 border-[#7f7f7f] text-center; }
+    .xl-cuota .xl-avance { @apply text-center font-bold text-[#00b050]; }
+    .xl-cuota .xl-dif { @apply text-center font-bold text-[#c00000]; }
+    .xl-cuota .xl-dif-valor { @apply bg-[#fce4d6] text-center font-semibold; }
+    .xl-cuota .xl-sin-borde { @apply border-0; }
+    .xl-comparativa { @apply min-w-[26rem]; }
+    .xl-grafico { @apply max-w-xl border border-[#d9d9d9] px-4 pt-3 pb-2; }
+    .xl-grafico-titulo { @apply text-center text-[13px] font-bold text-[#404040] italic; }
+    .xl-barras { @apply mt-2 grid grid-cols-2 gap-10 px-6; }
+    .xl-barra > p { @apply mt-1 border-t border-[#d9d9d9] pt-1 text-center text-[10.5px] text-[#595959]; }
+    .xl-barra-area { @apply flex h-44 items-end; }
+    .xl-barra-col { @apply relative w-full; }
+    .xl-barra-col > span { @apply absolute inset-x-0 top-1.5 text-center text-[10.5px] text-[#404040]; }
+
     /* Hoja tipo Excel (hoja de liquidación diaria) */
     .hoja { @apply rounded-xl border border-[#bcc3ca] bg-white p-4; box-shadow: 0 0 .125rem rgb(34 53 72 / .12), 0 .125rem .5rem rgb(34 53 72 / .08); }
     .hoja-titulo { @apply border-2 border-[#1d2d3e] py-1.5 text-center text-[15px] font-bold tracking-wide text-[#1d2d3e]; }
