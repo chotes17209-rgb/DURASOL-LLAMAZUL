@@ -21,6 +21,7 @@ use App\Models\Vehiculo;
 use App\Services\AlmacenService;
 use App\Services\CostoService;
 use App\Services\LiquidacionService;
+use App\Support\ActualizacionExcel;
 use App\Support\AuditLogger;
 use App\Support\DatosHistoricos;
 use Illuminate\Database\Seeder;
@@ -89,6 +90,10 @@ class ExcelSeeder extends Seeder
             DatosHistoricos::cargarCompras();
             DatosHistoricos::cargarFise25Setiembre();
             $this->command?->info('Partes de almacén y depósitos importados.');
+
+            // Excel de octubre: ventas hasta el 12/10, variaciones de precio, FISE y depósitos del 12/10.
+            $octubre = ActualizacionExcel::aplicar('octubre.json');
+            $this->command?->info("Actualización de octubre: {$octubre['liquidaciones']} liquidaciones y {$octubre['precios']} precios nuevos.");
         });
     }
 

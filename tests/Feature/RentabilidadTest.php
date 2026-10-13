@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\LiquidacionItem;
 use App\Models\PrecioCompra;
+use App\Services\CostoService;
 use App\Services\RentabilidadService;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -12,7 +13,7 @@ class RentabilidadTest extends TestCase
 {
     public function test_estado_de_resultados_con_costo_a_la_fecha_traslados_y_gastos(): void
     {
-        // Dos instalaciones de Durasol: el costo del S10 es el promedio de sus precios vigentes.
+        // Dos instalaciones de Durasol con precios distintos (empate): el costo del S10 es su promedio.
         foreach ([['11111111', 40.00], ['22222222', 42.00]] as [$codigo, $precio]) {
             PrecioCompra::create(['empresa_id' => $this->empresa()->id, 'instalacion_id' => $this->instalacion('DURASOL', $codigo)->id, 'producto_id' => $this->producto('S10')->id,
                 'precio' => $precio, 'vigente_desde' => '2026-09-01', 'validado' => true]);
@@ -31,6 +32,13 @@ class RentabilidadTest extends TestCase
             'gastos' => [['concepto' => 'Peaje', 'monto' => 30]],
         ])->assertOk();
         $this->assertSame('41.00', LiquidacionItem::first()->costo_unitario);
+
+        // Con más instalaciones, manda el precio más repetido (el de la empresa); una instalación especial no lo distorsiona.
+        foreach ([['33333333', 42.00], ['44444444', 36.80]] as [$codigo, $precio]) {
+            PrecioCompra::create(['empresa_id' => $durasol, 'instalacion_id' => $this->instalacion('DURASOL', $codigo)->id, 'producto_id' => $s10,
+                'precio' => $precio, 'vigente_desde' => '2026-09-01', 'validado' => true]);
+        }
+        $this->assertSame(42.0, app(CostoService::class)->costoUnitario($durasol, $s10, '2026-09-20'));
 
         $this->como('caja')->postJson(route('caja.chica.store'), ['fecha' => '2026-09-14', 'tipo' => 'gasto', 'concepto' => 'Peajes', 'descripcion' => 'X', 'monto' => 70])->assertOk();
 
