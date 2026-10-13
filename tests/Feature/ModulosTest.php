@@ -28,6 +28,17 @@ class ModulosTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_cerrar_sesion(): void
+    {
+        $this->como('caja')->post(route('logout'))->assertRedirect(route('login'));
+        $this->assertGuest();
+        $this->assertTrue(Audit::where('event', 'logout')->exists());
+        $this->get(route('login'))->assertOk();
+
+        // Si la sesión ya había expirado, salir lleva al inicio de sesión sin error.
+        $this->post(route('logout'))->assertRedirect(route('login'));
+    }
+
     public function test_permisos_por_rol(): void
     {
         $this->como('logistica')->get(route('caja.index'))->assertForbidden();

@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Render (y cualquier proxy) termina el HTTPS antes de llegar a la app.
         $middleware->trustProxies(at: '*');
         $middleware->alias(['role' => EnsureRole::class]);
+        // Salir nunca debe fallar: si la página quedó abierta y el token expiró, igual se cierra la sesión.
+        $middleware->validateCsrfTokens(except: ['logout']);
         $middleware->appendToGroup('web', EnvolverVistaParcial::class);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
