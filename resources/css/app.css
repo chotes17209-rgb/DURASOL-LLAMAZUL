@@ -192,8 +192,12 @@
 
     /* Hoja de compras con el formato del Excel (DURASOL morado; LLAMAZUL y GLOBAL azul) */
     .xl-hoja { @apply rounded-lg border border-[#dfe4ec] bg-white p-5; box-shadow: 0 1px 2px rgb(11 27 54 / .06); --banda: #1f3864; --total: #ffd966; }
-    .xl-durasol { --banda: #7030a0; --total: #d9d9d9; }
-    .xl-llamazul { --total: #c6e0b4; }
+    .xl-durasol { --banda: #7030a0; --total: #d9d9d9; --titulo: #1f3864; --titulo-texto: #fff; }
+    .xl-llamazul { --total: #c6e0b4; --titulo: #375623; --titulo-texto: #fff; }
+    .xl-global { --titulo: #ffd966; --titulo-texto: #000; }
+    .xl-titulo { @apply ml-auto flex max-w-xl border-2 border-[#262626] text-[17px] font-bold italic; color: var(--titulo-texto); background: var(--titulo); }
+    .xl-titulo > p:first-child { @apply flex-1 px-4 py-1.5 text-center; }
+    .xl-titulo > p:last-child { @apply border-l-2 border-[#262626] px-5 py-1.5; }
     .xl-tabla { @apply border-collapse text-[12.5px] text-black tabular-nums; }
     .xl-tabla th { @apply border border-[#7f7f7f] px-2 py-[3px] text-center text-[12px] font-bold whitespace-nowrap; }
     .xl-tabla td { @apply border border-[#bfbfbf] px-2 py-[2px] whitespace-nowrap; }

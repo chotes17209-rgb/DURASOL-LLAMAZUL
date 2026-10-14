@@ -44,8 +44,12 @@ class CompraService
         });
         $total = collect(self::PRODUCTOS)->mapWithKeys(fn ($c) => [$c => (int) $dias->sum(fn ($d) => $d['cantidades'][$c] ?? 0)])->all();
 
+        // Comparativa "mes anterior x día" (como el Excel): el mes anterior hasta el mismo día del corte.
+        // Mes en curso: hasta ayer; mes cerrado: hasta el último día del mes consultado.
+        $corte = $this->diaDeCorte($desde);
         $totalAnterior = collect(self::PRODUCTOS)->mapWithKeys(fn ($c) => [$c => 0])->all();
-        foreach ($this->cantidadesPorDia($anterior, $anterior->copy()->endOfMonth(), $empresaId, $productos) as $cantidades) {
+        $hastaAnterior = $corte > 0 ? $anterior->copy()->day(min($corte, $anterior->daysInMonth)) : null;
+        foreach ($hastaAnterior ? $this->cantidadesPorDia($anterior, $hastaAnterior, $empresaId, $productos) : [] as $cantidades) {
             foreach ($cantidades as $c => $n) {
                 $totalAnterior[$c] += $n;
             }
@@ -71,11 +75,22 @@ class CompraService
         ];
 
         return [
-            'mes' => $desde, 'anterior' => $anterior, 'dias' => $dias, 'total' => $total,
+            'mes' => $desde, 'anterior' => $anterior, 'anterior_hasta' => $hastaAnterior, 'dias' => $dias, 'total' => $total,
             'cuota' => $cuota, 'comparativa' => $comparativa,
             'base10' => ['anterior' => $base($totalAnterior), 'actual' => $base($total)],
             'dias_con_compra' => $dias->filter(fn ($d) => array_sum($d['cantidades']) > 0)->count(),
         ];
+    }
+
+    /** Día del mes hasta el que se compara con el mes anterior: ayer si es el mes en curso, fin de mes si ya cerró. */
+    public function diaDeCorte(Carbon $mes): int
+    {
+        $hoy = today();
+        if ($mes->isSameMonth($hoy)) {
+            return $hoy->day - 1;
+        }
+
+        return $mes->lt($hoy) ? $mes->daysInMonth : 0;
     }
 
     /** @return array<string, array<string, int>> fecha => código => cantidad */

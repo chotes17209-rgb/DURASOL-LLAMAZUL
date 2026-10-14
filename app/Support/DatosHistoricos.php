@@ -34,6 +34,11 @@ class DatosHistoricos
         $agregar = function (string $fecha, string $empresa, array $cantidades, string $observacion) use (&$filas, $empresas, $productos, $costos) {
             foreach ($cantidades as $codigo => $cantidad) {
                 if ($cantidad > 0 && isset($empresas[$empresa], $productos[$codigo])) {
+                    // Lo registrado a mano en el sistema para ese día y producto se respeta.
+                    if (DB::table('compras_planta')->where('origen', 'manual')->where('fecha', $fecha)
+                        ->where('empresa_id', $empresas[$empresa])->where('producto_id', $productos[$codigo])->exists()) {
+                        continue;
+                    }
                     $filas[] = [
                         'fecha' => $fecha, 'empresa_id' => $empresas[$empresa], 'producto_id' => $productos[$codigo], 'cantidad' => (int) $cantidad,
                         'precio_unitario' => $costos->costoUnitario($empresas[$empresa], $productos[$codigo], $fecha),
@@ -44,12 +49,13 @@ class DatosHistoricos
         };
         foreach ($datos['totales_mes_anterior'] as $mes => $porEmpresa) {
             foreach ($porEmpresa as $empresa => $cantidades) {
-                $agregar(Carbon::parse($mes.'-01')->endOfMonth()->toDateString(), $empresa, $cantidades, 'Total del mes según el registro de compras (sin detalle diario).');
+                $fecha = $datos['fecha_total_mes_anterior'][$mes] ?? Carbon::parse($mes.'-01')->endOfMonth()->toDateString();
+                $agregar($fecha, $empresa, $cantidades, 'Total del mes según el registro de compras (sin detalle diario).');
             }
         }
         foreach ($datos['compras'] as $empresa => $dias) {
             foreach ($dias as $fecha => $cantidades) {
-                $agregar($fecha, $empresa, $cantidades, 'Registro de compras de setiembre.');
+                $agregar($fecha, $empresa, $cantidades, 'Registro de compras '.(substr($fecha, 5, 2) === '10' ? 'de octubre.' : 'de setiembre.'));
             }
         }
         DB::table('compras_planta')->insert($filas);
@@ -66,6 +72,18 @@ class DatosHistoricos
                 }
             }
         }
+    }
+
+    /**
+     * Vuelve a cargar las compras del registro (agosto a la última fecha del archivo): reemplaza lo importado
+     * antes y lo que vino de los partes en esas fechas; lo registrado a mano se mantiene.
+     */
+    public static function recargarCompras(): void
+    {
+        $datos = self::archivo();
+        DB::table('compras_planta')->whereIn('origen', ['excel', 'parte'])
+            ->whereBetween('fecha', ['2026-08-01', $datos['importadas_hasta'] ?? config('erp.compras.importadas_hasta')])->delete();
+        self::cargarCompras();
     }
 
     /**

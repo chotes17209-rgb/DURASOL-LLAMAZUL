@@ -40,6 +40,10 @@
 
     {{-- Cuadro con el formato de la hoja de compras del Excel (DURASOL / LLAMAZUL / GLOBAL) --}}
     <div class="xl-hoja xl-{{ $tema }}">
+        <div class="xl-titulo mb-5">
+            <p>{{ $tema === 'global' ? 'COMPRA DEL MES GLOBAL' : 'COMPRA DEL MES - '.mb_strtoupper($titulo) }}</p>
+            <p>{{ ($c['mes']->isSameMonth($hoy) ? $hoy : $c['mes']->copy()->endOfMonth())->format('d/m/Y') }}</p>
+        </div>
         <div class="grid gap-x-10 gap-y-6 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)]">
             <div class="overflow-x-auto">
                 <table class="xl-tabla w-full">
@@ -86,6 +90,13 @@
                 </div>
 
                 <p class="xl-banda">COMPARATIVA MES ANTERIOR X DIA</p>
+                <p class="-mt-3 text-[12px] text-slate-500">
+                    @if ($c['anterior_hasta'])
+                        {{ $mesAnt }} del 1 al {{ $c['anterior_hasta']->day }} frente a {{ mb_strtolower($mesAct) }}{{ $c['mes']->isSameMonth($hoy) ? ' a la fecha' : ' completo' }}.
+                    @else
+                        Aún no hay días cerrados del mes para comparar.
+                    @endif
+                </p>
                 <div class="overflow-x-auto">
                     <table class="xl-tabla xl-comparativa">
                         <thead><tr><th class="xl-blanco">PROD.</th><th class="xl-durazno">{{ mb_strtoupper($mesAnt) }}</th><th class="xl-blanco">{{ mb_strtoupper($mesAct) }}</th><th class="xl-blanco">SUBE/BAJA</th><th class="xl-blanco">%</th></tr></thead>

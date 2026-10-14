@@ -40,7 +40,7 @@ return [
 
     // Compras: hasta esta fecha las compras vienen del registro importado (no del parte diario).
     'compras' => [
-        'importadas_hasta' => env('COMPRAS_IMPORTADAS_HASTA', '2026-09-26'),
+        'importadas_hasta' => env('COMPRAS_IMPORTADAS_HASTA', '2026-10-12'),
     ],
 
     // Denominaciones de la moneda peruana para el arqueo de efectivo.
