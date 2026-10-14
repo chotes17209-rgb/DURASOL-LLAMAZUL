@@ -502,6 +502,27 @@ window.afterSuccess = afterSuccess;
 /* ------------------------------------------------------------------ *
  * Arranque
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * Barra de carga al cambiar de pantalla (enlaces y filtros GET). Solo visual.
+ * ------------------------------------------------------------------ */
+const barraCarga = () => document.getElementById('barra-carga');
+
+document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    if (a.target || a.hasAttribute('download') || a.dataset.modalUrl || a.closest('[data-modal-url]')) return;
+    const url = new URL(a.href, location.href);
+    if (url.origin !== location.origin || url.searchParams.has('formato') || (url.pathname === location.pathname && url.hash)) return;
+    barraCarga()?.classList.add('activa');
+});
+document.addEventListener('submit', (e) => {
+    const form = e.target;
+    if (!e.defaultPrevented && (form.getAttribute('method') || 'get').toLowerCase() === 'get' && !form.closest('[data-modal-content]')) {
+        barraCarga()?.classList.add('activa');
+    }
+});
+window.addEventListener('pageshow', () => barraCarga()?.classList.remove('activa'));
+
 document.addEventListener('DOMContentLoaded', () => {
     initComponents();
     const flash = sessionStorage.getItem('flash');

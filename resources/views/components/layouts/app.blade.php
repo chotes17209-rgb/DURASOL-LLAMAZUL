@@ -21,11 +21,14 @@
     $seccionActual = collect($menu)->first(fn ($s) => collect($s['items'])->contains(fn ($i) => request()->routeIs(...(array) $i['match'])))['titulo'] ?? 'General';
 @endphp
 
+{{-- Barra de carga al cambiar de pantalla --}}
+<div id="barra-carga" aria-hidden="true"></div>
+
 {{-- Barra corporativa: marcas, módulo actual y usuario --}}
 <header class="app-header">
     <div class="app-brand">
-        <button class="btn-icon lg:hidden" @click="menu = !menu" title="Menú"><x-heroicon-o-bars-3/></button>
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
+        <button class="app-header-icon lg:hidden" @click="menu = !menu" title="Menú"><x-heroicon-o-bars-3/></button>
+        <a href="{{ route('dashboard') }}" class="app-logos">
             <img src="{{ asset('img/durasol.jpg') }}" alt="Mr. Durasol Perú S.A.C." class="h-9 w-auto">
             <span class="hidden h-6 w-px bg-line min-[420px]:block"></span>
             <img src="{{ asset('img/llamazul.jpg') }}" alt="Llamazul" class="hidden h-5 w-auto min-[420px]:block">
@@ -33,24 +36,24 @@
     </div>
     <div class="flex min-w-0 flex-1 items-center justify-between gap-4 px-3 sm:px-6">
         <div class="hidden min-w-0 leading-tight md:block">
-            <p class="truncate text-[14px] font-semibold text-slate-900">Sistema de gestión comercial</p>
-            <p class="text-[12px] text-slate-500">Mr. Durasol Perú S.A.C. · Llamazul</p>
+            <p class="truncate text-[14px] font-semibold text-white">Sistema de gestión comercial</p>
+            <p class="text-[12px] text-[#a9b8d6]">Mr. Durasol Perú S.A.C. · Llamazul</p>
         </div>
         <div class="ml-auto flex items-center gap-3 sm:gap-5">
             <div class="hidden text-right leading-tight sm:block">
-                <p class="text-[12px] text-slate-500">Fecha</p>
-                <p class="text-[13px] font-medium text-slate-800">{{ now()->format('d/m/Y') }}</p>
+                <p class="text-[12px] text-[#a9b8d6]">{{ ucfirst(now()->translatedFormat('l')) }}</p>
+                <p class="text-[13px] font-medium text-white">{{ now()->format('d/m/Y') }}</p>
             </div>
-            <span class="hidden h-8 w-px bg-line sm:block"></span>
+            <span class="hidden h-8 w-px bg-white/15 sm:block"></span>
             <div class="flex items-center gap-3">
                 <span class="app-avatar">{{ mb_strtoupper($iniciales) }}</span>
                 <div class="hidden leading-tight sm:block">
-                    <p class="text-[13px] font-semibold text-slate-800">{{ $usuario->name }}</p>
-                    <p class="text-[12px] text-slate-500">{{ $usuario->role->label() }}</p>
+                    <p class="text-[13px] font-semibold text-white">{{ $usuario->name }}</p>
+                    <p class="text-[12px] text-[#a9b8d6]">{{ $usuario->role->label() }}</p>
                 </div>
             </div>
             <form method="POST" action="{{ route('logout') }}" id="logout-form">@csrf</form>
-            <button type="button" class="btn btn-secondary btn-sm" title="Cerrar sesión"
+            <button type="button" class="app-salir" title="Cerrar sesión"
                     onclick="confirmAction({title: '¿Cerrar sesión?', confirmText: 'Salir'}).then(ok => ok && document.getElementById('logout-form').submit())">
                 <x-heroicon-o-arrow-right-start-on-rectangle/> <span class="hidden sm:inline">Salir</span>
             </button>
@@ -72,7 +75,7 @@
             @endforeach
         @endforeach
     </nav>
-    <div class="border-t border-white/10 px-5 py-3 text-[11.5px] leading-relaxed text-[#7f90b5]">
+    <div class="border-t border-[#e3e7ee] px-5 py-3 text-[11.5px] leading-relaxed text-[#8a97ab]">
         <p>Versión {{ config('erp.version', '1.0') }} · Uso interno</p>
     </div>
 </aside>
@@ -96,7 +99,7 @@
             <div class="filter-bar no-print">{{ $filters }}</div>
         @endisset
     </div>
-    <main class="px-3 pt-4 pb-8 sm:px-6">
+    <main class="app-main px-3 pt-4 pb-8 sm:px-6">
         {{ $slot }}
     </main>
 </div>
@@ -105,7 +108,7 @@
 <template x-for="(m, index) in $store.modal.stack" :key="m.id">
     <div class="fixed inset-0 flex items-start justify-center overflow-y-auto px-4 py-10" :style="`z-index: ${50 + index * 5}`" :data-modal-id="m.id"
          @keydown.escape.window="index === $store.modal.stack.length - 1 && $store.modal.close()">
-        <div class="fixed inset-0 bg-slate-900/40" @click="$store.modal.close()"></div>
+        <div class="modal-fondo fixed inset-0 bg-[#0b1b36]/45" @click="$store.modal.close()"></div>
         <div class="app-modal"
              :class="{ 'max-w-md': m.size === 'sm', 'max-w-2xl': m.size === 'md', 'max-w-4xl': m.size === 'lg', 'max-w-6xl': m.size === 'xl', 'max-w-[96rem]': m.size === 'full' }">
             <div x-show="m.loading" class="flex items-center justify-center gap-2 p-10 text-[13px] text-slate-500">
